@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fenghua-crm UI 设计方案预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #F5F5F5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #1F2937;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            border-color: #6366F1;
+            color: #6366F1;
+        }
+
+        .tab.active {
+            background: #6366F1;
+            color: white;
+            border-color: #6366F1;
+        }
+
+        .mockup {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .mockup.active {
+            display: block;
+        }
+
+        /* Notion Style */
+        .notion {
+            background: #FAFAFA;
+        }
+
+        .notion .header {
+            background: #FFFFFF;
+            height: 64px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .notion .sidebar {
+            background: #FAFAFA;
+            width: 240px;
+            padding: 20px;
+            border-right: 1px solid #E5E7EB;
+        }
+
+        .notion .menu-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .notion .menu-item:hover {
+            background: #F3F4F6;
+        }
+
+        .notion .menu-item.active {
+            background: #6366F1;
+            color: white;
+        }
+
+        .notion .content {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .notion .button {
+            background: #6366F1;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .notion .button:hover {
+            background: #818CF8;
+            transform: scale(0.98);
+        }
+
+        .notion .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .notion .table thead {
+            background: #F9FAFB;
+        }
+
+        .notion .table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #6B7280;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .notion .table td {
+            padding: 12px;
+            border-bottom: 1px solid #F3F4F6;
+            color: #1F2937;
+        }
+
+        .notion .table tr:hover {
+            background: #F9FAFB;
+        }
+
+        /* Linear Style */
+        .linear {
+            background: #0A0A0A;
+        }
+
+        .linear .header {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(8px);
+            height: 64px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-radius: 8px 8px 0 0;
+            color: white;
+        }
+
+        .linear .sidebar {
+            background: #1A1A1A;
+            width: 240px;
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .linear .menu-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: #A0A0A0;
+        }
+
+        .linear .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .linear .menu-item.active {
+            background: #5E6AD2;
+            color: white;
+        }
+
+        .linear .content {
+            background: rgba(36, 36, 36, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .linear .button {
+            background: linear-gradient(135deg, #5E6AD2, #818CF8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .linear .button:hover {
+            box-shadow: 0 0 20px rgba(94, 106, 210, 0.5);
+        }
+
+        .linear .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .linear .table thead {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .linear .table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #A0A0A0;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .linear .table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .linear .table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Vercel Style */
+        .vercel {
+            background: #FFFFFF;
+        }
+
+        .vercel .header {
+            background: #FFFFFF;
+            height: 64px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-radius: 0;
+        }
+
+        .vercel .sidebar {
+            background: #FAFAFA;
+            width: 240px;
+            padding: 20px;
+            border-right: 1px solid #E5E7EB;
+        }
+
+        .vercel .menu-item {
+            padding: 10px 12px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .vercel .menu-item:hover {
+            background: #F5F5F5;
+        }
+
+        .vercel .menu-item.active {
+            background: #000000;
+            color: white;
+        }
+
+        .vercel .content {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+
+        .vercel .button {
+            background: #000000;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .vercel .button:hover {
+            background: #333333;
+        }
+
+        .vercel .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .vercel .table thead {
+            background: #FAFAFA;
+        }
+
+        .vercel .table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #000000;
+            font-size: 12px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .vercel .table td {
+            padding: 12px;
+            border-bottom: 1px solid #E5E7EB;
+            color: #000000;
+        }
+
+        .vercel .table tr:hover {
+            background: #F9FAFB;
+        }
+
+        .layout {
+            display: flex;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #FFFFFF;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .toolbar input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .linear .toolbar {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .linear .toolbar input {
+            background: rgba(36, 36, 36, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .vercel .toolbar {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+        }
+
+        .vercel .toolbar input {
+            border: 1px solid #E5E7EB;
+        }
+
+        .info {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .info h3 {
+            color: #0369A1;
+            margin-bottom: 8px;
+        }
+
+        .info p {
+            color: #0C4A6E;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>fenghua-crm UI 设计方案预览</h1>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showMockup('notion')">方案 1: Notion 风格</div>
+            <div class="tab" onclick="showMockup('linear')">方案 2: Linear 风格</div>
+            <div class="tab" onclick="showMockup('vercel')">方案 3: Vercel 风格</div>
+        </div>
+
+        <!-- Notion Style Mockup -->
+        <div id="notion" class="mockup notion active">
+            <div class="info">
+                <h3>方案 1: Notion 风格 - 极简数据密集</h3>
+                <p><strong>特点：</strong>极简主义 + 高信息密度，通过留白和层次感提升可读性。无边框卡片设计，柔和阴影分隔。</p>
+                <p><strong>配色：</strong>白色背景 + 淡灰分隔 + 柔和靛蓝强调色 (#6366F1)</p>
+                <p><strong>复杂度：</strong>低-中 | <strong>性能：</strong>优秀 | <strong>维护：</strong>低</p>
+            </div>
+
+            <div class="header">
+                <div>🏢 fenghua-crm</div>
+                <div>
+                    <input type="text" placeholder="搜索..." style="padding: 8px 12px; border: 1px solid #E5E7EB; border-radius: 6px; margin-right: 10px;">
+                    <span>🔔</span>
+                    <span style="margin-left: 10px;">👤</span>
+                </div>
+            </div>
+
+            <div class="layout">
+                <div class="sidebar">
+                    <div class="menu-item active">🏠 首页</div>
+                    <div class="menu-item">👥 用户管理</div>
+                    <div class="menu-item">📦 产品管理</div>
+                    <div class="menu-item">⚙️ 系统设置</div>
+                </div>
+
+                <div class="main-content">
+                    <div class="toolbar">
+                        <input type="text" placeholder="搜索用户...">
+                        <select style="padding: 10px; border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <option>所有角色</option>
+                            <option>管理员</option>
+                            <option>专员</option>
+                        </select>
+                        <button class="button">+ 创建新用户</button>
+                    </div>
+
+                    <div class="content">
+                        <h2 style="margin-bottom: 20px; color: #1F2937;">用户列表</h2>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>邮箱</th>
+                                    <th>姓名</th>
+                                    <th>角色</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>user1@example.com</td>
+                                    <td>张三</td>
+                                    <td><span style="background: #6366F1; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">管理员</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 6px; margin-right: 8px; background: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 6px; background: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>user2@example.com</td>
+                                    <td>李四</td>
+                                    <td><span style="background: #E0E7FF; color: #6366F1; padding: 4px 8px; border-radius: 4px; font-size: 12px;">前端专员</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 6px; margin-right: 8px; background: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 6px; background: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>user3@example.com</td>
+                                    <td>王五</td>
+                                    <td><span style="background: #E0E7FF; color: #6366F1; padding: 4px 8px; border-radius: 4px; font-size: 12px;">总监</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 6px; margin-right: 8px; background: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 6px; background: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Linear Style Mockup -->
+        <div id="linear" class="mockup linear">
+            <div class="info" style="background: rgba(94, 106, 210, 0.1); border-color: rgba(94, 106, 210, 0.3);">
+                <h3 style="color: #818CF8;">方案 2: Linear 风格 - 现代深色</h3>
+                <p style="color: #E0E7FF;"><strong>特点：</strong>深色主题 + 玻璃态效果，营造现代科技感。背景模糊、渐变、微动效。</p>
+                <p style="color: #E0E7FF;"><strong>配色：</strong>深色背景 (#0A0A0A) + 玻璃态卡片 + 蓝紫色强调 (#5E6AD2)</p>
+                <p style="color: #E0E7FF;"><strong>复杂度：</strong>中-高 | <strong>性能：</strong>良好 | <strong>维护：</strong>中</p>
+            </div>
+
+            <div class="header">
+                <div>🏢 fenghua-crm</div>
+                <div>
+                    <input type="text" placeholder="搜索..." style="padding: 8px 12px; background: rgba(36, 36, 36, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; margin-right: 10px;">
+                    <span>🔔</span>
+                    <span style="margin-left: 10px;">👤</span>
+                </div>
+            </div>
+
+            <div class="layout">
+                <div class="sidebar">
+                    <div class="menu-item active">🏠 首页</div>
+                    <div class="menu-item">👥 用户管理</div>
+                    <div class="menu-item">📦 产品管理</div>
+                    <div class="menu-item">⚙️ 系统设置</div>
+                </div>
+
+                <div class="main-content">
+                    <div class="toolbar">
+                        <input type="text" placeholder="搜索用户..." style="color: white;">
+                        <select style="padding: 10px; background: rgba(36, 36, 36, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white;">
+                            <option>所有角色</option>
+                            <option>管理员</option>
+                            <option>专员</option>
+                        </select>
+                        <button class="button">+ 创建新用户</button>
+                    </div>
+
+                    <div class="content">
+                        <h2 style="margin-bottom: 20px; color: white;">用户列表</h2>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>邮箱</th>
+                                    <th>姓名</th>
+                                    <th>角色</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>user1@example.com</td>
+                                    <td>张三</td>
+                                    <td><span style="background: #5E6AD2; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">管理员</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; margin-right: 8px; background: transparent; color: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; background: transparent; color: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>user2@example.com</td>
+                                    <td>李四</td>
+                                    <td><span style="background: rgba(94, 106, 210, 0.2); color: #818CF8; padding: 4px 8px; border-radius: 4px; font-size: 12px;">前端专员</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; margin-right: 8px; background: transparent; color: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; background: transparent; color: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>user3@example.com</td>
+                                    <td>王五</td>
+                                    <td><span style="background: rgba(94, 106, 210, 0.2); color: #818CF8; padding: 4px 8px; border-radius: 4px; font-size: 12px;">总监</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; margin-right: 8px; background: transparent; color: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; background: transparent; color: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vercel Style Mockup -->
+        <div id="vercel" class="mockup vercel">
+            <div class="info">
+                <h3>方案 3: Vercel 风格 - 极简科技感</h3>
+                <p><strong>特点：</strong>极简 + 科技感，通过细线和几何图形营造专业感。大留白，细线边框。</p>
+                <p><strong>配色：</strong>纯白背景 + 黑色文字 + 细线边框 (#E5E7EB)</p>
+                <p><strong>复杂度：</strong>低 | <strong>性能：</strong>优秀 | <strong>维护：</strong>低</p>
+            </div>
+
+            <div class="header">
+                <div>🏢 fenghua-crm</div>
+                <div>
+                    <input type="text" placeholder="搜索..." style="padding: 8px 12px; border: 1px solid #E5E7EB; border-radius: 4px; margin-right: 10px;">
+                    <span>🔔</span>
+                    <span style="margin-left: 10px;">👤</span>
+                </div>
+            </div>
+
+            <div class="layout">
+                <div class="sidebar">
+                    <div class="menu-item active">🏠 首页</div>
+                    <div class="menu-item">👥 用户管理</div>
+                    <div class="menu-item">📦 产品管理</div>
+                    <div class="menu-item">⚙️ 系统设置</div>
+                </div>
+
+                <div class="main-content">
+                    <div class="toolbar">
+                        <input type="text" placeholder="搜索用户...">
+                        <select style="padding: 10px; border: 1px solid #E5E7EB; border-radius: 4px;">
+                            <option>所有角色</option>
+                            <option>管理员</option>
+                            <option>专员</option>
+                        </select>
+                        <button class="button">+ 创建新用户</button>
+                    </div>
+
+                    <div class="content">
+                        <h2 style="margin-bottom: 20px; color: #000000;">用户列表</h2>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>邮箱</th>
+                                    <th>姓名</th>
+                                    <th>角色</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>user1@example.com</td>
+                                    <td>张三</td>
+                                    <td><span style="background: #000000; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">管理员</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 4px; margin-right: 8px; background: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 4px; background: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>user2@example.com</td>
+                                    <td>李四</td>
+                                    <td><span style="background: #F5F5F5; color: #000000; padding: 4px 8px; border-radius: 4px; font-size: 12px;">前端专员</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 4px; margin-right: 8px; background: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 4px; background: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>user3@example.com</td>
+                                    <td>王五</td>
+                                    <td><span style="background: #F5F5F5; color: #000000; padding: 4px 8px; border-radius: 4px; font-size: 12px;">总监</span></td>
+                                    <td>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 4px; margin-right: 8px; background: white; cursor: pointer;">编辑</button>
+                                        <button style="padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 4px; background: white; cursor: pointer;">删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showMockup(style) {
+            // Hide all mockups
+            document.querySelectorAll('.mockup').forEach(m => {
+                m.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            
+            // Show selected mockup
+            document.getElementById(style).classList.add('active');
+            
+            // Add active to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
+

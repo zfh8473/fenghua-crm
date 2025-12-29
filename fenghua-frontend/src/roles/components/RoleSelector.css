@@ -1,0 +1,79 @@
+/**
+ * Role Selector Styles
+ * All custom code is proprietary and not open source.
+ */
+
+.role-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.role-select {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  color: #1a202c;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.role-select::placeholder {
+  color: #a0aec0;
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow:
+    0 0 0 3px rgba(102, 126, 234, 0.1),
+    0 4px 12px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.role-select:disabled {
+  background: #f0f0f0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.role-select.error {
+  border-color: #fc8181;
+  box-shadow: 0 0 0 3px rgba(252, 129, 129, 0.1);
+}
+
+.role-description {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.role-description-title {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.role-permissions {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #4a5568;
+}
+
+.role-permissions li {
+  margin-bottom: 0.25rem;
+}
+
+.error-text {
+  color: #c53030;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+

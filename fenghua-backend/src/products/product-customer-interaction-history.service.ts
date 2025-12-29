@@ -1,0 +1,233 @@
+/**
+ * Product Customer Interaction History Service
+ * 
+ * Handles queries for product-customer interaction history
+ * All custom code is proprietary and not open source.
+ */
+
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  OnModuleDestroy,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Pool } from 'pg';
+import { PermissionService } from '../permission/permission.service';
+import {
+  ProductCustomerInteractionDto,
+  FileAttachmentDto,
+} from './dto/product-customer-interaction-history.dto';
+
+@Injectable()
+export class ProductCustomerInteractionHistoryService implements OnModuleDestroy {
+  private readonly logger = new Logger(ProductCustomerInteractionHistoryService.name);
+  private pgPool: Pool | null = null;
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly permissionService: PermissionService,
+  ) {
+    this.initializeDatabaseConnection();
+  }
+
+  /**
+   * Initialize PostgreSQL connection pool
+   */
+  private initializeDatabaseConnection(): void {
+    const databaseUrl =
+      this.configService.get<string>('DATABASE_URL') ||
+      this.configService.get<string>('PG_DATABASE_URL');
+
+    if (!databaseUrl) {
+      this.logger.warn('DATABASE_URL not configured, product-customer interaction history operations will fail');
+      return;
+    }
+
+    try {
+      this.pgPool = new Pool({
+        connectionString: databaseUrl,
+        max: 10, // Connection pool size
+      });
+      this.logger.log('PostgreSQL connection pool initialized for ProductCustomerInteractionHistoryService');
+    } catch (error) {
+      this.logger.error('Failed to initialize PostgreSQL connection pool', error);
+    }
+  }
+
+  /**
+   * Get product customer interactions with pagination and role-based filtering
+   */
+  async getProductCustomerInteractions(
+    productId: string,
+    customerId: string,
+    token: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ interactions: ProductCustomerInteractionDto[]; total: number }> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    // 验证和规范化输入参数
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 20;
+    if (limit > 100) limit = 100;
+
+    // 1. 获取用户权限和数据访问过滤器
+    const dataFilter = await this.permissionService.getDataAccessFilter(token);
+
+    // 2. 转换 customer_type 大小写（PermissionService 返回小写，数据库存储大写）
+    const customerTypeFilter = dataFilter?.customerType
+      ? dataFilter.customerType.toUpperCase()
+      : null;
+
+    // 3. 处理权限检查失败
+    if (dataFilter?.customerType === 'NONE') {
+      throw new ForbiddenException('您没有权限查看互动历史');
+    }
+
+    // 4. 验证产品是否存在
+    const productCheck = await this.pgPool.query(
+      'SELECT id FROM products WHERE id = $1 AND deleted_at IS NULL',
+      [productId],
+    );
+    if (productCheck.rows.length === 0) {
+      throw new NotFoundException('产品不存在');
+    }
+
+    // 5. 验证客户是否存在，并检查客户类型权限
+    const customerCheck = await this.pgPool.query(
+      'SELECT id, customer_type FROM companies WHERE id = $1 AND deleted_at IS NULL',
+      [customerId],
+    );
+    if (customerCheck.rows.length === 0) {
+      throw new NotFoundException('客户不存在');
+    }
+
+    const customerType = customerCheck.rows[0].customer_type;
+    // 权限检查：如果用户只能查看特定类型的客户，验证客户类型
+    if (customerTypeFilter && customerType !== customerTypeFilter) {
+      throw new ForbiddenException('您没有权限查看该客户的互动历史');
+    }
+
+    // 6. 查询产品-客户互动历史（使用 SQL JOIN 获取附件和创建者信息）
+    const offset = (page - 1) * limit;
+    const query = `
+      SELECT 
+        pci.id,
+        pci.interaction_type,
+        pci.interaction_date,
+        pci.description,
+        pci.status,
+        pci.additional_info,
+        pci.created_at,
+        pci.created_by,
+        u.email as creator_email,
+        u.first_name as creator_first_name,
+        u.last_name as creator_last_name,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', fa.id,
+              'fileName', fa.file_name,
+              'fileUrl', fa.file_url,
+              'fileType', fa.file_type,
+              'fileSize', fa.file_size,
+              'mimeType', fa.mime_type
+            )
+          ) FILTER (WHERE fa.id IS NOT NULL),
+          '[]'::json
+        ) as attachments
+      FROM product_customer_interactions pci
+      INNER JOIN companies c ON c.id = pci.customer_id
+      LEFT JOIN users u ON u.id = pci.created_by
+      LEFT JOIN file_attachments fa ON fa.interaction_id = pci.id AND fa.deleted_at IS NULL
+      WHERE pci.product_id = $1 
+        AND pci.customer_id = $2
+        AND pci.deleted_at IS NULL
+        AND c.deleted_at IS NULL
+        AND ($3::text IS NULL OR c.customer_type = $3)
+      GROUP BY pci.id, pci.interaction_type, pci.interaction_date, pci.description, 
+               pci.status, pci.additional_info, pci.created_at, pci.created_by,
+               u.email, u.first_name, u.last_name
+      ORDER BY pci.interaction_date DESC
+      LIMIT $4 OFFSET $5
+    `;
+
+    let result;
+    let countResult;
+    try {
+      result = await this.pgPool.query(query, [
+        productId,
+        customerId,
+        customerTypeFilter,
+        limit,
+        offset,
+      ]);
+
+      // 7. 查询总数（用于分页）
+      const countQuery = `
+        SELECT COUNT(DISTINCT pci.id) as total
+        FROM product_customer_interactions pci
+        INNER JOIN companies c ON c.id = pci.customer_id
+        WHERE pci.product_id = $1 
+          AND pci.customer_id = $2
+          AND pci.deleted_at IS NULL
+          AND c.deleted_at IS NULL
+          AND ($3::text IS NULL OR c.customer_type = $3)
+      `;
+
+      countResult = await this.pgPool.query(countQuery, [
+        productId,
+        customerId,
+        customerTypeFilter,
+      ]);
+    } catch (error) {
+      this.logger.error('Failed to query product customer interactions', error);
+      throw new BadRequestException('查询产品客户互动历史失败');
+    }
+
+    // 安全地解析 total，提供默认值
+    const total = parseInt(countResult.rows[0]?.total || '0', 10) || 0;
+
+    // 8. 映射结果
+    const interactions: ProductCustomerInteractionDto[] = result.rows.map((row) => ({
+      id: row.id,
+      interactionType: row.interaction_type,
+      interactionDate: row.interaction_date,
+      description: row.description,
+      status: row.status,
+      additionalInfo: row.additional_info,
+      createdAt: row.created_at,
+      createdBy: row.created_by,
+      creator: row.created_by
+        ? {
+            email: row.creator_email,
+            firstName: row.creator_first_name,
+            lastName: row.creator_last_name,
+          }
+        : null,
+      attachments: (row.attachments || []) as FileAttachmentDto[],
+    }));
+
+    return { interactions, total };
+  }
+
+  /**
+   * Cleanup on module destroy
+   */
+  async onModuleDestroy() {
+    if (this.pgPool) {
+      try {
+        await this.pgPool.end();
+        this.logger.log('PostgreSQL connection pool closed for ProductCustomerInteractionHistoryService');
+      } catch (error) {
+        this.logger.error('Failed to close PostgreSQL connection pool', error);
+      }
+    }
+  }
+}
+

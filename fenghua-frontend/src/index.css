@@ -1,0 +1,158 @@
+/* Tailwind CSS directives - must be first */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Monday.com Style Global Styles - Rounded fonts for friendly UI */
+:root {
+  font-family: 'Nunito', 'Poppins', 'Quicksand', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+
+  color-scheme: light;
+  color: #323338;
+  background-color: #F4F5F8;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  /* 基础渐变背景 - 桌面端 */
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 30%, #e8f2ff 60%, #f0f9ff 100%);
+}
+
+/* 移动端：使用更浅的背景渐变 */
+@media (max-width: 768px) {
+  body {
+    background: linear-gradient(135deg, #fafbfc 0%, #f8f9fa 30%, #f5f7fa 60%, #f8fafc 100%);
+  }
+}
+
+/* 右上角装饰椭圆 */
+body::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  right: -10%;
+  width: 950px;
+  height: 850px;
+  background: radial-gradient(ellipse, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 25%, rgba(59, 130, 246, 0.08) 45%, rgba(59, 130, 246, 0.05) 65%, transparent 90%);
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 184, 0.08);
+  box-shadow: 
+    0 0 0 1px rgba(148, 163, 184, 0.04),
+    0 0 40px rgba(148, 163, 184, 0.025);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  body::before {
+    opacity: 0.4;
+  }
+}
+
+/* 左下角装饰椭圆 */
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -15%;
+  left: -8%;
+  width: 850px;
+  height: 750px;
+  background: radial-gradient(ellipse, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.08) 25%, rgba(99, 102, 241, 0.06) 45%, rgba(99, 102, 241, 0.04) 65%, transparent 90%);
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 184, 0.07);
+  box-shadow: 
+    0 0 0 1px rgba(148, 163, 184, 0.035),
+    0 0 40px rgba(148, 163, 184, 0.02);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  body::after {
+    opacity: 0.4;
+  }
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 中间偏右装饰椭圆 */
+.decorative-circle-1 {
+  position: fixed;
+  top: 30%;
+  right: 5%;
+  width: 450px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.08) 30%, rgba(96, 165, 250, 0.06) 50%, rgba(96, 165, 250, 0.03) 70%, transparent 90%);
+  border-radius: 50%;
+  border: 1.5px solid rgba(148, 163, 184, 0.07);
+  box-shadow: 
+    0 0 0 1px rgba(148, 163, 184, 0.035),
+    0 0 30px rgba(148, 163, 184, 0.02);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .decorative-circle-1 {
+    opacity: 0.3;
+  }
+}
+
+/* 中间偏左装饰椭圆 */
+.decorative-circle-2 {
+  position: fixed;
+  bottom: 25%;
+  left: 3%;
+  width: 400px;
+  height: 350px;
+  background: radial-gradient(ellipse, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.06) 30%, rgba(59, 130, 246, 0.04) 50%, rgba(59, 130, 246, 0.02) 70%, transparent 90%);
+  border-radius: 50%;
+  border: 1.5px solid rgba(148, 163, 184, 0.07);
+  box-shadow: 
+    0 0 0 1px rgba(148, 163, 184, 0.035),
+    0 0 25px rgba(148, 163, 184, 0.02);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .decorative-circle-2 {
+    opacity: 0.3;
+  }
+}
