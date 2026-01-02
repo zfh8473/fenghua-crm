@@ -4,22 +4,67 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { AuditService } from './audit.service';
 import { RoleChangeAuditLogDto } from './dto/audit-log.dto';
+import { Pool } from 'pg';
+
+// Mock pg Pool
+jest.mock('pg', () => {
+  const mockPool = {
+    query: jest.fn(),
+    connect: jest.fn(),
+    end: jest.fn().mockResolvedValue(undefined),
+  };
+  return {
+    Pool: jest.fn(() => mockPool),
+  };
+});
 
 describe('AuditService', () => {
   let service: AuditService;
+  let mockPgPool: any;
+  let mockConfigService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
+    // Mock ConfigService
+    mockConfigService = {
+      get: jest.fn((key: string) => {
+        if (key === 'DATABASE_URL' || key === 'PG_DATABASE_URL') {
+          return 'postgresql://user:pass@host:5432/testdb';
+        }
+        return undefined;
+      }),
+    } as any;
+
+    // Get mock pool instance
+    const PoolClass = require('pg').Pool;
+    mockPgPool = new PoolClass();
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuditService],
+      providers: [
+        AuditService,
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
+      ],
     }).compile();
 
     service = module.get<AuditService>(AuditService);
+    
+    // Inject mock pool
+    (service as any).pgPool = mockPgPool;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('logRoleChange', () => {
     it('should log role change successfully', async () => {
+      mockPgPool.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
       const roleChangeLog: RoleChangeAuditLogDto = {
         oldRole: 'FRONTEND_SPECIALIST',
         newRole: 'BACKEND_SPECIALIST',
@@ -31,17 +76,30 @@ describe('AuditService', () => {
 
       await service.logRoleChange(roleChangeLog);
 
-      const logs = await service.getUserAuditLogs('user-id-123');
-      expect(logs.length).toBeGreaterThan(0);
-      expect(logs[0].action).toBe('ROLE_CHANGE');
-      expect(logs[0].oldValue).toBe('FRONTEND_SPECIALIST');
-      expect(logs[0].newValue).toBe('BACKEND_SPECIALIST');
+      // Verify INSERT query was called
+      expect(mockPgPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO audit_logs'),
+        expect.arrayContaining([
+          'ROLE_CHANGE',
+          'USER',
+          'user-id-123',
+          expect.any(String), // oldValue (JSON stringified)
+          expect.any(String), // newValue (JSON stringified)
+          'user-id-123',
+          'operator-id-456',
+          expect.any(Date),
+          'Role reassignment',
+          expect.any(String), // metadata (JSON stringified)
+        ]),
+      );
     });
 
     it('should log role change without reason', async () => {
+      mockPgPool.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
       const roleChangeLog: RoleChangeAuditLogDto = {
-        oldRole: 'NONE',
-        newRole: 'ADMIN',
+        oldRole: 'FRONTEND_SPECIALIST',
+        newRole: 'BACKEND_SPECIALIST',
         userId: 'user-id-123',
         operatorId: 'operator-id-456',
         timestamp: new Date(),
@@ -49,60 +107,99 @@ describe('AuditService', () => {
 
       await service.logRoleChange(roleChangeLog);
 
-      const logs = await service.getUserAuditLogs('user-id-123');
-      expect(logs.length).toBeGreaterThan(0);
-      expect(logs[0].reason).toBeUndefined();
+      // Verify INSERT query was called with null reason
+      expect(mockPgPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO audit_logs'),
+        expect.arrayContaining([null]), // reason should be null
+      );
     });
   });
 
   describe('getUserAuditLogs', () => {
     it('should return audit logs for user', async () => {
-      const roleChangeLog: RoleChangeAuditLogDto = {
-        oldRole: 'FRONTEND_SPECIALIST',
-        newRole: 'BACKEND_SPECIALIST',
-        userId: 'user-id-123',
-        operatorId: 'operator-id-456',
-        timestamp: new Date(),
+      const mockRow = {
+        action: 'ROLE_CHANGE',
+        entity_type: 'USER',
+        entity_id: 'user-id-123',
+        old_value: JSON.stringify('FRONTEND_SPECIALIST'),
+        new_value: JSON.stringify('BACKEND_SPECIALIST'),
+        user_id: 'user-id-123',
+        operator_id: 'operator-id-456',
+        timestamp: new Date('2025-01-03T10:00:00Z'),
+        reason: null,
+        metadata: JSON.stringify({ actionType: 'ROLE_ASSIGNMENT' }),
       };
 
-      await service.logRoleChange(roleChangeLog);
+      mockPgPool.query.mockResolvedValueOnce({
+        rows: [mockRow],
+        rowCount: 1,
+      });
 
       const logs = await service.getUserAuditLogs('user-id-123');
-      expect(logs.length).toBeGreaterThan(0);
+      expect(logs.length).toBe(1);
       expect(logs[0].userId).toBe('user-id-123');
+      expect(logs[0].action).toBe('ROLE_CHANGE');
+      expect(mockPgPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT'),
+        ['user-id-123', 100],
+      );
     });
 
     it('should respect limit parameter', async () => {
-      // Create multiple logs
-      for (let i = 0; i < 5; i++) {
-        await service.logRoleChange({
-          oldRole: 'NONE',
-          newRole: 'ADMIN',
-          userId: 'user-id-123',
-          operatorId: 'operator-id-456',
-          timestamp: new Date(),
-        });
-      }
+      const mockRows = Array.from({ length: 3 }, (_, i) => ({
+        action: 'ROLE_CHANGE',
+        entity_type: 'USER',
+        entity_id: 'user-id-123',
+        old_value: JSON.stringify('NONE'),
+        new_value: JSON.stringify('ADMIN'),
+        user_id: 'user-id-123',
+        operator_id: 'operator-id-456',
+        timestamp: new Date(`2025-01-03T${10 + i}:00:00Z`),
+        reason: null,
+        metadata: JSON.stringify({ actionType: 'ROLE_ASSIGNMENT' }),
+      }));
+
+      mockPgPool.query.mockResolvedValueOnce({
+        rows: mockRows,
+        rowCount: 3,
+      });
 
       const logs = await service.getUserAuditLogs('user-id-123', 3);
-      expect(logs.length).toBeLessThanOrEqual(3);
+      expect(logs.length).toBe(3);
+      expect(mockPgPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('LIMIT'),
+        ['user-id-123', 3],
+      );
     });
   });
 
   describe('getAuditLogsByAction', () => {
     it('should return logs for specific action', async () => {
-      await service.logRoleChange({
-        oldRole: 'FRONTEND_SPECIALIST',
-        newRole: 'BACKEND_SPECIALIST',
-        userId: 'user-id-123',
-        operatorId: 'operator-id-456',
-        timestamp: new Date(),
+      const mockRow = {
+        action: 'ROLE_CHANGE',
+        entity_type: 'USER',
+        entity_id: 'user-id-123',
+        old_value: JSON.stringify('FRONTEND_SPECIALIST'),
+        new_value: JSON.stringify('BACKEND_SPECIALIST'),
+        user_id: 'user-id-123',
+        operator_id: 'operator-id-456',
+        timestamp: new Date('2025-01-03T10:00:00Z'),
+        reason: null,
+        metadata: JSON.stringify({ actionType: 'ROLE_ASSIGNMENT' }),
+      };
+
+      mockPgPool.query.mockResolvedValueOnce({
+        rows: [mockRow],
+        rowCount: 1,
       });
 
       const logs = await service.getAuditLogsByAction('ROLE_CHANGE');
-      expect(logs.length).toBeGreaterThan(0);
+      expect(logs.length).toBe(1);
       expect(logs[0].action).toBe('ROLE_CHANGE');
+      expect(mockPgPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE action = $1'),
+        ['ROLE_CHANGE', 100],
+      );
     });
   });
 });
-

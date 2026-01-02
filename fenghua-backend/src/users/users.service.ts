@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { AuditService } from '../audit/audit.service';
 
 interface UserWithRoles {
   id: string;
@@ -34,6 +35,7 @@ export class UsersService implements OnModuleDestroy {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly auditService: AuditService,
   ) {
     this.initializeDatabaseConnection();
   }
@@ -319,8 +321,13 @@ export class UsersService implements OnModuleDestroy {
   /**
    * Update a user
    * Uses transaction to ensure user and role updates are atomic
+   * 
+   * @param id - User ID to update
+   * @param updateUserDto - User update data
+   * @param operatorId - ID of the user performing the update (for audit logging)
+   * @returns Updated user data
    */
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async update(id: string, updateUserDto: UpdateUserDto, operatorId: string): Promise<UserResponseDto> {
     if (!this.pgPool) {
       this.logger.error('Database pool not initialized');
       throw new BadRequestException('User management service unavailable');
@@ -374,7 +381,20 @@ export class UsersService implements OnModuleDestroy {
       }
 
       // Update role if provided
+      let oldRole: string | null = null;
       if (updateUserDto.role) {
+        // Get old role before updating (for audit logging)
+        const oldRoleQuery = `
+          SELECT r.name as role_name
+          FROM user_roles ur
+          INNER JOIN roles r ON r.id = ur.role_id
+          WHERE ur.user_id = $1
+          ORDER BY ur.assigned_at DESC
+          LIMIT 1
+        `;
+        const oldRoleResult = await client.query<{ role_name: string }>(oldRoleQuery, [id]);
+        oldRole = oldRoleResult.rows.length > 0 ? oldRoleResult.rows[0].role_name : 'NONE';
+
         // Get role ID
         const roleResult = await client.query(
           'SELECT id FROM roles WHERE name = $1',
@@ -402,6 +422,23 @@ export class UsersService implements OnModuleDestroy {
       }
 
       await client.query('COMMIT');
+
+      // Log role change to audit service (after transaction commit)
+      if (updateUserDto.role && oldRole !== null) {
+        try {
+          await this.auditService.logRoleChange({
+            oldRole: oldRole,
+            newRole: updateUserDto.role,
+            userId: id,
+            operatorId: operatorId,
+            timestamp: new Date(),
+            reason: 'Role updated via user update',
+          });
+        } catch (auditError) {
+          // Audit logging failure should not affect the main request
+          this.logger.warn(`Failed to log role change in user update for user ${id}: ${auditError instanceof Error ? auditError.message : String(auditError)}`, auditError);
+        }
+      }
 
       // Fetch updated user
       return await this.findOne(id);

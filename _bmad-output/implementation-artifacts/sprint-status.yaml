@@ -1,4 +1,4 @@
-# generated: 2025-12-25
+# generated: 2025-01-03
 # project: fenghua-crm
 # project_key: fenghua-crm
 # tracking_system: file-system
@@ -33,7 +33,7 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2025-12-25
+generated: 2025-01-03
 project: fenghua-crm
 project_key: fenghua-crm
 tracking_system: file-system
@@ -69,15 +69,15 @@ development_status:
   2-7-product-association-integrity-validation: done
   2-8-product-category-management: done
   epic-2-retrospective: optional
-  epic-3: backlog
-  3-1-customer-creation-and-management: backlog
-  3-2-customer-search: backlog
-  3-3-customer-details-view: backlog
-  3-4-customer-product-association-view: backlog
-  3-5-customer-product-interaction-history: backlog
-  3-6-customer-timeline-view: backlog
-  3-7-role-based-data-access-filtering: backlog
-  3-8-permission-operation-audit-log: backlog
+         epic-3: done
+         3-1-customer-creation-and-management: done
+         3-2-customer-search: done
+         3-3-customer-details-view: done
+         3-4-customer-product-association-view: done
+         3-5-customer-product-interaction-history: done
+  3-6-customer-timeline-view: done
+         3-7-role-based-data-access-filtering: done
+         3-8-permission-operation-audit-log: done
   epic-3-retrospective: optional
   epic-4: backlog
   4-1-interaction-record-creation-frontend: backlog

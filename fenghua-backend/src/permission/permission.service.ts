@@ -6,8 +6,10 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth/auth.service';
 import { UserRole } from '../users/dto/create-user.dto';
+import { PermissionAuditService } from './permission-audit.service';
 
 /**
  * Permission types
@@ -53,7 +55,11 @@ export class PermissionService {
   private permissionCache: Map<string, { permissions: Permission[]; expiresAt: number }> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+    private readonly permissionAuditService: PermissionAuditService,
+  ) {}
 
   /**
    * Get user permissions from token
@@ -136,27 +142,67 @@ export class PermissionService {
   /**
    * Get data access filter based on user role
    * Returns filter criteria for database queries
+   * 
+   * Optionally logs permission verification results for debugging (if enabled via configuration)
    */
   async getDataAccessFilter(token: string): Promise<{ customerType?: string } | null> {
     const permissions = await this.getUserPermissions(token);
+    let filter: { customerType?: string } | null = null;
+    let expectedType: string | null = null;
+    let verificationResult: 'GRANTED' | 'DENIED' = 'GRANTED';
 
     // If user has access to all customers, no filter needed
     if (permissions.includes(Permission.ACCESS_ALL_CUSTOMERS)) {
-      return null; // No filter - can access all
+      filter = null; // No filter - can access all
+      expectedType = null; // No restriction
+      verificationResult = 'GRANTED';
     }
-
     // If user can only access buyers
-    if (permissions.includes(Permission.ACCESS_BUYERS) && !permissions.includes(Permission.ACCESS_SUPPLIERS)) {
-      return { customerType: 'buyer' };
+    else if (permissions.includes(Permission.ACCESS_BUYERS) && !permissions.includes(Permission.ACCESS_SUPPLIERS)) {
+      filter = { customerType: 'buyer' };
+      expectedType = 'BUYER';
+      verificationResult = 'GRANTED';
     }
-
     // If user can only access suppliers
-    if (permissions.includes(Permission.ACCESS_SUPPLIERS) && !permissions.includes(Permission.ACCESS_BUYERS)) {
-      return { customerType: 'supplier' };
+    else if (permissions.includes(Permission.ACCESS_SUPPLIERS) && !permissions.includes(Permission.ACCESS_BUYERS)) {
+      filter = { customerType: 'supplier' };
+      expectedType = 'SUPPLIER';
+      verificationResult = 'GRANTED';
+    }
+    // Default: no access
+    else {
+      filter = { customerType: 'NONE' };
+      expectedType = null;
+      verificationResult = 'DENIED';
     }
 
-    // Default: no access
-    return { customerType: 'NONE' };
+    // Optionally log permission verification result (if enabled)
+    // This is done asynchronously and does not block the main request
+    const verificationLoggingEnabled = this.configService.get<boolean>(
+      'AUDIT_LOG_PERMISSION_VERIFICATION_ENABLED',
+      false,
+    ) || this.configService.get<boolean>('auditLogPermissionVerificationEnabled', false);
+
+    if (verificationLoggingEnabled) {
+      // Log asynchronously - don't await to avoid blocking
+      // The logPermissionVerification method handles token validation internally
+      setImmediate(() => {
+        this.permissionAuditService.logPermissionVerification(
+          token,
+          'CUSTOMER',
+          null, // Resource ID not available at filter level
+          verificationResult,
+          expectedType,
+          null, // Actual type not available at filter level
+          true, // enabled
+        ).catch((error) => {
+          // Silently handle errors - logging should not affect main request
+          this.logger.debug('Failed to log permission verification (non-blocking)', error);
+        });
+      });
+    }
+
+    return filter;
   }
 
   /**

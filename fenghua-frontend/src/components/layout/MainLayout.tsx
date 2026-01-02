@@ -22,6 +22,7 @@ interface MainLayoutProps {
   detailPanel?: ReactNode;
   showDetailPanel?: boolean;
   onCloseDetailPanel?: () => void;
+  detailPanelTitle?: string;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -31,6 +32,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   detailPanel,
   showDetailPanel = false,
   onCloseDetailPanel,
+  detailPanelTitle,
 }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -43,6 +45,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     { path: '/', label: '首页', icon: '🏠' },
     { path: '/users', label: '用户管理', icon: '👥', adminOnly: true },
     { path: '/products', label: '产品管理', icon: '📦', adminOnly: true },
+    { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
     { path: '/settings', label: '系统', icon: '⚙️', adminOnly: true },
   ];
 
@@ -194,7 +197,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <div className="bg-monday-surface rounded-monday-lg shadow-monday-md border border-gray-200 flex flex-col h-full">
               {/* Panel Header */}
               <div className="p-monday-4 flex items-center justify-between border-b border-gray-200">
-                <h3 className="text-monday-lg font-semibold text-monday-text">产品详情</h3>
+                <h3 className="text-monday-lg font-semibold text-monday-text">{detailPanelTitle || '详情'}</h3>
                 {onCloseDetailPanel && (
                   <button
                     onClick={onCloseDetailPanel}

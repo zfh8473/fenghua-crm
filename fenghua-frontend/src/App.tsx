@@ -15,6 +15,8 @@ import { ProductCategoryManagementPage } from './product-categories/ProductCateg
 import { ProductCustomerInteractionHistoryPage } from './products/ProductCustomerInteractionHistoryPage'
 import { ProductBusinessProcessPage } from './products/ProductBusinessProcessPage'
 import { ProductIntegrityValidationPage } from './products/ProductIntegrityValidationPage'
+import { CustomerManagementPage } from './customers/CustomerManagementPage'
+import { CustomerProductInteractionHistoryPage } from './customers/CustomerProductInteractionHistoryPage'
 import { TestTailwind } from './components/TestTailwind'
 import { Card } from './components/ui'
 import './App.css'
@@ -42,6 +44,7 @@ function HomePage() {
     { path: '/users', label: '用户管理', icon: '👥', adminOnly: true },
     { path: '/products', label: '产品管理', icon: '📦', adminOnly: true },
     { path: '/product-categories', label: '类别管理', icon: '🏷️', adminOnly: true },
+    { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
     { path: '/settings', label: '系统设置', icon: '⚙️', adminOnly: true },
     { path: '/monitoring', label: '系统监控', icon: '📊', adminOnly: true },
     { path: '/logs', label: '系统日志', icon: '📝', adminOnly: true },
@@ -251,6 +254,22 @@ function App() {
         element={
           <ProtectedRoute>
             <ProductIntegrityValidationPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customers"
+        element={
+          <ProtectedRoute>
+            <CustomerManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customers/:customerId/interactions"
+        element={
+          <ProtectedRoute>
+            <CustomerProductInteractionHistoryPage />
           </ProtectedRoute>
         }
       />

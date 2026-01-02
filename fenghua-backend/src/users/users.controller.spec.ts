@@ -153,12 +153,18 @@ describe('UsersController', () => {
         firstName: updateUserDto.firstName,
       };
 
+      const mockRequest = {
+        user: {
+          id: 'operator-id-123',
+        },
+      };
+
       service.update.mockResolvedValue(updatedUser);
 
-      const result = await controller.update(mockUser.id, updateUserDto);
+      const result = await controller.update(mockUser.id, updateUserDto, mockRequest as any);
 
       expect(result).toEqual(updatedUser);
-      expect(service.update).toHaveBeenCalledWith(mockUser.id, updateUserDto);
+      expect(service.update).toHaveBeenCalledWith(mockUser.id, updateUserDto, mockRequest.user.id);
     });
   });
 

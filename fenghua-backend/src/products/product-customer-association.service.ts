@@ -16,6 +16,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { PermissionService } from '../permission/permission.service';
+import { PermissionAuditService } from '../permission/permission-audit.service';
 import { ProductCustomerAssociationDto } from './dto/product-customer-association.dto';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class ProductCustomerAssociationService implements OnModuleDestroy {
   constructor(
     private readonly configService: ConfigService,
     private readonly permissionService: PermissionService,
+    private readonly permissionAuditService: PermissionAuditService,
   ) {
     this.initializeDatabaseConnection();
   }
@@ -53,6 +55,7 @@ export class ProductCustomerAssociationService implements OnModuleDestroy {
       this.logger.error('Failed to initialize PostgreSQL connection pool', error);
     }
   }
+
 
   /**
    * Get product customers with pagination and role-based filtering
@@ -82,6 +85,8 @@ export class ProductCustomerAssociationService implements OnModuleDestroy {
 
     // 3. 处理权限检查失败
     if (dataFilter?.customerType === 'NONE') {
+      // Log permission violation
+      await this.permissionAuditService.logPermissionViolation(token, 'PRODUCT_ASSOCIATION', productId, 'ACCESS', null, null);
       throw new ForbiddenException('您没有权限查看客户信息');
     }
 

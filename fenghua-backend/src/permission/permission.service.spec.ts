@@ -4,13 +4,17 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { PermissionService, Permission } from './permission.service';
 import { AuthService } from '../auth/auth.service';
+import { PermissionAuditService } from './permission-audit.service';
 import { UserRole } from '../users/dto/create-user.dto';
 
 describe('PermissionService', () => {
   let service: PermissionService;
   let authService: jest.Mocked<AuthService>;
+  let configService: jest.Mocked<ConfigService>;
+  let permissionAuditService: jest.Mocked<PermissionAuditService>;
 
   const mockToken = 'mock-token';
   const mockUserId = 'e1523409-53b9-484b-b920-baf9d2ea1152';
@@ -20,6 +24,20 @@ describe('PermissionService', () => {
       validateToken: jest.fn(),
     };
 
+    const mockConfigService = {
+      get: jest.fn((key: string, defaultValue?: any) => {
+        // Default: permission verification logging is disabled
+        if (key === 'AUDIT_LOG_PERMISSION_VERIFICATION_ENABLED' || key === 'auditLogPermissionVerificationEnabled') {
+          return defaultValue !== undefined ? defaultValue : false;
+        }
+        return defaultValue;
+      }),
+    };
+
+    const mockPermissionAuditService = {
+      logPermissionVerification: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PermissionService,
@@ -27,11 +45,21 @@ describe('PermissionService', () => {
           provide: AuthService,
           useValue: mockAuthService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
+        {
+          provide: PermissionAuditService,
+          useValue: mockPermissionAuditService,
+        },
       ],
     }).compile();
 
     service = module.get<PermissionService>(PermissionService);
     authService = module.get(AuthService);
+    configService = module.get(ConfigService);
+    permissionAuditService = module.get(PermissionAuditService);
   });
 
   afterEach(() => {
@@ -168,6 +196,70 @@ describe('PermissionService', () => {
       const filter = await service.getDataAccessFilter(mockToken);
 
       expect(filter).toEqual({ customerType: 'supplier' });
+    });
+
+    it('should not log permission verification when disabled', async () => {
+      configService.get.mockReturnValue(false); // Disabled
+      authService.validateToken.mockResolvedValueOnce({
+        id: mockUserId,
+        email: 'admin@test.com',
+        role: 'ADMIN',
+      });
+
+      await service.getDataAccessFilter(mockToken);
+
+      // Wait a bit for async operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(permissionAuditService.logPermissionVerification).not.toHaveBeenCalled();
+    });
+
+    it('should log permission verification when enabled', async () => {
+      configService.get.mockReturnValue(true); // Enabled
+      authService.validateToken.mockResolvedValueOnce({
+        id: mockUserId,
+        email: 'frontend@test.com',
+        role: 'FRONTEND_SPECIALIST',
+      });
+
+      await service.getDataAccessFilter(mockToken);
+
+      // Wait a bit for async operations (setImmediate)
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(permissionAuditService.logPermissionVerification).toHaveBeenCalledWith(
+        mockToken,
+        'CUSTOMER',
+        null,
+        'GRANTED',
+        'BUYER',
+        null,
+        true,
+      );
+    });
+
+    it('should log DENIED when user has no access', async () => {
+      configService.get.mockReturnValue(true); // Enabled
+      authService.validateToken.mockResolvedValueOnce({
+        id: mockUserId,
+        email: 'user@test.com',
+        role: null, // No role = no access
+      });
+
+      await service.getDataAccessFilter(mockToken);
+
+      // Wait a bit for async operations
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(permissionAuditService.logPermissionVerification).toHaveBeenCalledWith(
+        mockToken,
+        'CUSTOMER',
+        null,
+        'DENIED',
+        null,
+        null,
+        true,
+      );
     });
   });
 

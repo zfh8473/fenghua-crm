@@ -16,6 +16,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { PermissionService } from '../permission/permission.service';
+import { PermissionAuditService } from '../permission/permission-audit.service';
 import {
   ProductBusinessProcessDto,
   BusinessProcessStageDto,
@@ -54,6 +55,7 @@ export class ProductBusinessProcessService implements OnModuleDestroy {
   constructor(
     private readonly configService: ConfigService,
     private readonly permissionService: PermissionService,
+    private readonly permissionAuditService: PermissionAuditService,
   ) {
     this.initializeDatabaseConnection();
   }
@@ -82,6 +84,7 @@ export class ProductBusinessProcessService implements OnModuleDestroy {
     }
   }
 
+
   /**
    * Get product business process stages
    */
@@ -104,6 +107,8 @@ export class ProductBusinessProcessService implements OnModuleDestroy {
 
     // 3. 处理权限检查失败
     if (dataFilter?.customerType === 'NONE') {
+      // Log permission violation
+      await this.permissionAuditService.logPermissionViolation(token, 'BUSINESS_PROCESS', `${productId}/${customerId}`, 'ACCESS', null, null);
       throw new ForbiddenException('您没有权限查看业务流程');
     }
 
@@ -128,6 +133,15 @@ export class ProductBusinessProcessService implements OnModuleDestroy {
     const customerType = customerCheck.rows[0].customer_type;
     // 权限检查：如果用户只能查看特定类型的客户，验证客户类型
     if (customerTypeFilter && customerType !== customerTypeFilter) {
+      // Log permission violation
+      await this.permissionAuditService.logPermissionViolation(
+        token,
+        'BUSINESS_PROCESS',
+        `${productId}/${customerId}`,
+        'ACCESS',
+        customerTypeFilter,
+        customerType,
+      );
       throw new ForbiddenException('您没有权限查看该客户的业务流程');
     }
 

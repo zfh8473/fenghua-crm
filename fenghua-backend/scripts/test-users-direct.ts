@@ -46,10 +46,11 @@ async function testUsersService() {
         // Test 3: update
         console.log('\n=== Test 3: update() ===');
         try {
+          const mockOperatorId = firstUserId; // Use first user as operator for testing
           const updatedUser = await usersService.update(firstUserId, {
             firstName: 'Updated',
             lastName: 'Name',
-          });
+          }, mockOperatorId);
           console.log('✅ Success:', JSON.stringify(updatedUser, null, 2));
         } catch (error: any) {
           console.error('❌ Error:', error.message);

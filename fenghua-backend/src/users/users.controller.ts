@@ -62,8 +62,10 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
   ): Promise<UserResponseDto> {
-    return this.usersService.update(id, updateUserDto);
+    const operatorId = req.user.id; // Get operator ID from JWT token
+    return this.usersService.update(id, updateUserDto, operatorId);
   }
 
   /**

@@ -7,7 +7,7 @@
  * Note: This test file uses Jest syntax. If using Vitest, adjust imports accordingly.
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { authService } from './auth.service';
 
 // Mock localStorage
@@ -33,12 +33,12 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('AuthService', () => {
   beforeEach(() => {
     localStorageMock.clear();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('login', () => {
@@ -52,7 +52,7 @@ describe('AuthService', () => {
         },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
@@ -68,7 +68,7 @@ describe('AuthService', () => {
     });
 
     it('should throw error on login failure', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ message: 'Invalid credentials' }),
@@ -126,7 +126,7 @@ describe('AuthService', () => {
       localStorageMock.setItem('auth_token', 'mock-token');
       const mockUser = { id: 'user-123', email: 'test@example.com', role: 'ADMIN' };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockUser,
       });
@@ -138,7 +138,7 @@ describe('AuthService', () => {
     it('should throw error when token is invalid', async () => {
       localStorageMock.setItem('auth_token', 'invalid-token');
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: false,
         status: 401,
       });

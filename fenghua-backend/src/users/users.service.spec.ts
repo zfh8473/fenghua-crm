@@ -13,6 +13,7 @@ import { CreateUserDto, UserRole } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Pool, QueryResult } from 'pg';
 import * as bcrypt from 'bcrypt';
+import { AuditService } from '../audit/audit.service';
 
 // Mock bcrypt
 jest.mock('bcrypt');
@@ -22,6 +23,7 @@ describe('UsersService', () => {
   let service: UsersService;
   let configService: jest.Mocked<ConfigService>;
   let mockPgPool: any;
+  let testModule: TestingModule;
 
   const mockUserId = 'b68e3723-3099-4611-a1b0-d1cea4eef844';
   const mockRoleId = 'role-123';
@@ -56,18 +58,32 @@ describe('UsersService', () => {
       }),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    // Mock AuditService
+    const mockAuditService = {
+      logRoleChange: jest.fn().mockResolvedValue(undefined),
+      log: jest.fn().mockResolvedValue(undefined),
+      getUserAuditLogs: jest.fn().mockResolvedValue([]),
+      getAuditLogsByAction: jest.fn().mockResolvedValue([]),
+      getAuditLogs: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, limit: 50, totalPages: 0 }),
+      cleanupOldLogs: jest.fn().mockResolvedValue(0),
+    };
+
+    testModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: AuditService,
+          useValue: mockAuditService,
+        },
       ],
     }).compile();
 
-    service = module.get<UsersService>(UsersService);
-    configService = module.get(ConfigService);
+    service = testModule.get<UsersService>(UsersService);
+    configService = testModule.get(ConfigService);
 
     // Inject mock pool
     (service as any).pgPool = mockPgPool;
@@ -258,6 +274,7 @@ describe('UsersService', () => {
     };
 
     let mockClient: any;
+    let auditService: jest.Mocked<AuditService>;
 
     beforeEach(() => {
       mockClient = {
@@ -275,15 +292,23 @@ describe('UsersService', () => {
         fields: [],
       };
       mockPgPool.query.mockResolvedValueOnce(mockQueryResult as QueryResult);
+      
+      // Get AuditService mock
+      auditService = testModule.get<AuditService>(AuditService) as jest.Mocked<AuditService>;
+      jest.clearAllMocks();
     });
 
     it('should update user information', async () => {
-      // Mock transaction queries
+      // Mock transaction queries in correct order
+      // Note: updateUserDto has firstName, lastName, and role, so all update paths will be executed
       mockClient.query
-        .mockResolvedValueOnce({ rows: [{ id: mockUserId }] }) // Update user
-        .mockResolvedValueOnce({ rows: [{ id: 'role-2' }] }) // Get role
+        .mockResolvedValueOnce({ rows: [] }) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ id: mockUserId }] }) // Update user (firstName/lastName)
+        .mockResolvedValueOnce({ rows: [{ role_name: 'FRONTEND_SPECIALIST' }] }) // Get old role (for audit log) - when role is being updated
+        .mockResolvedValueOnce({ rows: [{ id: 'role-2' }] }) // Get role ID by name (DIRECTOR)
         .mockResolvedValueOnce({ rows: [] }) // Delete old roles
-        .mockResolvedValueOnce({ rows: [] }); // Assign new role
+        .mockResolvedValueOnce({ rows: [] }) // Assign new role
+        .mockResolvedValueOnce({ rows: [] }); // COMMIT
 
       // Mock findOne (called at end of update)
       const mockQueryResult: Partial<QueryResult> = {
@@ -300,12 +325,23 @@ describe('UsersService', () => {
       };
       mockPgPool.query.mockResolvedValueOnce(mockQueryResult as QueryResult);
 
-      const result = await service.update(mockUserId, updateUserDto);
+      const mockOperatorId = 'operator-id-123';
+      const result = await service.update(mockUserId, updateUserDto, mockOperatorId);
 
       expect(result.firstName).toBe(updateUserDto.firstName);
       expect(result.lastName).toBe(updateUserDto.lastName);
       expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
       expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+      
+      // Verify audit log was called for role change
+      expect(auditService.logRoleChange).toHaveBeenCalledWith({
+        oldRole: 'FRONTEND_SPECIALIST',
+        newRole: 'DIRECTOR',
+        userId: mockUserId,
+        operatorId: mockOperatorId,
+        timestamp: expect.any(Date),
+        reason: 'Role updated via user update',
+      });
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -320,10 +356,125 @@ describe('UsersService', () => {
       // findOne() uses this.pgPool.query, so we need to mock it
       mockPgPool.query.mockResolvedValueOnce(mockQueryResult as QueryResult);
 
-      await expect(service.update('non-existent-id', updateUserDto)).rejects.toThrow(NotFoundException);
+      const mockOperatorId = 'operator-id-123';
+      await expect(service.update('non-existent-id', updateUserDto, mockOperatorId)).rejects.toThrow(NotFoundException);
       
       // Verify that findOne was called (which uses pgPool.query)
       expect(mockPgPool.query).toHaveBeenCalled();
+    });
+
+    it('should log audit when role is updated', async () => {
+      // Mock transaction queries
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [] }) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ role_name: 'ADMIN' }] }) // Get old role
+        .mockResolvedValueOnce({ rows: [{ id: 'role-2' }] }) // Get role ID
+        .mockResolvedValueOnce({ rows: [] }) // Delete old roles
+        .mockResolvedValueOnce({ rows: [] }) // Assign new role
+        .mockResolvedValueOnce({ rows: [] }); // COMMIT
+
+      // Mock findOne (called at end of update)
+      const mockQueryResult: Partial<QueryResult> = {
+        rows: [{
+          ...mockUser,
+          roles: [{ role_id: 'role-2', role_name: 'DIRECTOR' }],
+        }],
+        rowCount: 1,
+        command: 'SELECT',
+        oid: 0,
+        fields: [],
+      };
+      mockPgPool.query.mockResolvedValueOnce(mockQueryResult as QueryResult);
+
+      const mockOperatorId = 'operator-id-123';
+      const roleUpdateDto: UpdateUserDto = {
+        role: UserRole.DIRECTOR,
+      };
+
+      await service.update(mockUserId, roleUpdateDto, mockOperatorId);
+
+      // Verify audit log was called
+      expect(auditService.logRoleChange).toHaveBeenCalledWith({
+        oldRole: 'ADMIN',
+        newRole: 'DIRECTOR',
+        userId: mockUserId,
+        operatorId: mockOperatorId,
+        timestamp: expect.any(Date),
+        reason: 'Role updated via user update',
+      });
+    });
+
+    it('should not log audit when role is not updated', async () => {
+      // Mock transaction queries (no role update)
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [] }) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ id: mockUserId }] }) // Update user (firstName/lastName only)
+        .mockResolvedValueOnce({ rows: [] }); // COMMIT
+
+      // Mock findOne (called at end of update)
+      const mockQueryResult: Partial<QueryResult> = {
+        rows: [{
+          ...mockUser,
+          first_name: 'Updated',
+          last_name: 'Name',
+        }],
+        rowCount: 1,
+        command: 'SELECT',
+        oid: 0,
+        fields: [],
+      };
+      mockPgPool.query.mockResolvedValueOnce(mockQueryResult as QueryResult);
+
+      const mockOperatorId = 'operator-id-123';
+      const noRoleUpdateDto: UpdateUserDto = {
+        firstName: 'Updated',
+        lastName: 'Name',
+        // No role update
+      };
+
+      await service.update(mockUserId, noRoleUpdateDto, mockOperatorId);
+
+      // Verify audit log was NOT called (no role change)
+      expect(auditService.logRoleChange).not.toHaveBeenCalled();
+    });
+
+    it('should not fail main request if audit logging fails', async () => {
+      // Make audit service fail
+      auditService.logRoleChange.mockRejectedValueOnce(new Error('Audit log failed'));
+
+      // Mock transaction queries
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [] }) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ role_name: 'ADMIN' }] }) // Get old role
+        .mockResolvedValueOnce({ rows: [{ id: 'role-2' }] }) // Get role ID
+        .mockResolvedValueOnce({ rows: [] }) // Delete old roles
+        .mockResolvedValueOnce({ rows: [] }) // Assign new role
+        .mockResolvedValueOnce({ rows: [] }); // COMMIT
+
+      // Mock findOne (called at end of update)
+      const mockQueryResult: Partial<QueryResult> = {
+        rows: [{
+          ...mockUser,
+          roles: [{ role_id: 'role-2', role_name: 'DIRECTOR' }],
+        }],
+        rowCount: 1,
+        command: 'SELECT',
+        oid: 0,
+        fields: [],
+      };
+      mockPgPool.query.mockResolvedValueOnce(mockQueryResult as QueryResult);
+
+      const mockOperatorId = 'operator-id-123';
+      const roleUpdateDto: UpdateUserDto = {
+        role: UserRole.DIRECTOR,
+      };
+
+      // Should succeed even if audit log fails
+      const result = await service.update(mockUserId, roleUpdateDto, mockOperatorId);
+      expect(result).toBeDefined();
+      
+      // Verify audit log was attempted
+      expect(auditService.logRoleChange).toHaveBeenCalled();
     });
   });
 
