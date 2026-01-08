@@ -146,15 +146,20 @@ export const CustomerManagementPage: React.FC = () => {
 
   const handleSubmit = async (data: CreateCustomerDto | UpdateCustomerDto) => {
     try {
+      setError(null);
       if (viewMode === 'create') {
-        await customersService.createCustomer(data as CreateCustomerDto);
+        // Note: CustomerCreateForm already creates the customer and associations
+        // This callback is called after creation for consistency
+        // We don't create the customer again here to avoid duplicate creation
         setSuccessMessage('客户创建成功');
-      } else if (viewMode === 'edit' && editingCustomer) {
+      } else {
+        if (!editingCustomer) return;
         await customersService.updateCustomer(editingCustomer.id, data as UpdateCustomerDto);
         setSuccessMessage('客户更新成功');
       }
       setViewMode('list');
-      setEditingCustomer(null);
+      setSelectedCustomer(null);
+      setShowDetailPanel(false);
       await loadData();
     } catch (err: unknown) {
       setError((err as Error).message || `${viewMode === 'create' ? '创建' : '更新'}客户失败`);

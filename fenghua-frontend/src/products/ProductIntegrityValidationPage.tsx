@@ -67,10 +67,11 @@ export const ProductIntegrityValidationPage: React.FC = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingFixAction, setPendingFixAction] = useState<'delete' | 'mark_fixed' | null>(null);
 
-  const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_BACKEND_URL ||
-    'http://localhost:3006';
+  // Use relative path /api to leverage Vite proxy in development
+  // In production, set VITE_API_BASE_URL to the full backend URL
+  const apiBaseUrl = (import.meta.env?.VITE_API_BASE_URL as string) || 
+                    (import.meta.env?.VITE_BACKEND_URL as string) || 
+                    '/api';
 
   // Check if user is admin
   const userIsAdmin = isAdmin(user?.role);
@@ -84,7 +85,7 @@ export const ProductIntegrityValidationPage: React.FC = () => {
   } = useQuery<IntegrityValidationResult>({
     queryKey: ['integrity-validation'],
     queryFn: async () => {
-      const response = await fetch(`${apiBaseUrl}/api/products/integrity/validate`, {
+      const response = await fetch(`${apiBaseUrl}/products/integrity/validate`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -115,7 +116,7 @@ export const ProductIntegrityValidationPage: React.FC = () => {
     queryFn: async () => {
       if (!validationResult?.taskId) return null;
       const response = await fetch(
-        `${apiBaseUrl}/api/products/integrity/validate/${validationResult.taskId}`,
+        `${apiBaseUrl}/products/integrity/validate/${validationResult.taskId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -148,7 +149,7 @@ export const ProductIntegrityValidationPage: React.FC = () => {
   // Fix issues mutation
   const fixIssuesMutation = useMutation<FixIntegrityIssuesResult, Error, FixIntegrityIssuesRequest>({
     mutationFn: async (request: FixIntegrityIssuesRequest) => {
-      const response = await fetch(`${apiBaseUrl}/api/products/integrity/fix`, {
+      const response = await fetch(`${apiBaseUrl}/products/integrity/fix`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,

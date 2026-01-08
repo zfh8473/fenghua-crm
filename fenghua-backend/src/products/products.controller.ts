@@ -30,6 +30,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../users/guards/admin.guard';
 import { Token } from '../common/decorators/token.decorator';
 import { Request } from 'express';
+import { BadRequestException } from '@nestjs/common';
 
 @Controller('products')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -43,11 +44,13 @@ export class ProductsController {
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body(ValidationPipe) createProductDto: CreateProductDto,
-    @Token() token: string,
     @Req() req: Request & { user?: { id: string } },
   ): Promise<ProductResponseDto> {
     const userId = req.user?.id;
-    return this.productsService.create(createProductDto, token, userId);
+    if (!userId) {
+      throw new BadRequestException('用户ID无效');
+    }
+    return this.productsService.create(createProductDto, userId);
   }
 
   /**
@@ -57,8 +60,13 @@ export class ProductsController {
   async findAll(
     @Query(ValidationPipe) query: ProductQueryDto,
     @Token() token: string,
+    @Req() req: Request & { user?: { id: string } },
   ): Promise<{ products: ProductResponseDto[]; total: number }> {
-    return this.productsService.findAll(query, token);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new BadRequestException('用户ID无效');
+    }
+    return this.productsService.findAll(query, userId, token);
   }
 
   /**
@@ -68,8 +76,13 @@ export class ProductsController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @Token() token: string,
+    @Req() req: Request & { user?: { id: string } },
   ): Promise<ProductResponseDto> {
-    return this.productsService.findOne(id, token);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new BadRequestException('用户ID无效');
+    }
+    return this.productsService.findOne(id, userId, token);
   }
 
   /**
@@ -83,7 +96,10 @@ export class ProductsController {
     @Req() req: Request & { user?: { id: string } },
   ): Promise<ProductResponseDto> {
     const userId = req.user?.id;
-    return this.productsService.update(id, updateProductDto, token, userId);
+    if (!userId) {
+      throw new BadRequestException('用户ID无效');
+    }
+    return this.productsService.update(id, updateProductDto, userId, token);
   }
 
   /**
@@ -97,7 +113,10 @@ export class ProductsController {
     @Req() req: Request & { user?: { id: string } },
   ): Promise<void> {
     const userId = req.user?.id;
-    return this.productsService.remove(id, token, userId);
+    if (!userId) {
+      throw new BadRequestException('用户ID无效');
+    }
+    return this.productsService.remove(id, userId, token);
   }
 }
 

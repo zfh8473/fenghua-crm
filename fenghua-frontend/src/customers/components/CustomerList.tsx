@@ -1,7 +1,7 @@
 /**
  * Customer List Component
  * 
- * Displays a list of customers in a table
+ * Displays a table of customers with actions
  * All custom code is proprietary and not open source.
  */
 
@@ -14,24 +14,19 @@ interface CustomerListProps {
   customers: Customer[];
   onEdit: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
-  onSelect?: (customer: Customer) => void;
+  onSelect: (customer: Customer) => void;
   loading?: boolean;
   searchQuery?: string;
 }
 
-/**
- * Highlight matching keywords in text
- */
-const highlightText = (text: string, keyword?: string): React.ReactNode => {
-  if (!keyword || !text) return text;
+const highlightText = (text: string, query?: string): React.ReactNode => {
+  if (!query || !text) return text;
   
-  const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  const parts = text.split(regex);
-  
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
   return parts.map((part, index) => {
-    if (regex.test(part)) {
+    if (part.toLowerCase() === query.toLowerCase()) {
       return (
-        <mark key={index} className="bg-yellow-200 text-monday-text font-semibold px-monday-0.5 rounded">
+        <mark key={index} className="bg-yellow-200 text-yellow-900 px-monday-0.5 rounded">
           {part}
         </mark>
       );
@@ -46,7 +41,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
   onDelete,
   onSelect,
   loading = false,
-  searchQuery,
+  searchQuery
 }) => {
   const getCustomerTypeLabel = (type: string): string => {
     const typeMap: Record<string, string> = {
@@ -129,15 +124,6 @@ export const CustomerList: React.FC<CustomerListProps> = ({
       ),
     },
     {
-      key: 'address',
-      header: '地址',
-      render: (value, customer) => (
-        <div className="text-monday-text-secondary text-monday-sm max-w-xs truncate">
-          {customer.address || '-'}
-        </div>
-      ),
-    },
-    {
       key: 'contact',
       header: '联系方式',
       render: (value, customer) => (
@@ -182,8 +168,6 @@ export const CustomerList: React.FC<CustomerListProps> = ({
       data={customers}
       columns={columns}
       onRowClick={onSelect}
-      className="w-full"
     />
   );
 };
-

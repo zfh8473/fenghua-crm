@@ -18,39 +18,43 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ## Technology Stack & Versions
 
 **Base Platform:**
-- Twenty CRM (NestJS + React + TypeScript + PostgreSQL + GraphQL)
-- Custom code in `packages/twenty-server/src/custom/` and `packages/twenty-front/src/custom/`
+- **原生技术栈** (NestJS + React + TypeScript + PostgreSQL)
+- **架构决策：** 已移除 Twenty CRM 依赖（2025-12-26），使用完全独立的技术栈
+- **参考文档：** `_bmad-output/refactoring-plan-remove-twenty-dependency-2025-12-26.md`
 
 **Frontend:**
 - React 18+ with TypeScript
-- Tailwind CSS (customization of Twenty CRM design system)
+- Vite for build tooling
+- Tailwind CSS (自定义设计系统，Monday.com风格)
 - React Query (`@tanstack/react-query`) for server state
 - React Hook Form for form management
-- Vite for build tooling
+- React Router for routing
 
 **Backend:**
 - NestJS with TypeScript
-- GraphQL API (single endpoint `/graphql`)
+- **RESTful API** (标准 HTTP 方法，无 GraphQL)
 - TypeORM for database access
-- Bull Queue (Redis-based) for async job processing
-- Redis for server-side caching
+- JWT for authentication
+- bcrypt for password hashing
 
 **Database:**
-- PostgreSQL with Row Level Security (RLS) support
-- Use Twenty CRM Custom Objects + Relationship Fields (NOT direct table creation)
+- PostgreSQL 16+ (Neon Serverless)
+- Row Level Security (RLS) support for data isolation
+- 直接数据库访问（独立表结构，不依赖外部系统）
 
 **Deployment:**
-- Docker + Docker Compose
-- Multi-container: server, database, redis, worker
+- Vercel Serverless (前端 + API Routes)
+- 或独立服务器部署
+- 无需 Docker（简化部署）
 
-**Critical Constraint:** All custom code must maintain compatibility with Twenty CRM for future upgrades.
+**Critical Constraint:** 系统完全独立，不依赖任何外部CRM系统。
 
 ## Critical Implementation Rules
 
 ### Language-Specific Rules
 
 **TypeScript:**
-- Use strict mode (enforced by Twenty CRM)
+- Use strict mode (enforced by tsconfig.json)
 - Prefer named exports over default exports (better tree-shaking)
 - Use `camelCase` for variables/functions, `PascalCase` for classes/components
 - Use `UPPER_SNAKE_CASE` for constants and enum values
@@ -65,10 +69,11 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Use absolute imports from `@/` or `src/` when configured
 
 **Error Handling:**
-- Use ErrorCode enum from `packages/twenty-server/src/common/errors/error-codes.enum.ts`
-- Error code ranges: Product (1000-1999), Customer (2000-2999), Interaction (3000-3999), Excel Import (4000-4999), Mobile Network (5000-5999), Permission (6000-6999), System (9000-9999)
-- Always include error code in error responses
+- Use consistent error response structure: `{ message, statusCode, timestamp, path }`
+- Error categories: Product, Customer, Interaction, Excel Import, Mobile Network, Permission, System
+- Always include statusCode in error responses
 - Use layered error handling: User/Business/System layers
+- Use NestJS built-in exception filters
 
 ### Framework-Specific Rules
 
@@ -83,30 +88,30 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 **NestJS:**
 - Services: `{name}.service.ts` with `@Injectable()` decorator
-- Resolvers: `{name}.resolver.ts` with `@Resolver()` decorator
+- Controllers: `{name}.controller.ts` with `@Controller()` decorator
 - DTOs: `{name}.dto.ts` with `class-validator` decorators
 - Entities: `{name}.entity.ts` with TypeORM decorators
-- Modules: `{name}.module.ts` - register in `custom.module.ts`
+- Modules: `{name}.module.ts` - register in `app.module.ts`
 - Always inject dependencies via constructor (no property injection)
 
-**GraphQL:**
-- Types: `PascalCase` (e.g., `Product`, `Customer`)
-- Fields: `camelCase` (e.g., `productName`, `customerId`)
-- Queries/Mutations: `camelCase`, verb-based (e.g., `getProduct`, `createProduct`)
-- Always apply permission filtering in Resolvers (primary layer)
+**RESTful API:**
+- Controllers: `{name}.controller.ts` with REST endpoints
+- Routes: RESTful conventions (GET, POST, PUT, DELETE)
+- Request/Response DTOs: Separate DTOs for requests and responses
+- Always apply permission filtering in Controllers/Services (primary layer)
 - RLS policies provide defense-in-depth (database layer)
 
 **Permission Filtering (CRITICAL):**
-- **ALWAYS** filter data by user role in GraphQL Resolvers
+- **ALWAYS** filter data by user role in Controllers/Services
 - Frontend Specialist: Only buyer-type customers
 - Backend Specialist: Only supplier-type customers
 - Director/Administrator: All customer types
 - Use unified `PermissionService` for permission checks
-- RLS policies must match Resolver filtering (no duplicate logic)
+- RLS policies must match Controller/Service filtering (no duplicate logic)
 
 **Product Association (CRITICAL):**
 - **ALL** interactions MUST link to a product (product-driven data model)
-- Use Twenty CRM Custom Objects + Relationship Fields
+- Use direct database tables (NOT Twenty CRM Custom Objects)
 - Never create interactions without product association
 - Product-Customer-Interaction is the core data model
 
@@ -119,30 +124,31 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Co-locate tests with source files
 
 **Test Structure:**
-- Use Jest (Twenty CRM standard)
+- Use Jest for testing
 - Test coverage: > 80% overall, > 95% for critical features
-- Mock external dependencies (GraphQL, IndexedDB, Redis)
+- Mock external dependencies (REST API, IndexedDB, Redis)
 - Use React Testing Library for component tests
 
 **Test Organization:**
 - Unit tests: Test individual functions/services in isolation
-- Integration tests: Test Resolver + Service + Repository together
+- Integration tests: Test Controller + Service + Repository together
 - E2E tests: Test complete user flows (quick record, product association)
 
 ### Code Quality & Style Rules
 
 **Naming Conventions:**
 - Database: `snake_case` (tables, columns, indexes)
-- API: GraphQL `PascalCase` types, `camelCase` fields
+- API: REST endpoints use `kebab-case` or `camelCase` paths
 - Code: `camelCase` variables, `PascalCase` classes/components
 - Constants: `UPPER_SNAKE_CASE`
 - Files: Match the exported name (e.g., `ProductSelector.tsx` exports `ProductSelector`)
 
 **File Organization:**
-- Custom code: `packages/twenty-server/src/custom/{module}/` and `packages/twenty-front/src/custom/{module}/`
-- Shared code: `packages/twenty-server/src/common/` and `packages/twenty-front/src/shared/`
-- Module structure: `{module}.service.ts`, `{module}.resolver.ts`, `{module}.entity.ts`, `{module}.dto.ts`, `{module}.module.ts`
-- Frontend module: `components/`, `hooks/`, `types/`, `utils/`
+- Backend code: `fenghua-backend/src/{module}/`
+- Frontend code: `fenghua-frontend/src/{module}/`
+- Shared code: `fenghua-backend/src/common/` and `fenghua-frontend/src/common/`
+- Module structure: `{module}.service.ts`, `{module}.controller.ts`, `{module}.entity.ts`, `{module}.dto.ts`, `{module}.module.ts`
+- Frontend module: `components/`, `hooks/`, `types/`, `utils/`, `services/`
 
 **Code Comments:**
 - Use JSDoc comments for all public functions/classes
@@ -159,13 +165,13 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ### Development Workflow Rules
 
 **Module Registration:**
-- All custom modules must be registered in `packages/twenty-server/src/custom/custom.module.ts`
+- All modules must be registered in `fenghua-backend/src/app.module.ts`
 - Load order: Permission → Product → Interaction → Excel Import → Offline Sync
-- Import `CustomModule` in `app.module.ts` (or Twenty CRM's equivalent)
+- Import modules in `app.module.ts`
 
 **Database Migrations:**
-- Use TypeORM migrations (Twenty CRM standard)
-- Migration files: `packages/twenty-server/src/migrations/{timestamp}-{description}.ts`
+- Use TypeORM migrations
+- Migration files: `fenghua-backend/migrations/{timestamp}-{description}.sql` or TypeORM migration files
 - Never modify existing migrations (create new ones)
 - Test migrations in development before committing
 
@@ -184,22 +190,20 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ### Critical Don't-Miss Rules
 
 **❌ NEVER:**
-- Create database tables directly (use Twenty CRM Custom Objects)
-- Skip permission filtering in Resolvers
+- Skip permission filtering in Controllers/Services
 - Create interactions without product association
 - Use default exports for components
 - Mix naming conventions (stick to project patterns)
 - Bypass RLS policies (they're defense-in-depth)
-- Hardcode error messages (use ErrorCode enum)
+- Hardcode error messages (use consistent error response structure)
 - Create circular dependencies between modules
-- Modify Twenty CRM core code (use `custom/` directory only)
 
 **✅ ALWAYS:**
-- Filter data by user role in Resolvers (permission service)
+- Filter data by user role in Controllers/Services (permission service)
 - Associate all interactions with products
 - Use named exports for components
-- Follow error code ranges (1000 codes per module)
-- Use `custom.module.ts` for module registration
+- Use consistent error response structure
+- Register modules in `app.module.ts`
 - Co-locate tests with source files (`*.test.ts`)
 - Use React Query for server state (no direct fetch)
 - Apply multi-layer validation (Client + Server + Database)
@@ -310,27 +314,26 @@ All four experts agree the rules are comprehensive but need the following enhanc
 ### Enhanced Context Rules
 
 **Version Constraints:**
-- **Twenty CRM:** Use latest stable version (verify compatibility in POC phase)
 - **Node.js:** v18+ (verify with `node --version`)
-- **PostgreSQL:** 14+ (via Docker, Twenty CRM managed)
-- **Redis:** 7+ (via Docker, Twenty CRM managed)
-- **React:** 18+ (Twenty CRM managed)
-- **NestJS:** Version provided by Twenty CRM
-- **TypeORM:** Version provided by Twenty CRM
+- **PostgreSQL:** 16+ (Neon Serverless)
+- **React:** 18+
+- **NestJS:** Latest stable version
+- **TypeORM:** Latest stable version compatible with NestJS
+- **TypeScript:** 5.0+
 
-**Custom Objects API Usage:**
-- **Creation:** Use Twenty CRM's GraphQL API or Admin UI to create Custom Objects
-- **Access:** Access Custom Objects via GraphQL queries/mutations
-- **Relationship Fields:** Use relationship fields to link Custom Objects (e.g., Product → Interaction)
-- **Example:** Product Custom Object with fields: `name`, `hsCode`, `description`, `category`, `status`
-- **Important:** Never create database tables directly - always use Custom Objects
+**Database Schema:**
+- **Creation:** Use TypeORM entities to define database schema
+- **Access:** Access data via REST API endpoints
+- **Relationships:** Use TypeORM relations to link entities (e.g., Product → Interaction)
+- **Example:** Product entity with fields: `name`, `hsCode`, `description`, `category`, `status`
+- **Important:** Create database tables directly using TypeORM migrations
 
 **RLS Policy Implementation:**
-- **Pattern:** Create RLS policies that match Resolver filtering logic
+- **Pattern:** Create RLS policies that match Controller/Service filtering logic
 - **Example:** Policy for Frontend Specialist to only access buyer-type customers
 - **Location:** RLS policies in database migrations or PostgreSQL directly
-- **Testing:** Test RLS policies independently from Resolver filtering
-- **Important:** RLS is defense-in-depth, Resolver filtering is primary security
+- **Testing:** Test RLS policies independently from Controller/Service filtering
+- **Important:** RLS is defense-in-depth, Controller/Service filtering is primary security
 
 **Environment Variables:**
 - **Required:**
@@ -346,20 +349,18 @@ All four experts agree the rules are comprehensive but need the following enhanc
 - **Location:** `.env` file (gitignored), `.env.example` (committed)
 
 **Development Commands:**
-- **Start Backend:** `cd packages/twenty-server && yarn start:dev`
-- **Start Frontend:** `cd packages/twenty-front && yarn dev`
-- **Run Tests:** `yarn test` (root) or `yarn test` (in package directory)
-- **Run Migrations:** `yarn migration:run` (or Twenty CRM's migration command)
-- **Docker Compose:** `cd packages/twenty-docker && docker-compose up -d`
-- **Lint:** `yarn lint` (root or package directory)
-- **Type Check:** `yarn type-check` (if configured)
+- **Start Backend:** `cd fenghua-backend && npm run start:dev`
+- **Start Frontend:** `cd fenghua-frontend && npm run dev`
+- **Run Tests:** `npm test` (in respective directory)
+- **Run Migrations:** `cd fenghua-backend && npm run migration:run`
+- **Lint:** `npm run lint` (in respective directory)
+- **Type Check:** `npm run type-check` (if configured)
 
 **Debugging Tips:**
 - **Backend:** Use VS Code debugger with `launch.json` configuration
 - **Frontend:** Use React DevTools and browser DevTools
-- **GraphQL:** Use GraphQL Playground (usually at `/graphql`)
-- **Database:** Connect to PostgreSQL via Docker: `docker exec -it twenty-db-1 psql -U postgres`
-- **Redis:** Connect via Docker: `docker exec -it twenty-redis-1 redis-cli`
+- **API:** Use REST client (Postman, Insomnia, or browser DevTools Network tab)
+- **Database:** Connect to PostgreSQL via Neon console or connection string
 - **Common Issues:**
   - Permission errors: Check Resolver filtering and RLS policies
   - Product association missing: Verify Custom Object relationship fields

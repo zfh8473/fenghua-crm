@@ -17,7 +17,6 @@ export class ProductResponseDto {
   status: 'active' | 'inactive' | 'archived';
   specifications?: Record<string, unknown>;
   imageUrl?: string;
-  workspaceId: string;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;

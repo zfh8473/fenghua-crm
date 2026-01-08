@@ -12,7 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../auth/AuthContext';
 import { isAdmin, isDirector, isFrontendSpecialist, isBackendSpecialist } from '../../common/constants/roles';
 import { CustomerProductAssociation } from './CustomerProductAssociation';
-import { CustomerTimeline } from './CustomerTimeline';
+import { CustomerTimelineSummary } from './CustomerTimelineSummary';
 
 interface CustomerDetailPanelProps {
   customer: Customer;
@@ -174,10 +174,7 @@ export const CustomerDetailPanel: React.FC<CustomerDetailPanelProps> = ({
       <CustomerProductAssociation customerId={customer.id} customer={customer} />
 
       {/* 时间线视图 */}
-      <Card variant="outlined" className="p-monday-4">
-        <h4 className="text-monday-base font-semibold text-monday-text mb-monday-3">时间线视图</h4>
-        <CustomerTimeline customerId={customer.id} />
-      </Card>
+      <CustomerTimelineSummary customerId={customer.id} />
 
       {/* Edit/Delete Buttons (Role-based) */}
       {canEdit && onEdit && onDelete ? (

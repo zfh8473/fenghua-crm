@@ -64,6 +64,44 @@ export class CompaniesService implements OnModuleDestroy {
 
 
   /**
+   * Generate next available customer code
+   */
+  private async generateCustomerCode(customerType: 'BUYER' | 'SUPPLIER'): Promise<string> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    try {
+      // Find the maximum customer code for the given customer type
+      const prefix = customerType === 'BUYER' ? 'BUYER' : 'SUPPLIER';
+      const result = await this.pgPool.query(
+        `SELECT MAX(CAST(SUBSTRING(customer_code FROM '[0-9]+$') AS INTEGER)) as max_num
+         FROM companies
+         WHERE customer_type = $1 AND customer_code LIKE $2 AND deleted_at IS NULL`,
+        [customerType, `${prefix}%`]
+      );
+
+      const maxNum = result.rows[0]?.max_num;
+      const nextNum = maxNum ? maxNum + 1 : 1;
+      const customerCode = `${prefix}${String(nextNum).padStart(3, '0')}`;
+
+      // Double-check uniqueness (in case of race condition)
+      const exists = await this.checkCustomerCodeExists(customerCode);
+      if (exists) {
+        // If exists, try next number
+        return `${prefix}${String(nextNum + 1).padStart(3, '0')}`;
+      }
+
+      return customerCode;
+    } catch (error) {
+      this.logger.error('Failed to generate customer code', error);
+      // Fallback: use timestamp-based code
+      const prefix = customerType === 'BUYER' ? 'BUYER' : 'SUPPLIER';
+      return `${prefix}${Date.now().toString().slice(-6)}`;
+    }
+  }
+
+  /**
    * Create a new customer
    */
   async create(createCustomerDto: CreateCustomerDto, token: string, userId: string): Promise<CustomerResponseDto> {
@@ -91,10 +129,17 @@ export class CompaniesService implements OnModuleDestroy {
       }
     }
 
-    // 3. 检查客户代码唯一性
-    const customerCodeExists = await this.checkCustomerCodeExists(createCustomerDto.customerCode);
-    if (customerCodeExists) {
-      throw new ConflictException('客户代码已存在');
+    // 3. 自动生成客户代码（如果未提供）
+    let customerCode = createCustomerDto.customerCode;
+    if (!customerCode || customerCode.trim() === '') {
+      customerCode = await this.generateCustomerCode(createCustomerDto.customerType);
+      this.logger.log(`Auto-generated customer code: ${customerCode} for ${createCustomerDto.customerType}`);
+    } else {
+      // 如果提供了客户代码，检查唯一性
+      const customerCodeExists = await this.checkCustomerCodeExists(customerCode);
+      if (customerCodeExists) {
+        throw new ConflictException('客户代码已存在');
+      }
     }
 
     // 4. 验证 userId 格式
@@ -108,12 +153,12 @@ export class CompaniesService implements OnModuleDestroy {
       const result = await this.pgPool.query(
         `INSERT INTO companies (
           name, customer_code, customer_type, domain_name, address, city, state, country, 
-          postal_code, industry, employees, website, phone, notes, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          postal_code, industry, employees, website, phone, email, notes, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING *`,
         [
           createCustomerDto.name,
-          createCustomerDto.customerCode,
+          customerCode, // Use generated or provided code
           createCustomerDto.customerType,
           createCustomerDto.domainName || null,
           createCustomerDto.address || null,
@@ -125,6 +170,7 @@ export class CompaniesService implements OnModuleDestroy {
           createCustomerDto.employees || null,
           createCustomerDto.website || null,
           createCustomerDto.phone || null,
+          createCustomerDto.email || null,
           createCustomerDto.notes || null,
           validUserId,
         ]
@@ -174,8 +220,24 @@ export class CompaniesService implements OnModuleDestroy {
     const offset = query.offset || 0;
 
     try {
+      this.logger.log(`[findAll] Starting customer query with params: ${JSON.stringify(query)}`);
+      
       // 1. 获取用户权限和数据访问过滤器
-      const dataFilter = await this.permissionService.getDataAccessFilter(token);
+      let dataFilter;
+      try {
+        this.logger.log('[findAll] Getting data access filter...');
+        dataFilter = await this.permissionService.getDataAccessFilter(token);
+        this.logger.log(`[findAll] Data access filter: ${JSON.stringify(dataFilter)}`);
+      } catch (permissionError) {
+        this.logger.error('[findAll] Failed to get data access filter', {
+          error: permissionError instanceof Error ? permissionError.message : String(permissionError),
+          stack: permissionError instanceof Error ? permissionError.stack : undefined,
+        });
+        throw new BadRequestException({
+          message: `获取用户权限失败: ${permissionError instanceof Error ? permissionError.message : String(permissionError)}`,
+          error: 'PERMISSION_CHECK_FAILED',
+        });
+      }
 
       // 2. 转换 customer_type 大小写（PermissionService 返回小写，数据库存储大写）
       const customerTypeFilter = dataFilter?.customerType
@@ -222,7 +284,7 @@ export class CompaniesService implements OnModuleDestroy {
         paramIndex += 2;
       }
 
-      // 5. 获取总数
+      // 5. 获取总数（使用单独的查询，避免参数索引冲突）
       const countResult = await this.pgPool.query(
         `SELECT COUNT(*) as total FROM companies ${whereClause}`,
         params
@@ -230,35 +292,101 @@ export class CompaniesService implements OnModuleDestroy {
       const total = parseInt(countResult.rows[0].total, 10);
 
       // 6. 获取客户列表
+      // 注意：orderByClause 中的参数索引需要从 paramIndex 开始，因为 whereClause 已经使用了之前的参数
       let orderByClause = 'ORDER BY created_at DESC';
+      const orderParams: (string | number)[] = [];
+      let orderParamIndex = paramIndex;
+      
       if (query.name) {
-        orderByClause = `ORDER BY CASE WHEN name = $${paramIndex} THEN 1 WHEN name ILIKE $${paramIndex + 1} THEN 2 ELSE 3 END, name`;
-        params.push(query.name, `${query.name}%`);
-        paramIndex += 2;
+        orderByClause = `ORDER BY CASE WHEN name = $${orderParamIndex} THEN 1 WHEN name ILIKE $${orderParamIndex + 1} THEN 2 ELSE 3 END, name`;
+        orderParams.push(query.name, `${query.name}%`);
+        orderParamIndex += 2;
       } else if (query.customerCode) {
-        orderByClause = `ORDER BY CASE WHEN customer_code = $${paramIndex} THEN 1 ELSE 2 END, customer_code`;
-        params.push(query.customerCode);
-        paramIndex++;
+        orderByClause = `ORDER BY CASE WHEN customer_code = $${orderParamIndex} THEN 1 ELSE 2 END, customer_code`;
+        orderParams.push(query.customerCode);
+        orderParamIndex++;
       } else if (query.search) {
-        orderByClause = `ORDER BY CASE WHEN name = $${paramIndex} THEN 1 WHEN name ILIKE $${paramIndex + 1} THEN 2 WHEN customer_code = $${paramIndex + 2} THEN 3 ELSE 4 END, name`;
-        params.push(query.search, `${query.search}%`, query.search);
-        paramIndex += 3;
+        orderByClause = `ORDER BY CASE WHEN name = $${orderParamIndex} THEN 1 WHEN name ILIKE $${orderParamIndex + 1} THEN 2 WHEN customer_code = $${orderParamIndex + 2} THEN 3 ELSE 4 END, name`;
+        orderParams.push(query.search, `${query.search}%`, query.search);
+        orderParamIndex += 3;
       }
 
-      const customersResult = await this.pgPool.query(
-        `SELECT * FROM companies ${whereClause} ${orderByClause} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-        [...params, limit, offset]
-      );
+      // 合并所有参数：whereClause 参数 + orderByClause 参数 + limit/offset
+      const allParams = [...params, ...orderParams, limit, offset];
+      const limitParamIndex = orderParamIndex;
+      const offsetParamIndex = orderParamIndex + 1;
 
-      const customers = customersResult.rows.map(row => this.mapToResponseDto(row));
+      // Log query details (always log in development, error level in production for debugging)
+      this.logger.log('Executing customer query', {
+        whereClause,
+        orderByClause,
+        limitParamIndex,
+        offsetParamIndex,
+        paramCount: allParams.length,
+        params: allParams,
+        paramIndex,
+        orderParamIndex,
+      });
 
-      return { customers, total };
+      // Validate parameter indices match array length
+      if (limitParamIndex > allParams.length || offsetParamIndex > allParams.length) {
+        const errorMsg = `Parameter index mismatch: limitParamIndex=${limitParamIndex}, offsetParamIndex=${offsetParamIndex}, allParams.length=${allParams.length}`;
+        this.logger.error(errorMsg, {
+          whereClause,
+          orderByClause,
+          params,
+          orderParams,
+          limit,
+          offset,
+          paramIndex,
+          orderParamIndex,
+        });
+        throw new BadRequestException({
+          message: '查询参数错误',
+          error: 'PARAMETER_INDEX_MISMATCH',
+          details: errorMsg,
+        });
+      }
+
+      this.logger.log(`[findAll] Executing SQL query with ${allParams.length} parameters`);
+      
+      try {
+        const customersResult = await this.pgPool.query(
+          `SELECT * FROM companies ${whereClause} ${orderByClause} LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}`,
+          allParams
+        );
+
+        this.logger.log(`[findAll] Query successful, returned ${customersResult.rows.length} rows`);
+        const customers = customersResult.rows.map(row => this.mapToResponseDto(row));
+
+        return { customers, total };
+      } catch (sqlError) {
+        this.logger.error('[findAll] SQL query failed', {
+          error: sqlError instanceof Error ? sqlError.message : String(sqlError),
+          stack: sqlError instanceof Error ? sqlError.stack : undefined,
+          sql: `SELECT * FROM companies ${whereClause} ${orderByClause} LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}`,
+          params: allParams,
+          paramCount: allParams.length,
+          limitParamIndex,
+          offsetParamIndex,
+        });
+        throw sqlError; // Re-throw to be caught by outer catch block
+      }
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-      this.logger.error('Failed to find customers', error);
-      throw new BadRequestException('查询客户列表失败');
+      // Log detailed error information for debugging
+      this.logger.error('[findAll] Failed to find customers', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        query: query,
+        errorName: error instanceof Error ? error.constructor.name : typeof error,
+      });
+      throw new BadRequestException({
+        message: `查询客户列表失败: ${error instanceof Error ? error.message : String(error)}`,
+        error: 'CUSTOMER_QUERY_FAILED',
+      });
     }
   }
 
@@ -459,6 +587,12 @@ export class CompaniesService implements OnModuleDestroy {
         paramIndex++;
       }
 
+      if (updateCustomerDto.email !== undefined) {
+        updateFields.push(`email = $${paramIndex}`);
+        values.push(updateCustomerDto.email || null);
+        paramIndex++;
+      }
+
       if (updateCustomerDto.notes !== undefined) {
         updateFields.push(`notes = $${paramIndex}`);
         values.push(updateCustomerDto.notes || null);
@@ -648,6 +782,7 @@ export class CompaniesService implements OnModuleDestroy {
       employees: row.employees,
       website: row.website,
       phone: row.phone,
+      email: row.email,
       notes: row.notes,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

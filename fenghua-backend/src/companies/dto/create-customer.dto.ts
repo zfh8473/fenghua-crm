@@ -3,7 +3,7 @@
  * All custom code is proprietary and not open source.
  */
 
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, Matches, IsEnum, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, Matches, IsEnum, IsInt, Min, Max, IsEmail } from 'class-validator';
 
 /**
  * Customer type enum
@@ -24,9 +24,9 @@ export class CreateCustomerDto {
   name: string;
 
   @IsString({ message: '客户代码必须是字符串' })
-  @IsNotEmpty({ message: '客户代码不能为空' })
+  @IsOptional()
   @Matches(/^[a-zA-Z0-9]{1,50}$/, { message: '客户代码格式不正确，应为1-50个字母数字字符' })
-  customerCode: string;
+  customerCode?: string; // Optional - will be auto-generated if not provided
 
   @IsEnum(CustomerType, { message: '客户类型必须是 BUYER 或 SUPPLIER' })
   @IsNotEmpty({ message: '客户类型不能为空' })
@@ -87,5 +87,11 @@ export class CreateCustomerDto {
   @IsOptional()
   @MaxLength(5000, { message: '备注长度不能超过5000个字符' })
   notes?: string;
+
+  @IsString({ message: '邮箱必须是字符串' })
+  @IsOptional()
+  @IsEmail({}, { message: '邮箱格式不正确' })
+  @MaxLength(255, { message: '邮箱长度不能超过255个字符' })
+  email?: string;
 }
 

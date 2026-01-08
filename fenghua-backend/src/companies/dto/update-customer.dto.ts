@@ -3,7 +3,7 @@
  * All custom code is proprietary and not open source.
  */
 
-import { IsString, IsOptional, MinLength, MaxLength, Matches, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength, Matches, IsInt, Min, Max, IsEmail } from 'class-validator';
 
 /**
  * DTO for updating a customer
@@ -75,5 +75,11 @@ export class UpdateCustomerDto {
   @IsOptional()
   @MaxLength(5000, { message: '备注长度不能超过5000个字符' })
   notes?: string;
+
+  @IsString({ message: '邮箱必须是字符串' })
+  @IsOptional()
+  @IsEmail({}, { message: '邮箱格式不正确' })
+  @MaxLength(255, { message: '邮箱长度不能超过255个字符' })
+  email?: string;
 }
 

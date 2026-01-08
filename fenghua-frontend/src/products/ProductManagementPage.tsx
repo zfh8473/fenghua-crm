@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import {
   Product,
@@ -19,7 +20,7 @@ import { ProductList } from './components/ProductList';
 import { ProductCreateForm } from './components/ProductCreateForm';
 import { ProductEditForm } from './components/ProductEditForm';
 import { ProductDetailPanel } from './components/ProductDetailPanel';
-import { isAdmin } from '../common/constants/roles';
+import { isAdmin, isDirector, isFrontendSpecialist, isBackendSpecialist } from '../common/constants/roles';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { MainLayout } from '../components/layout';
@@ -31,6 +32,7 @@ type ViewMode = 'list' | 'create' | 'edit';
 
 export const ProductManagementPage: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -49,6 +51,7 @@ export const ProductManagementPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasAutoSelectedProduct = useRef(false);
 
   // Load categories on mount
   useEffect(() => {
@@ -80,6 +83,63 @@ export const ProductManagementPage: React.FC = () => {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  // Auto-select product from URL query parameter
+  useEffect(() => {
+    const productIdFromUrl = searchParams.get('productId');
+    
+    // Only auto-select if:
+    // 1. There's a productId in URL
+    // 2. Products are loaded (or loading is complete)
+    // 3. We haven't already auto-selected (to avoid re-selecting on re-renders)
+    // 4. No product is currently selected
+    if (
+      productIdFromUrl &&
+      !loading &&
+      !hasAutoSelectedProduct.current &&
+      !selectedProduct
+    ) {
+      // First, try to find the product in the current list
+      let productToSelect = products.find(p => p.id === productIdFromUrl);
+      
+      // If product is not in current list, load it separately
+      if (!productToSelect) {
+        productsService.getProduct(productIdFromUrl)
+          .then((product) => {
+            setSelectedProduct(product);
+            setShowDetailPanel(true);
+            hasAutoSelectedProduct.current = true;
+            
+            // Remove productId from URL to clean it up
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete('productId');
+            setSearchParams(newSearchParams, { replace: true });
+          })
+          .catch((err) => {
+            console.error('Failed to load product:', err);
+            // Remove invalid productId from URL
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete('productId');
+            setSearchParams(newSearchParams, { replace: true });
+          });
+      } else {
+        // Product found in current list, select it
+        setSelectedProduct(productToSelect);
+        setShowDetailPanel(true);
+        hasAutoSelectedProduct.current = true;
+        
+        // Remove productId from URL to clean it up
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('productId');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+    
+    // Reset the flag when productId changes or products change
+    if (!productIdFromUrl) {
+      hasAutoSelectedProduct.current = false;
+    }
+  }, [searchParams, loading, products, selectedProduct, setSearchParams]);
 
   // Debounced search
   useEffect(() => {
@@ -178,7 +238,9 @@ export const ProductManagementPage: React.FC = () => {
     try {
       setError(null);
       if (viewMode === 'create') {
-        await productsService.createProduct(data as CreateProductDto);
+        // Note: ProductCreateForm already creates the product and associations
+        // This callback is called after creation for consistency
+        // We don't create the product again here to avoid duplicate creation
         setSuccessMessage('产品创建成功');
       } else {
         if (!editingProduct) return;
@@ -218,14 +280,22 @@ export const ProductManagementPage: React.FC = () => {
 
   const totalPages = Math.ceil(total / (filters.limit || 20));
 
-  // Check if current user is admin
+  // Check user permissions
   const userIsAdmin = isAdmin(currentUser?.role);
+  const userIsDirector = isDirector(currentUser?.role);
+  const userIsFrontendSpecialist = isFrontendSpecialist(currentUser?.role);
+  const userIsBackendSpecialist = isBackendSpecialist(currentUser?.role);
 
-  if (!userIsAdmin) {
+  // Allow access to admin, director, frontend specialist, and backend specialist
+  // Frontend specialists need to view products for buyer associations
+  // Backend specialists need to view products for supplier associations
+  const canAccessProducts = userIsAdmin || userIsDirector || userIsFrontendSpecialist || userIsBackendSpecialist;
+
+  if (!canAccessProducts) {
     return (
       <MainLayout title="产品管理">
         <Card variant="default" className="p-monday-8 text-center">
-          <p className="text-semantic-error text-monday-lg">只有管理员可以访问此页面</p>
+          <p className="text-semantic-error text-monday-lg">您没有权限访问此页面</p>
         </Card>
       </MainLayout>
     );
@@ -274,15 +344,17 @@ export const ProductManagementPage: React.FC = () => {
             类别管理
           </Button>
         </Link>
-        <Button 
-          variant="primary" 
-          size="md" 
-          onClick={handleCreate}
-          className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-monday-md hover:shadow-monday-lg font-semibold"
-        >
-          <span className="mr-monday-2">✨</span>
-          创建新产品
-        </Button>
+        {userIsAdmin && (
+          <Button 
+            variant="primary" 
+            size="md" 
+            onClick={handleCreate}
+            className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-monday-md hover:shadow-monday-lg font-semibold"
+          >
+            <span className="mr-monday-2">✨</span>
+            创建新产品
+          </Button>
+        )}
       </div>
     </Card>
   ) : null;
@@ -295,8 +367,8 @@ export const ProductManagementPage: React.FC = () => {
         selectedProduct ? (
           <ProductDetailPanel
             product={selectedProduct}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={userIsAdmin ? handleEdit : undefined}
+            onDelete={userIsAdmin ? handleDelete : undefined}
           />
         ) : undefined
       }
@@ -329,8 +401,8 @@ export const ProductManagementPage: React.FC = () => {
                 <h2 className="text-monday-2xl font-bold text-monday-text mb-monday-6 tracking-tight">产品列表</h2>
           <ProductList
             products={products}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={userIsAdmin ? handleEdit : () => {}}
+            onDelete={userIsAdmin ? handleDelete : () => {}}
             onSelect={handleSelect}
             loading={loading}
             searchQuery={filters.search}

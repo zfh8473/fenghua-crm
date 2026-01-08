@@ -43,9 +43,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   // Simplified sidebar navigation - only main items
   const navigationItems = [
     { path: '/', label: '首页', icon: '🏠' },
+    { path: '/search', label: '搜索', icon: '🔍', adminOnly: false },
     { path: '/users', label: '用户管理', icon: '👥', adminOnly: true },
-    { path: '/products', label: '产品管理', icon: '📦', adminOnly: true },
+    { path: '/products', label: '产品管理', icon: '📦', adminOnly: false }, // Allow all roles to access products
     { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
+    { path: '/interactions', label: '互动管理', icon: '💬', adminOnly: false },
     { path: '/settings', label: '系统', icon: '⚙️', adminOnly: true },
   ];
 
@@ -64,6 +66,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       BACKEND_SPECIALIST: '后端专员',
     };
     return roleMap[role] || role;
+  };
+
+  // Get user display name (firstName + lastName, or firstName, or lastName, or email username)
+  const getUserDisplayName = (user: typeof user): string => {
+    if (!user) return '用户';
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) {
+      return user.firstName;
+    }
+    if (user.lastName) {
+      return user.lastName;
+    }
+    // Fallback to email username (part before @)
+    return user.email?.split('@')[0] || '用户';
   };
 
   return (
@@ -126,10 +144,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               {user && !sidebarCollapsed && (
                 <div className="flex items-center gap-monday-3 p-monday-3 rounded-monday-md bg-monday-bg">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-blue to-primary-purple flex items-center justify-center text-white text-monday-sm font-semibold shadow-monday-sm flex-shrink-0">
-                    {user.email?.charAt(0).toUpperCase() || 'U'}
+                    {getUserDisplayName(user).charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-monday-sm font-medium text-monday-text truncate">{user.email}</p>
+                    <p className="text-monday-sm font-medium text-monday-text truncate">{getUserDisplayName(user)}</p>
                     <p className="text-monday-xs text-monday-text-secondary">{getRoleLabel(user.role || null)}</p>
                   </div>
                 </div>
@@ -216,8 +234,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             </div>
           </aside>
         )}
+        </div>
       </div>
-    </div>
     </>
   );
 };

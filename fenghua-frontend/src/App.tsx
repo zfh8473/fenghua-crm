@@ -17,6 +17,11 @@ import { ProductBusinessProcessPage } from './products/ProductBusinessProcessPag
 import { ProductIntegrityValidationPage } from './products/ProductIntegrityValidationPage'
 import { CustomerManagementPage } from './customers/CustomerManagementPage'
 import { CustomerProductInteractionHistoryPage } from './customers/CustomerProductInteractionHistoryPage'
+import { PersonManagementPage } from './people/PersonManagementPage'
+import { InteractionsPage } from './interactions/pages/InteractionsPage'
+import { InteractionCreatePage } from './interactions/pages/InteractionCreatePage'
+import { InteractionEditPage } from './interactions/pages/InteractionEditPage'
+import { GlobalSearchPage } from './search/GlobalSearchPage'
 import { TestTailwind } from './components/TestTailwind'
 import { Card } from './components/ui'
 import './App.css'
@@ -45,6 +50,8 @@ function HomePage() {
     { path: '/products', label: '产品管理', icon: '📦', adminOnly: true },
     { path: '/product-categories', label: '类别管理', icon: '🏷️', adminOnly: true },
     { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
+    { path: '/people', label: '联系人管理', icon: '👤', adminOnly: false },
+    { path: '/interactions', label: '互动记录', icon: '💬', adminOnly: false },
     { path: '/settings', label: '系统设置', icon: '⚙️', adminOnly: true },
     { path: '/monitoring', label: '系统监控', icon: '📊', adminOnly: true },
     { path: '/logs', label: '系统日志', icon: '📝', adminOnly: true },
@@ -270,6 +277,46 @@ function App() {
         element={
           <ProtectedRoute>
             <CustomerProductInteractionHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/people"
+        element={
+          <ProtectedRoute>
+            <PersonManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interactions"
+        element={
+          <ProtectedRoute>
+            <InteractionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interactions/create"
+        element={
+          <ProtectedRoute>
+            <InteractionCreatePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interactions/:id/edit"
+        element={
+          <ProtectedRoute>
+            <InteractionEditPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/search"
+        element={
+          <ProtectedRoute>
+            <GlobalSearchPage />
           </ProtectedRoute>
         }
       />

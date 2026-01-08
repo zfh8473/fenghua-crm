@@ -79,38 +79,38 @@ development_status:
          3-7-role-based-data-access-filtering: done
          3-8-permission-operation-audit-log: done
   epic-3-retrospective: optional
-  epic-4: backlog
-  4-1-interaction-record-creation-frontend: backlog
-  4-2-interaction-record-creation-backend: backlog
-  4-3-interaction-record-additional-info: backlog
-  4-4-interaction-record-attachment-upload: backlog
-  4-5-production-progress-photo-upload: backlog
-  4-6-pre-shipment-inspection-photo-upload: backlog
-  4-7-mobile-interaction-record-creation: backlog
-  4-8-interaction-history-view: backlog
-  4-9-product-customer-interaction-records-view: backlog
-  4-10-customer-product-interaction-records-view: backlog
-  4-11-interaction-record-edit-and-delete: backlog
+  epic-4: done
+  4-1-interaction-record-creation-frontend: done
+  4-2-interaction-record-creation-backend: done
+  4-3-interaction-record-additional-info: done
+  4-4-interaction-record-attachment-upload: done
+  4-5-production-progress-photo-upload: done
+  4-6-pre-shipment-inspection-photo-upload: done
+  4-7-mobile-interaction-record-creation: done
+  4-8-interaction-history-view: done
+  4-9-product-customer-interaction-records-view: done
+  4-10-customer-product-interaction-records-view: done
+  4-11-interaction-record-edit-and-delete: done
   epic-4-retrospective: optional
-  epic-5: backlog
-  5-1-quick-record-form-basic: backlog
-  5-2-product-auto-completion: backlog
-  5-3-customer-auto-completion: backlog
-  5-4-quick-record-templates: backlog
-  5-5-quick-record-mobile-optimization: backlog
-  5-6-quick-record-smart-pre-fill: backlog
+  epic-5: done
+  5-1-quick-record-form-basic: done
+  5-2-product-auto-completion: done
+  5-3-customer-auto-completion: done
+  5-4-quick-record-templates: done
+  5-5-quick-record-mobile-optimization: done
+  5-6-quick-record-smart-pre-fill: done
   epic-5-retrospective: optional
-  epic-6: backlog
-  6-1-customer-search: backlog
-  6-2-product-search: backlog
-  6-3-interaction-record-search: backlog
-  6-4-advanced-search: backlog
-  6-5-search-results-timeline-view: backlog
-  6-6-search-results-sorting: backlog
-  6-7-search-results-filtering: backlog
+  epic-6: in-progress
+  6-1-customer-search: done
+  6-2-product-search: done
+  6-3-interaction-record-search: done
+  6-4-advanced-search: done
+  6-5-search-results-timeline-view: done
+  6-6-search-results-sorting: done
+  6-7-search-results-filtering: done
   epic-6-retrospective: optional
-  epic-7: backlog
-  7-1-customer-data-bulk-import: backlog
+  epic-7: in-progress
+  7-1-customer-data-bulk-import: ready-for-dev
   7-2-product-data-bulk-import: backlog
   7-3-interaction-record-data-bulk-import: backlog
   7-4-data-export: backlog
@@ -172,8 +172,16 @@ development_status:
   epic-16: in-progress
   16-1-database-design-and-migration-scripts: done
   16-2-replace-authentication-system: done
-  16-3-replace-user-and-role-management: in-progress
-  16-4-replace-company-and-people-management: backlog
-  16-5-update-products-and-interactions: backlog
+  16-3-replace-user-and-role-management: done
+  16-4-replace-company-and-people-management: done
+  16-5-update-products-and-interactions: in-progress
   16-6-remove-twenty-dependencies-and-cleanup: backlog
   epic-16-retrospective: optional
+  epic-17: done
+  17-1-product-customer-association-data-model-and-api: done
+  17-2-associate-customers-when-creating-product: done
+  17-3-associate-products-when-creating-customer: done
+  17-4-product-details-association-management: done
+  17-5-customer-details-association-management: done
+  17-6-association-and-interaction-integration: done
+  epic-17-retrospective: optional

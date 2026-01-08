@@ -20,6 +20,7 @@ interface CustomerSearchProps {
   initialFilters?: CustomerSearchFilters;
   loading?: boolean;
   userRole?: string;
+  inputMode?: 'search' | 'text' | 'none' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal';
 }
 
 export const CustomerSearch: React.FC<CustomerSearchProps> = ({
@@ -27,6 +28,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
   initialFilters = {},
   loading = false,
   userRole,
+  inputMode = 'text',
 }) => {
   const [searchQuery, setSearchQuery] = useState(initialFilters.search || '');
   const [selectedCustomerType, setSelectedCustomerType] = useState<'BUYER' | 'SUPPLIER' | ''>(
@@ -115,6 +117,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
         <div className="flex-1 w-full sm:w-auto min-w-0">
           <Input
             type="text"
+            inputMode={inputMode}
             placeholder="搜索客户名称或客户代码..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

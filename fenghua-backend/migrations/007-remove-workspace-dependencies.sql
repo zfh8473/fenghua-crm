@@ -1,7 +1,8 @@
 -- Migration: Remove workspace dependencies
 -- Description: Removes workspace_id from existing tables and updates foreign key constraints
 -- Date: 2025-12-26
--- Story: 16.1
+-- Story: 16.1, 16.5
+-- Note: Must execute 006-create-companies-and-people-tables.sql first
 
 -- Update products table: remove workspace_id, ensure created_by/updated_by exist
 DO $$

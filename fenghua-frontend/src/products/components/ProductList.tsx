@@ -8,6 +8,8 @@
 import { Product } from '../products.service';
 import { Table, Column } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
+import { useAuth } from '../../auth/AuthContext';
+import { isAdmin } from '../../common/constants/roles';
 // import './ProductList.css'; // Removed
 
 interface ProductListProps {
@@ -48,6 +50,9 @@ export const ProductList: React.FC<ProductListProps> = ({
   loading = false,
   searchQuery,
 }) => {
+  const { user } = useAuth();
+  const userIsAdmin = isAdmin(user?.role);
+
   const getStatusLabel = (status: string): string => {
     const statusMap: Record<string, string> = {
       active: '活跃',
@@ -101,7 +106,7 @@ export const ProductList: React.FC<ProductListProps> = ({
           <table className="w-full">
             <thead>
               <tr className="bg-monday-bg border-b border-gray-200">
-                {['产品名称', 'HS编码', '类别', '状态', '描述', '创建时间', '操作'].map((header) => (
+                {['产品名称', 'HS编码', '类别', '状态', '描述', '创建时间', ...(userIsAdmin ? ['操作'] : [])].map((header) => (
                   <th key={header} className="p-monday-2 px-monday-4 text-left text-monday-sm font-semibold text-monday-text">
                     {header}
                   </th>
@@ -110,7 +115,7 @@ export const ProductList: React.FC<ProductListProps> = ({
             </thead>
             <tbody>
               <tr>
-                <td colSpan={7} className="p-monday-12 text-center text-monday-text-secondary">
+                <td colSpan={userIsAdmin ? 7 : 6} className="p-monday-12 text-center text-monday-text-secondary">
                   暂无产品
                 </td>
               </tr>
@@ -172,24 +177,31 @@ export const ProductList: React.FC<ProductListProps> = ({
       header: '操作',
       render: (_, product) => (
         <div className="flex gap-monday-2">
-          <Button
-            onClick={() => onEdit(product)}
-            variant="secondary"
-            size="sm"
-            title="编辑"
-            className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50 hover:text-primary-blue font-medium shadow-monday-sm"
-          >
-            ✏️ 编辑
-          </Button>
-          <Button
-            onClick={() => onDelete(product)}
-            variant="ghost"
-            size="sm"
-            title="删除"
-            className="bg-primary-red/10 text-primary-red hover:bg-primary-red/20 hover:text-primary-red font-medium border border-primary-red/20 hover:border-primary-red/40 shadow-monday-sm"
-          >
-            🗑️ 删除
-          </Button>
+          {userIsAdmin && (
+            <>
+              <Button
+                onClick={() => onEdit(product)}
+                variant="secondary"
+                size="sm"
+                title="编辑"
+                className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50 hover:text-primary-blue font-medium shadow-monday-sm"
+              >
+                ✏️ 编辑
+              </Button>
+              <Button
+                onClick={() => onDelete(product)}
+                variant="ghost"
+                size="sm"
+                title="删除"
+                className="bg-primary-red/10 text-primary-red hover:bg-primary-red/20 hover:text-primary-red font-medium border border-primary-red/20 hover:border-primary-red/40 shadow-monday-sm"
+              >
+                🗑️ 删除
+              </Button>
+            </>
+          )}
+          {!userIsAdmin && (
+            <span className="text-monday-xs text-monday-text-placeholder">仅查看</span>
+          )}
         </div>
       ),
     },

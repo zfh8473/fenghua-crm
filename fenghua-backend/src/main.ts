@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, BadRequestException, ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -39,14 +39,66 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Enable validation pipe
+  // Enable validation pipe with detailed error messages
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => {
+        // Format validation errors for better error messages
+        const messages = errors.map((error) => {
+          if (error.constraints) {
+            return Object.values(error.constraints).join(', ');
+          }
+          return `${error.property} 验证失败`;
+        });
+        return new BadRequestException({
+          message: messages.length > 0 ? messages.join('; ') : '请求数据验证失败',
+          errors: errors,
+        });
+      },
     }),
   );
+
+  // Add global exception filter for better error logging
+  const globalExceptionFilter: ExceptionFilter = {
+    catch(exception: any, host: ArgumentsHost) {
+      const ctx = host.switchToHttp();
+      const response = ctx.getResponse();
+      const request = ctx.getRequest();
+      
+      const status = exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      
+      const message = exception instanceof HttpException
+        ? exception.getResponse()
+        : exception.message || 'Internal server error';
+      
+      // Always log errors to console (will be captured by log file)
+      console.error('[Global Exception Filter]', {
+        status,
+        message: typeof message === 'string' ? message : JSON.stringify(message),
+        error: exception instanceof Error ? exception.message : String(exception),
+        stack: exception instanceof Error ? exception.stack : undefined,
+        url: request.url,
+        method: request.method,
+        body: request.body,
+        query: request.query,
+        timestamp: new Date().toISOString(),
+      });
+      
+      response.status(status).json({
+        statusCode: status,
+        message: typeof message === 'string' ? message : (message as any)?.message || 'Internal server error',
+        timestamp: new Date().toISOString(),
+        path: request.url,
+      });
+    },
+  };
+  
+  app.useGlobalFilters(globalExceptionFilter);
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

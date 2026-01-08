@@ -12,14 +12,21 @@ inputDocuments: ['prd.md', 'architecture.md', 'ux-design-specification.md']
 ## 统计信息
 
 ### Epic 统计
-- **总 Epic 数：** 16 个
+- **总 Epic 数：** 17 个（包含 Epic 0 和 Epic 17）
 - **MVP 阶段 Epic：** 14 个（Epic 1-14）
 - **Growth 阶段 Epic：** 1 个（Epic 15）
 - **架构重构 Epic：** 1 个（Epic 16）
+- **UI 基础设施 Epic：** 1 个（Epic 0）
+- **关联管理 Epic：** 1 个（Epic 17）
 
 ### Story 统计
-- **总 Story 数：** 95 个
+- **总 Story 数：** 约 100+ 个
 - **平均每个 Epic 的 Story 数：** 约 5.9 个
+
+### 完成状态（截至 2025-01-03）
+- **已完成 Epic：** 4 个（Epic 0, 1, 2, 3, 4）
+- **进行中 Epic：** 2 个（Epic 16, 17）
+- **待开发 Epic：** 11 个（Epic 5-15）
 
 ## Epic 列表和 Story 数量
 

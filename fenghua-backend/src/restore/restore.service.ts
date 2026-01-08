@@ -13,9 +13,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BackupService } from '../backup/backup.service';
 import { AuditService } from '../audit/audit.service';
-import { LogsService } from '../logs/logs.service';
+// import { LogsService } from '../logs/logs.service'; // TODO: LogsModule not implemented yet
 import { SettingsService } from '../settings/settings.service';
-import { LogLevel, ErrorType } from '../logs/dto/log-query.dto';
+// import { LogLevel, ErrorType } from '../logs/dto/log-query.dto'; // TODO: LogsModule not implemented yet
 import { RestoreStatus } from './dto/restore-request.dto';
 import { Pool } from 'pg';
 
@@ -33,7 +33,7 @@ export class RestoreService implements OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly backupService: BackupService,
     private readonly auditService: AuditService,
-    private readonly logsService: LogsService,
+    // private readonly logsService: LogsService, // TODO: LogsModule not implemented yet
     private readonly settingsService: SettingsService,
   ) {
     this.initializeDatabaseConnection();
@@ -250,11 +250,12 @@ export class RestoreService implements OnModuleDestroy {
       this.restoreStatuses.set(restoreId, restoreStatus);
 
       // Log restore success
-      this.logsService.log(LogLevel.INFO, `Database restore completed successfully: ${backupId}`, 'RestoreService', operatorId, {
-        restoreId,
-        backupId,
-        snapshotPath,
-      });
+      // TODO: LogsModule not implemented yet
+      // this.logsService.log(LogLevel.INFO, `Database restore completed successfully: ${backupId}`, 'RestoreService', operatorId, {
+      //   restoreId,
+      //   backupId,
+      //   snapshotPath,
+      // });
 
       // Record audit log
       await this.auditService.log({
@@ -293,10 +294,11 @@ export class RestoreService implements OnModuleDestroy {
       this.restoreStatuses.set(restoreId, restoreStatus);
 
       // Log restore failure
-      await this.logsService.logError(ErrorType.SYSTEM, `Database restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : '', operatorId, '/restore', undefined, {
-        restoreId,
-        backupId,
-      });
+      // TODO: LogsModule not implemented yet
+      // await this.logsService.logError(ErrorType.SYSTEM, `Database restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : '', operatorId, '/restore', undefined, {
+      //   restoreId,
+      //   backupId,
+      // });
 
       // Send notification (MVP: log to console, production: send email)
       await this.sendRestoreFailureNotification(operatorId, error instanceof Error ? error.message : 'Unknown error');
@@ -324,10 +326,11 @@ export class RestoreService implements OnModuleDestroy {
         this.logger.warn(`Notification message: ${message}`);
         
         // Log to system logs
-        this.logsService.log(LogLevel.WARN, `Restore ${success ? 'success' : 'failure'} notification (would send to: ${settings.notificationRecipients.join(', ')})`, 'RestoreService', operatorId, {
-          message,
-          recipients: settings.notificationRecipients,
-        });
+        // TODO: LogsModule not implemented yet
+        // this.logsService.log(LogLevel.WARN, `Restore ${success ? 'success' : 'failure'} notification (would send to: ${settings.notificationRecipients.join(', ')})`, 'RestoreService', operatorId, {
+        //   message,
+        //   recipients: settings.notificationRecipients,
+        // });
         
         // TODO: In production, implement email sending using SendGrid, AWS SES, etc.
       } else {

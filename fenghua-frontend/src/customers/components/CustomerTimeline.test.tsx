@@ -226,7 +226,7 @@ describe('CustomerTimeline', () => {
     });
     await waitFor(() => expect(screen.getByText('附件：')).toBeInTheDocument());
     expect(screen.getByText('document.pdf')).toBeInTheDocument();
-    expect(screen.getByText('(1.0 KB)')).toBeInTheDocument();
+    expect(screen.getByText('1.0 KB')).toBeInTheDocument();
   });
 
   it('should change sort order when sort dropdown changes', async () => {

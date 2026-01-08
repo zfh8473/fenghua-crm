@@ -135,3 +135,5 @@ export class CustomerTimelineQueryDto {
   dateRange?: 'week' | 'month' | 'year' | 'all' = 'all';
 }
 
+
+

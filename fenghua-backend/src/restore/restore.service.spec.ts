@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { RestoreService } from './restore.service';
 import { BackupService } from '../backup/backup.service';
 import { AuditService } from '../audit/audit.service';
-import { LogsService } from '../logs/logs.service';
+// import { LogsService } from '../logs/logs.service'; // TODO: LogsModule not implemented yet
 import { SettingsService } from '../settings/settings.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Pool } from 'pg';
@@ -32,7 +32,7 @@ describe('RestoreService', () => {
   let configService: jest.Mocked<ConfigService>;
   let backupService: jest.Mocked<BackupService>;
   let auditService: jest.Mocked<AuditService>;
-  let logsService: jest.Mocked<LogsService>;
+  // let logsService: jest.Mocked<LogsService>; // TODO: LogsModule not implemented yet
   let settingsService: jest.Mocked<SettingsService>;
 
   const mockBackupId = 'backup-123';
@@ -73,10 +73,11 @@ describe('RestoreService', () => {
       log: jest.fn().mockResolvedValue(undefined),
     };
 
-    const mockLogsService = {
-      log: jest.fn(),
-      logError: jest.fn().mockResolvedValue(undefined),
-    };
+    // TODO: LogsModule not implemented yet
+    // const mockLogsService = {
+    //   log: jest.fn(),
+    //   logError: jest.fn().mockResolvedValue(undefined),
+    // };
 
     const mockSettingsService = {
       getAllSettings: jest.fn().mockResolvedValue({
@@ -100,10 +101,11 @@ describe('RestoreService', () => {
           provide: AuditService,
           useValue: mockAuditService,
         },
-        {
-          provide: LogsService,
-          useValue: mockLogsService,
-        },
+        // TODO: LogsModule not implemented yet
+        // {
+        //   provide: LogsService,
+        //   useValue: mockLogsService,
+        // },
         {
           provide: SettingsService,
           useValue: mockSettingsService,
@@ -115,7 +117,7 @@ describe('RestoreService', () => {
     configService = module.get(ConfigService);
     backupService = module.get(BackupService);
     auditService = module.get(AuditService);
-    logsService = module.get(LogsService);
+    // logsService = module.get(LogsService); // TODO: LogsModule not implemented yet
     settingsService = module.get(SettingsService);
 
     // Mock fs.existsSync

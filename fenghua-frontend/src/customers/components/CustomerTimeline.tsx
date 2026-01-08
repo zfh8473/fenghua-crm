@@ -6,8 +6,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -17,6 +17,12 @@ import {
   isDirector,
   isAdmin,
 } from '../../common/constants/roles';
+import { PhotoPreview } from '../../attachments/components/PhotoPreview';
+import { Attachment } from '../../attachments/services/attachments.service';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
+import { TIMELINE_ERRORS, CUSTOMER_ERRORS, PHOTO_PREVIEW_ERRORS, GENERIC_ERRORS, INTERACTION_EDIT_ERRORS } from '../../common/constants/error-messages';
+import { interactionsService } from '../../interactions/services/interactions.service';
+import { toast } from 'react-toastify';
 
 interface CustomerTimelineProps {
   customerId: string;
@@ -129,6 +135,48 @@ const getTimeLabel = (dateString: string): string => {
 };
 
 /**
+ * Get file type icon based on attachment type
+ * 
+ * @param attachment - File attachment
+ * @returns Icon emoji string
+ */
+const getFileIcon = (attachment: FileAttachment): string => {
+  if (attachment.fileType === 'photo' || attachment.mimeType?.startsWith('image/')) {
+    return '🖼️';
+  }
+  if (attachment.mimeType === 'application/pdf' || attachment.fileName.endsWith('.pdf')) {
+    return '📄';
+  }
+  if (
+    attachment.mimeType?.includes('word') ||
+    attachment.fileName.endsWith('.docx') ||
+    attachment.fileName.endsWith('.doc')
+  ) {
+    return '📝';
+  }
+  if (
+    attachment.mimeType?.includes('excel') ||
+    attachment.fileName.endsWith('.xlsx') ||
+    attachment.fileName.endsWith('.xls')
+  ) {
+    return '📊';
+  }
+  return '📎';
+};
+
+/**
+ * Format file size to human-readable string
+ * 
+ * @param bytes - File size in bytes
+ * @returns Formatted file size string
+ */
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+/**
  * Timeline Interaction Card Component
  * 
  * Displays a single interaction in the timeline with click-to-view-details functionality
@@ -136,21 +184,29 @@ const getTimeLabel = (dateString: string): string => {
  * @param interaction - Interaction data to display
  * @param isLast - Whether this is the last interaction in the timeline
  * @param onCardClick - Callback when card is clicked to show detail modal
+ * @param onPhotoClick - Callback when photo attachment is clicked to show photo preview
  */
 const TimelineInteractionCard: React.FC<{
   interaction: Interaction;
   isLast: boolean;
   onCardClick: (interaction: Interaction) => void;
-}> = ({ interaction, isLast, onCardClick }) => {
+  onPhotoClick: (attachment: FileAttachment, allAttachments: FileAttachment[]) => void;
+  currentUserId?: string;
+  onDelete?: (interactionId: string) => void;
+}> = ({ interaction, isLast, onCardClick, onPhotoClick, currentUserId, onDelete }) => {
   /**
-   * Handle attachment click - opens attachment in new tab safely
+   * Handle document attachment click - download document safely
    * 
-   * @param attachment - File attachment to open
+   * Creates a temporary anchor element to trigger download while preventing
+   * tabnabbing attacks by using safe link creation.
+   * 
+   * @param attachment - File attachment to download
    */
-  const handleAttachmentClick = (attachment: FileAttachment) => {
+  const handleDocumentClick = (attachment: FileAttachment) => {
     // Use safe link creation to prevent tabnabbing attacks
     const link = document.createElement('a');
     link.href = attachment.fileUrl;
+    link.download = attachment.fileName;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.click();
@@ -242,19 +298,65 @@ const TimelineInteractionCard: React.FC<{
             <div className="mt-monday-3 pt-monday-3 border-t border-gray-200">
               <div className="text-monday-xs text-monday-text-secondary mb-monday-2">附件：</div>
               <div className="flex flex-wrap gap-monday-2">
-                {interaction.attachments.map((attachment) => (
-                  <button
-                    key={attachment.id}
-                    onClick={() => handleAttachmentClick(attachment)}
-                    className="flex items-center gap-monday-1 px-monday-2 py-monday-1 rounded-monday-md bg-gray-50 hover:bg-gray-100 text-monday-xs text-monday-text-secondary hover:text-monday-text transition-colors"
-                  >
-                    <span>📎</span>
-                    <span>{attachment.fileName}</span>
-                    <span className="text-monday-xs opacity-60">
-                      ({(attachment.fileSize / 1024).toFixed(1)} KB)
-                    </span>
-                  </button>
-                ))}
+                {interaction.attachments.map((attachment) => {
+                  const isPhoto =
+                    attachment.fileType === 'photo' || attachment.mimeType?.startsWith('image/');
+
+                  if (isPhoto) {
+                    // 照片附件：显示缩略图
+                    return (
+                      <button
+                        key={attachment.id}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 防止触发卡片点击
+                          onPhotoClick(attachment, interaction.attachments);
+                        }}
+                        className="relative w-16 h-16 rounded overflow-hidden border border-gray-200 hover:border-primary-blue transition-colors"
+                        aria-label={`查看照片: ${attachment.fileName}`}
+                      >
+                        <img
+                          src={attachment.fileUrl}
+                          alt={attachment.fileName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // 缩略图加载失败，显示图标
+                            const target = e.currentTarget;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) {
+                              fallback.classList.remove('hidden');
+                            }
+                          }}
+                        />
+                        <span className="hidden absolute inset-0 flex items-center justify-center text-2xl bg-gray-100">
+                          {getFileIcon(attachment)}
+                        </span>
+                      </button>
+                    );
+                  } else {
+                    // 文档附件：显示图标和文件名
+                    return (
+                      <a
+                        key={attachment.id}
+                        href={attachment.fileUrl}
+                        download={attachment.fileName}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 防止触发卡片点击
+                          handleDocumentClick(attachment);
+                        }}
+                        className="flex items-center gap-monday-2 px-monday-3 py-monday-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                      >
+                        <span className="text-lg">{getFileIcon(attachment)}</span>
+                        <div className="flex flex-col">
+                          <span className="text-monday-xs font-medium">{attachment.fileName}</span>
+                          <span className="text-monday-xs text-gray-500">
+                            {formatFileSize(attachment.fileSize)}
+                          </span>
+                        </div>
+                      </a>
+                    );
+                  }
+                })}
               </div>
             </div>
           )}
@@ -266,6 +368,41 @@ const TimelineInteractionCard: React.FC<{
                 创建者：{interaction.creatorFirstName} {interaction.creatorLastName} (
                 {interaction.creatorEmail})
               </span>
+            </div>
+          )}
+
+          {/* 编辑和删除按钮（只在当前用户是创建者时显示） */}
+          {interaction.createdBy && currentUserId && interaction.createdBy === currentUserId && (
+            <div className="mt-monday-3 pt-monday-3 border-t border-gray-200 flex gap-monday-2">
+              <Link
+                to={`/interactions/${interaction.id}/edit`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1"
+              >
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full"
+                >
+                  编辑
+                </Button>
+              </Link>
+              {onDelete && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(interaction.id);
+                  }}
+                  className="flex-1 text-primary-red hover:text-primary-red/80 hover:border-primary-red"
+                >
+                  删除
+                </Button>
+              )}
             </div>
           )}
         </Card>
@@ -283,7 +420,21 @@ const TimelineInteractionCard: React.FC<{
  * @param customerId - UUID of the customer to display timeline for
  */
 export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }) => {
+  // Validate customerId format (UUID)
+  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customerId);
+  
+  if (!isValidUUID) {
+    return (
+      <Card variant="outlined" className="p-monday-4">
+        <div className="text-center py-monday-8">
+          <p className="text-monday-sm text-primary-red">{CUSTOMER_ERRORS.INVALID_ID}</p>
+        </div>
+      </Card>
+    );
+  }
+
   const { token, user } = useAuth();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -293,6 +444,62 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  
+  // 照片预览状态
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [photoAttachments, setPhotoAttachments] = useState<Attachment[]>([]);
+
+  // 删除确认对话框状态
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean;
+    interactionId: string | null;
+  }>({
+    show: false,
+    interactionId: null,
+  });
+
+  const queryClient = useQueryClient();
+
+  // 删除互动记录的 mutation
+  const deleteMutation = useMutation({
+    mutationFn: (interactionId: string) => interactionsService.deleteInteraction(interactionId),
+    onSuccess: () => {
+      toast.success('互动记录删除成功');
+      // 刷新时间线数据
+      queryClient.invalidateQueries({ queryKey: ['customer-timeline', customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customer-interactions'] });
+      queryClient.invalidateQueries({ queryKey: ['product-interactions'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-product-interactions'] });
+      setDeleteConfirm({ show: false, interactionId: null });
+    },
+    onError: (error: Error) => {
+      const errorMessage = error.message || INTERACTION_EDIT_ERRORS.DELETE_FAILED;
+      toast.error(errorMessage);
+    },
+  });
+
+  /**
+   * 处理删除按钮点击
+   */
+  const handleDeleteClick = (interactionId: string) => {
+    setDeleteConfirm({ show: true, interactionId });
+  };
+
+  /**
+   * 确认删除
+   */
+  const handleConfirmDelete = () => {
+    if (deleteConfirm.interactionId) {
+      deleteMutation.mutate(deleteConfirm.interactionId);
+    }
+  };
+
+  /**
+   * 取消删除
+   */
+  const handleCancelDelete = () => {
+    setDeleteConfirm({ show: false, interactionId: null });
+  };
 
   // Determine title based on role
   let title = '客户时间线';
@@ -327,6 +534,74 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
     if (previousFocusRef.current) {
       previousFocusRef.current.focus();
     }
+  };
+
+  /**
+   * Handle photo click - open photo preview
+   * 
+   * @param attachment - Photo attachment that was clicked
+   * @param allAttachments - All attachments for the interaction
+   */
+  const handlePhotoClick = (attachment: FileAttachment, allAttachments: FileAttachment[]) => {
+    // 筛选出所有照片附件
+    const photos = allAttachments.filter(
+      (a) => a.fileType === 'photo' || a.mimeType?.startsWith('image/'),
+    );
+
+    // 找到当前照片的索引
+    const index = photos.findIndex((a) => a.id === attachment.id);
+
+    if (index !== -1) {
+      // 转换为 Attachment 类型（PhotoPreview 需要的格式）
+      // 注意：PhotoPreview 组件只需要 id, fileName, fileUrl, fileSize, fileType, mimeType
+      // storageProvider, storageKey, createdAt, createdBy 是 Attachment 接口的必需字段，
+      // 但 PhotoPreview 实际上不使用这些字段，所以使用合理的默认值
+      const photoAttachmentsAsAttachment: Attachment[] = photos.map((p) => ({
+        id: p.id,
+        fileName: p.fileName,
+        fileUrl: p.fileUrl,
+        fileSize: p.fileSize,
+        fileType: p.fileType,
+        mimeType: p.mimeType,
+        // 这些字段在 PhotoPreview 中不使用，但为了满足 Attachment 接口要求，使用默认值
+        storageProvider: 'timeline', // 标识来源为 timeline API
+        storageKey: p.id, // 使用 attachment id 作为 storageKey
+        createdAt: new Date(), // 使用当前时间作为默认值
+        createdBy: '', // 从 timeline API 返回的数据可能没有这个字段
+      }));
+
+      setPhotoAttachments(photoAttachmentsAsAttachment);
+      setSelectedPhotoIndex(index);
+    }
+  };
+
+  /**
+   * Handle photo preview navigation - next photo
+   */
+  const handlePhotoNext = () => {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < photoAttachments.length - 1) {
+      setSelectedPhotoIndex(selectedPhotoIndex + 1);
+    }
+  };
+
+  /**
+   * Handle photo preview navigation - previous photo
+   */
+  const handlePhotoPrevious = () => {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex > 0) {
+      setSelectedPhotoIndex(selectedPhotoIndex - 1);
+    }
+  };
+
+  /**
+   * Handle create interaction button click
+   */
+  const handleCreateInteraction = () => {
+    navigate('/interactions/create', {
+      state: {
+        customerId: customerId,
+      },
+    });
   };
 
   // Handle ESC key to close modal and focus trap
@@ -383,10 +658,11 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
   }>({
     queryKey: ['customer-timeline', customerId, page, limit, sortOrder, dateRange],
     queryFn: async () => {
-      const apiBaseUrl =
-        import.meta.env.VITE_API_BASE_URL ||
-        import.meta.env.VITE_BACKEND_URL ||
-        'http://localhost:3001';
+      // Use relative path /api to leverage Vite proxy in development
+      // In production, set VITE_API_BASE_URL to the full backend URL
+      const apiBaseUrl = (import.meta.env?.VITE_API_BASE_URL as string) || 
+                        (import.meta.env?.VITE_BACKEND_URL as string) || 
+                        '/api';
       const response = await fetch(
         `${apiBaseUrl}/customers/${customerId}/timeline?page=${page}&limit=${limit}&sortOrder=${sortOrder}&dateRange=${dateRange}`,
         {
@@ -398,12 +674,12 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
       );
       if (!response.ok) {
         if (response.status === 403) {
-          throw new Error('您没有权限查看时间线');
+          throw new Error(TIMELINE_ERRORS.NO_PERMISSION);
         }
         if (response.status === 404) {
-          throw new Error('客户不存在');
+          throw new Error(TIMELINE_ERRORS.NOT_FOUND);
         }
-        throw new Error('获取时间线失败');
+        throw new Error(TIMELINE_ERRORS.LOAD_FAILED);
       }
       return response.json();
     },
@@ -428,12 +704,17 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
     return (
       <Card variant="outlined" className="p-monday-4">
         <div className="text-center py-monday-8">
-          <p className="text-monday-sm text-primary-red mb-monday-2">
-            {error instanceof Error ? error.message : '加载失败'}
+          <p className="text-monday-sm text-primary-red mb-monday-4">
+            {error instanceof Error ? error.message : GENERIC_ERRORS.LOAD_FAILED}
           </p>
-          <Button size="sm" onClick={() => refetch()}>
-            重试
-          </Button>
+          <div className="flex gap-monday-2 justify-center">
+            <Button size="sm" onClick={() => refetch()} variant="secondary">
+              重试
+            </Button>
+            <Button onClick={handleCreateInteraction} variant="primary">
+              记录新互动
+            </Button>
+          </div>
         </div>
       </Card>
     );
@@ -444,14 +725,12 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
       <Card variant="outlined" className="p-monday-4">
         <div className="text-center py-monday-8">
           <div className="text-monday-4xl mb-monday-4 opacity-50">📅</div>
-          <p className="text-monday-base text-monday-text-secondary mb-monday-2">
+          <p className="text-monday-base text-monday-text-secondary mb-monday-4">
             该客户尚未有任何互动记录
           </p>
-          <Link to={`/interactions/create?customerId=${customerId}`}>
-            <Button size="sm" variant="secondary">
-              记录新互动
-            </Button>
-          </Link>
+          <Button onClick={handleCreateInteraction} variant="primary">
+            记录新互动
+          </Button>
         </div>
       </Card>
     );
@@ -508,6 +787,9 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
               interaction={interaction}
               isLast={index === data.interactions.length - 1}
               onCardClick={handleCardClick}
+              onPhotoClick={handlePhotoClick}
+              currentUserId={user?.id}
+              onDelete={handleDeleteClick}
             />
           ))}
         </div>
@@ -660,26 +942,60 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
                       </div>
                       <div className="flex flex-wrap gap-monday-2">
                         {selectedInteraction.attachments.map((attachment) => {
-                          const handleAttachmentClick = () => {
-                            const link = document.createElement('a');
-                            link.href = attachment.fileUrl;
-                            link.target = '_blank';
-                            link.rel = 'noopener noreferrer';
-                            link.click();
-                          };
-                          return (
-                            <button
-                              key={attachment.id}
-                              onClick={handleAttachmentClick}
-                              className="flex items-center gap-monday-2 px-monday-3 py-monday-2 rounded-monday-md bg-gray-50 hover:bg-gray-100 text-monday-sm text-monday-text-secondary hover:text-monday-text transition-colors"
-                            >
-                              <span>📎</span>
-                              <span>{attachment.fileName}</span>
-                              <span className="text-monday-xs opacity-60">
-                                ({(attachment.fileSize / 1024).toFixed(1)} KB)
-                              </span>
-                            </button>
-                          );
+                          const isPhoto =
+                            attachment.fileType === 'photo' ||
+                            attachment.mimeType?.startsWith('image/');
+
+                          if (isPhoto) {
+                            // 照片附件：显示缩略图
+                            return (
+                              <button
+                                key={attachment.id}
+                                onClick={() =>
+                                  handlePhotoClick(attachment, selectedInteraction.attachments)
+                                }
+                                className="relative w-16 h-16 rounded overflow-hidden border border-gray-200 hover:border-primary-blue transition-colors"
+                                aria-label={`查看照片: ${attachment.fileName}`}
+                              >
+                                <img
+                                  src={attachment.fileUrl}
+                                  alt={attachment.fileName}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.currentTarget;
+                                    target.style.display = 'none';
+                                    const fallback = target.nextElementSibling as HTMLElement;
+                                    if (fallback) {
+                                      fallback.classList.remove('hidden');
+                                    }
+                                  }}
+                                />
+                                <span className="hidden absolute inset-0 flex items-center justify-center text-2xl bg-gray-100">
+                                  {getFileIcon(attachment)}
+                                </span>
+                              </button>
+                            );
+                          } else {
+                            // 文档附件：显示图标和文件名
+                            return (
+                              <a
+                                key={attachment.id}
+                                href={attachment.fileUrl}
+                                download={attachment.fileName}
+                                className="flex items-center gap-monday-2 px-monday-3 py-monday-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                              >
+                                <span className="text-lg">{getFileIcon(attachment)}</span>
+                                <div className="flex flex-col">
+                                  <span className="text-monday-xs font-medium">
+                                    {attachment.fileName}
+                                  </span>
+                                  <span className="text-monday-xs text-gray-500">
+                                    {formatFileSize(attachment.fileSize)}
+                                  </span>
+                                </div>
+                              </a>
+                            );
+                          }
                         })}
                       </div>
                     </div>
@@ -710,6 +1026,84 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Photo Preview Modal */}
+      {selectedPhotoIndex !== null && photoAttachments.length > 0 && (
+        <ErrorBoundary
+          fallback={
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-monday-4">
+              <Card variant="outlined" className="p-monday-4 max-w-md">
+                <div className="text-center">
+                  <p className="text-monday-sm text-primary-red mb-monday-4">
+                    {PHOTO_PREVIEW_ERRORS.LOAD_FAILED}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setSelectedPhotoIndex(null);
+                      setPhotoAttachments([]);
+                    }}
+                    variant="primary"
+                  >
+                    关闭
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          }
+          onError={(error) => {
+            console.error('PhotoPreview error:', error);
+          }}
+        >
+          <PhotoPreview
+            photos={photoAttachments}
+            currentIndex={selectedPhotoIndex}
+            onClose={() => {
+              setSelectedPhotoIndex(null);
+              setPhotoAttachments([]);
+            }}
+            onNext={handlePhotoNext}
+            onPrevious={handlePhotoPrevious}
+          />
+        </ErrorBoundary>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm.show && deleteConfirm.interactionId && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-monday-4 z-50" 
+          onClick={handleCancelDelete}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              handleCancelDelete();
+            }
+          }}
+          role="presentation"
+          tabIndex={-1}
+        >
+          <Card variant="elevated" className="max-w-md w-full" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+            <h3 id="delete-confirm-title" className="text-monday-xl font-semibold text-monday-text mb-monday-4">确认删除</h3>
+            <p className="text-monday-base text-monday-text mb-monday-6">
+              确定要删除这条互动记录吗？
+            </p>
+            <p className="text-monday-sm text-monday-text-secondary mb-monday-6">
+              此操作将执行软删除，数据保留用于审计。
+            </p>
+            <div className="flex justify-end gap-monday-3">
+              <Button onClick={handleCancelDelete} variant="outline">
+                取消
+              </Button>
+              <Button 
+                onClick={handleConfirmDelete} 
+                variant="primary" 
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? '删除中...' : '确认删除'}
+              </Button>
+            </div>
+          </Card>
         </div>
       )}
     </>

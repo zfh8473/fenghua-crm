@@ -38,3 +38,5 @@ COMMENT ON COLUMN integrity_validation_reports.issues IS 'JSONB array of Integri
 COMMENT ON COLUMN integrity_validation_reports.query_filter IS 'JSONB object with productId/customerId if validation was filtered';
 COMMENT ON COLUMN integrity_validation_reports.validation_type IS 'Type of validation: manual (triggered by admin) or scheduled (automatic)';
 
+
+

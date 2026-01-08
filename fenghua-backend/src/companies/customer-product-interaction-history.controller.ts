@@ -52,6 +52,7 @@ export class CustomerProductInteractionHistoryController {
         token,
         query.page || 1,
         query.limit || 20,
+        query.sortOrder || 'desc',
       );
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ForbiddenException) {

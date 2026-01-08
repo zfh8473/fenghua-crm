@@ -52,3 +52,5 @@ WHERE customer_code IN (
 )
 GROUP BY customer_type;
 
+
+

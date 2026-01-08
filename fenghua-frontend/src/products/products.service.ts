@@ -5,7 +5,11 @@
  * All custom code is proprietary and not open source.
  */
 
-const API_URL = (import.meta.env?.VITE_BACKEND_URL as string) || 'http://localhost:3001';
+// Use relative path /api to leverage Vite proxy in development
+// In production, set VITE_API_BASE_URL to the full backend URL
+const API_URL = (import.meta.env?.VITE_API_BASE_URL as string) || (import.meta.env?.VITE_BACKEND_URL as string) || '/api';
+
+import { AssociationType } from './types/association-types';
 
 export interface Product {
   id: string;
@@ -16,7 +20,6 @@ export interface Product {
   status: 'active' | 'inactive' | 'archived';
   specifications?: Record<string, unknown>;
   imageUrl?: string;
-  workspaceId: string;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
@@ -158,6 +161,68 @@ class ProductsService {
    */
   async deleteProduct(id: string): Promise<void> {
     return this.request<void>(`/products/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
+   * Create a product-customer association
+   * 
+   * @param productId - The ID of the product
+   * @param customerId - The ID of the customer
+   * @param associationType - The association type (POTENTIAL_SUPPLIER or POTENTIAL_BUYER)
+   * @returns Promise that resolves when the association is created
+   */
+  async createProductCustomerAssociation(
+    productId: string,
+    customerId: string,
+    associationType: AssociationType,
+  ): Promise<void> {
+    // Backend controller: @Controller('products') with @Post(':id/associations')
+    // Full path: /products/:id/associations (consistent with other product endpoints)
+    return this.request<void>(`/products/${productId}/associations`, {
+      method: 'POST',
+      body: JSON.stringify({
+        customerId,
+        associationType,
+      }),
+    });
+  }
+
+  /**
+   * Get product associations (merging explicit associations and interaction records)
+   * 
+   * @param productId - The ID of the product
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 10)
+   * @returns Promise that resolves to associations list with total count
+   */
+  async getProductAssociations(
+    productId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ customers: import('./types/product-customer-association-response.dto').ProductCustomerAssociationResponseDto[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', page.toString());
+    queryParams.append('limit', limit.toString());
+
+    return this.request<{ customers: import('./types/product-customer-association-response.dto').ProductCustomerAssociationResponseDto[]; total: number }>(
+      `/products/${productId}/associations?${queryParams.toString()}`,
+    );
+  }
+
+  /**
+   * Delete a product-customer association
+   * 
+   * @param productId - The ID of the product
+   * @param customerId - The ID of the customer
+   * @returns Promise that resolves when the association is deleted
+   */
+  async deleteProductCustomerAssociation(
+    productId: string,
+    customerId: string,
+  ): Promise<void> {
+    return this.request<void>(`/products/${productId}/associations/${customerId}`, {
       method: 'DELETE',
     });
   }

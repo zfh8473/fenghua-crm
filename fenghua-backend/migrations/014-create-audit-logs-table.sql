@@ -42,3 +42,5 @@ COMMENT ON COLUMN audit_logs.timestamp IS 'Timestamp when the audit event occurr
 COMMENT ON COLUMN audit_logs.operator_id IS 'ID of the user who performed the action';
 COMMENT ON COLUMN audit_logs.user_id IS 'ID of the user affected by the action';
 
+
+

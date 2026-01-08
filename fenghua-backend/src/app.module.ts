@@ -8,12 +8,18 @@ import { PermissionModule } from './permission/permission.module';
 import { AuditModule } from './audit/audit.module';
 import { SettingsModule } from './settings/settings.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
-import { LogsModule } from './logs/logs.module';
+// import { LogsModule } from './logs/logs.module'; // TODO: LogsModule not implemented yet
 import { BackupModule } from './backup/backup.module';
 import { RestoreModule } from './restore/restore.module';
 import { ProductsModule } from './products/products.module';
 import { CompaniesModule } from './companies/companies.module';
+import { PeopleModule } from './people/people.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
+import { InteractionsModule } from './interactions/interactions.module';
+import { AttachmentsModule } from './attachments/attachments.module';
+// Note: ProductCustomerAssociationManagementModule is now deprecated
+// ProductCustomerAssociationManagementController is in ProductsModule
+// CustomerProductAssociationManagementController is in CompaniesModule
 
 @Module({
   imports: [
@@ -30,12 +36,16 @@ import { ProductCategoriesModule } from './product-categories/product-categories
     AuditModule,
     SettingsModule,
     MonitoringModule,
-    LogsModule,
+    // LogsModule, // TODO: LogsModule not implemented yet
     BackupModule,
     RestoreModule,
     ProductCategoriesModule,
     ProductsModule,
     CompaniesModule,
+    PeopleModule,
+    InteractionsModule,
+    AttachmentsModule,
+    // Note: ProductCustomerAssociationManagementModule is deprecated, controllers are in ProductsModule and CompaniesModule
   ],
 })
 export class AppModule {}

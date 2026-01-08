@@ -9,6 +9,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CustomerTimelineService } from './customer-timeline.service';
 import { ConfigService } from '@nestjs/config';
 import { PermissionService } from '../permission/permission.service';
+import { PermissionAuditService } from '../permission/permission-audit.service';
 import { Pool } from 'pg';
 import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 
@@ -46,6 +47,14 @@ describe('CustomerTimelineService', () => {
           provide: PermissionService,
           useValue: {
             getDataAccessFilter: jest.fn(),
+          },
+        },
+        {
+          provide: PermissionAuditService,
+          useValue: {
+            logPermissionCheck: jest.fn(),
+            logDataAccess: jest.fn(),
+            logPermissionViolation: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

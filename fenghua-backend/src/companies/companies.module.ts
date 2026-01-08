@@ -12,6 +12,7 @@ import { CompaniesCompatController } from './companies-compat.controller';
 import { CustomerProductAssociationController } from './customer-product-association.controller';
 import { CustomerProductInteractionHistoryController } from './customer-product-interaction-history.controller';
 import { CustomerTimelineController } from './customer-timeline.controller';
+import { CustomerProductAssociationManagementController } from './customer-product-association-management.controller';
 import { CompaniesService } from './companies.service';
 import { CustomerProductAssociationService } from './customer-product-association.service';
 import { CustomerProductInteractionHistoryService } from './customer-product-interaction-history.service';
@@ -19,6 +20,8 @@ import { CustomerTimelineService } from './customer-timeline.service';
 import { AuthModule } from '../auth/auth.module';
 import { PermissionModule } from '../permission/permission.module';
 import { AuditModule } from '../audit/audit.module';
+import { ProductsModule } from '../products/products.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -26,10 +29,12 @@ import { AuditModule } from '../audit/audit.module';
     AuthModule,
     PermissionModule, // Import to use PermissionService for role-based filtering
     AuditModule, // Import to use AuditService for audit logging
+    forwardRef(() => ProductsModule), // Use forwardRef to avoid circular dependency
   ],
   controllers: [
     CompaniesController, // Handles /customers routes
     CompaniesCompatController, // Handles /companies/:id for backward compatibility
+    CustomerProductAssociationManagementController, // /customers/:id/associations - MUST be before CompaniesController
     CustomerProductAssociationController, // Handles /customers/:id/products routes
     CustomerProductInteractionHistoryController, // Handles /customers/:customerId/interactions routes
     CustomerTimelineController, // Handles /customers/:customerId/timeline routes

@@ -21,6 +21,7 @@ export class CustomerResponseDto {
   employees?: number;
   website?: string;
   phone?: string;
+  email?: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;

@@ -5,11 +5,12 @@
  * All custom code is proprietary and not open source.
  */
 
-import { Injectable, Logger, BadRequestException, NotFoundException, ConflictException, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException, ConflictException, ForbiddenException, UnauthorizedException, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
-import { TwentyClientService } from '../services/twenty-client/twenty-client.service';
 import { AuditService } from '../audit/audit.service';
+import { AuthService } from '../auth/auth.service';
+import { PermissionAuditService } from '../permission/permission-audit.service';
 import { ProductCategoriesService } from '../product-categories/product-categories.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -23,8 +24,9 @@ export class ProductsService implements OnModuleDestroy {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly twentyClient: TwentyClientService,
     private readonly auditService: AuditService,
+    private readonly authService: AuthService,
+    private readonly permissionAuditService: PermissionAuditService,
     private readonly productCategoriesService: ProductCategoriesService,
   ) {
     this.initializeDatabaseConnection();
@@ -53,101 +55,6 @@ export class ProductsService implements OnModuleDestroy {
     }
   }
 
-  /**
-   * Get workspace ID from token
-   * TODO: Fix token exchange - loginToken cannot be used directly for currentUser query
-   * Currently using JWT payload parsing as fallback for testing
-   */
-  async getWorkspaceId(token: string): Promise<string> {
-    try {
-      // Try to query Twenty CRM for workspace ID
-      const query = `
-        query {
-          currentUser {
-            workspaceMember {
-              workspace {
-                id
-              }
-            }
-          }
-        }
-      `;
-      
-      try {
-        const result = await this.twentyClient.executeQueryWithToken<{
-          currentUser: {
-            workspaceMember: {
-              workspace: {
-                id: string;
-              };
-            };
-          };
-        }>(query, token);
-
-        if (result?.currentUser?.workspaceMember?.workspace?.id) {
-          return result.currentUser.workspaceMember.workspace.id;
-        }
-      } catch (apiError: unknown) {
-        // If API call fails (e.g., INVALID_JWT_TOKEN_TYPE), fallback to JWT parsing
-        const message = apiError instanceof Error ? apiError.message : String(apiError);
-        this.logger.warn('Failed to get workspace ID via API, using JWT payload fallback', message);
-        // Fall through to JWT parsing fallback
-      }
-
-      // Fallback: Extract workspace ID from JWT payload (for loginToken that cannot be used directly)
-      // This is a temporary solution until token exchange is fixed
-      try {
-        const workspaceId = this.extractWorkspaceIdFromToken(token);
-        if (workspaceId) {
-          this.logger.debug('Using JWT payload fallback for workspace ID');
-          return workspaceId;
-        }
-      } catch (jwtError) {
-        this.logger.error('Failed to extract workspace ID from JWT payload', jwtError);
-      }
-
-      throw new BadRequestException('无法从 token 中获取工作空间ID');
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      this.logger.error('Failed to get workspace ID', error);
-      throw new BadRequestException('获取工作空间ID失败');
-    }
-  }
-
-  /**
-   * Extract workspace ID from JWT token payload
-   * Fallback method when API query fails
-   */
-  private extractWorkspaceIdFromToken(token: string): string | null {
-    try {
-      // Decode JWT payload (base64url decode)
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        throw new Error('Invalid JWT format');
-      }
-
-      // Decode payload (base64url)
-      const payload = JSON.parse(
-        Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString(),
-      );
-
-      // Extract workspace ID from payload
-      // loginToken typically contains: workspaceId, sub (email), etc.
-      const workspaceId = payload.workspaceId || payload.workspace_id;
-      
-      if (!workspaceId) {
-        this.logger.warn('Workspace ID not found in JWT payload', { payloadKeys: Object.keys(payload) });
-        return null;
-      }
-
-      return workspaceId;
-    } catch (error) {
-      this.logger.error('Failed to extract workspace ID from token', error);
-      return null;
-    }
-  }
 
   /**
    * Check if product has associated interactions
@@ -170,19 +77,29 @@ export class ProductsService implements OnModuleDestroy {
   }
 
   /**
-   * Check if HS code already exists
+   * Check if HS code already exists for a specific user
+   * HS code uniqueness is now per user (created_by + hs_code unique constraint)
    */
-  async checkHsCodeExists(hsCode: string, excludeProductId?: string): Promise<boolean> {
+  async checkHsCodeExists(hsCode: string, excludeProductId?: string, userId?: string | null): Promise<boolean> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
     }
 
     try {
+      // If userId is provided, check uniqueness per user (created_by + hs_code)
+      // If userId is null/undefined, check globally (for backward compatibility, but this should not happen)
       let query = 'SELECT COUNT(*) as count FROM products WHERE hs_code = $1 AND deleted_at IS NULL';
-      const params: (string | number)[] = [hsCode];
+      const params: (string | number | null)[] = [hsCode];
+      let paramIndex = 2;
+      
+      if (userId) {
+        query += ` AND created_by = $${paramIndex}`;
+        params.push(userId);
+        paramIndex++;
+      }
       
       if (excludeProductId) {
-        query += ' AND id != $2';
+        query += ` AND id != $${paramIndex}`;
         params.push(excludeProductId);
       }
 
@@ -197,7 +114,7 @@ export class ProductsService implements OnModuleDestroy {
   /**
    * Create a new product
    */
-  async create(createProductDto: CreateProductDto, token: string, userId: string): Promise<ProductResponseDto> {
+  async create(createProductDto: CreateProductDto, userId: string): Promise<ProductResponseDto> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
     }
@@ -208,20 +125,21 @@ export class ProductsService implements OnModuleDestroy {
       throw new BadRequestException(`产品类别"${createProductDto.category}"不存在`);
     }
 
-    // Check HS code uniqueness
-    const hsCodeExists = await this.checkHsCodeExists(createProductDto.hsCode);
+    // Validate userId is a valid UUID, if not, use null (for audit purposes)
+    // TODO: Fix token exchange to get proper user UUID from Twenty CRM
+    let validUserId: string | null = userId;
+    if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+      this.logger.warn(`Invalid userId format (not UUID): ${userId}, using null for created_by`);
+      validUserId = null; // Use null instead of invalid UUID
+    }
+
+    // Check HS code uniqueness (per user, based on created_by + hs_code unique constraint)
+    const hsCodeExists = await this.checkHsCodeExists(createProductDto.hsCode, undefined, validUserId);
     if (hsCodeExists) {
       throw new ConflictException('HS编码已存在');
     }
 
     try {
-      // Validate userId is a valid UUID, if not, use null (for audit purposes)
-      // TODO: Fix token exchange to get proper user UUID from Twenty CRM
-      let validUserId: string | null = userId;
-      if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
-        this.logger.warn(`Invalid userId format (not UUID): ${userId}, using null for created_by`);
-        validUserId = null; // Use null instead of invalid UUID
-      }
 
       const result = await this.pgPool.query(
         `INSERT INTO products (
@@ -274,8 +192,11 @@ export class ProductsService implements OnModuleDestroy {
 
   /**
    * Find all products with pagination and filters
+   * Implements data isolation based on user role:
+   * - ADMIN and DIRECTOR: can see all products
+   * - Other roles: can only see products they created
    */
-  async findAll(query: ProductQueryDto, token: string): Promise<{ products: ProductResponseDto[]; total: number }> {
+  async findAll(query: ProductQueryDto, userId: string, token: string): Promise<{ products: ProductResponseDto[]; total: number }> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
     }
@@ -284,10 +205,27 @@ export class ProductsService implements OnModuleDestroy {
     const offset = query.offset || 0;
 
     try {
+      // 1. Get user information (including role) for data isolation
+      const user = await this.authService.validateToken(token);
+      if (!user || !user.role) {
+        throw new UnauthorizedException('用户信息无效');
+      }
+
+      // 2. Build WHERE clause with data isolation
       let whereClause = 'WHERE deleted_at IS NULL';
       const params: (string | number | boolean)[] = [];
       let paramIndex = 1;
       let orderByClause = 'ORDER BY created_at DESC';
+
+      // 3. Data isolation: Add created_by filter for non-admin/director users
+      const isAdminOrDirector = user.role === 'ADMIN' || user.role === 'DIRECTOR';
+      if (!isAdminOrDirector) {
+        // Regular users can only see products they created
+        whereClause += ` AND created_by = $${paramIndex}`;
+        params.push(userId);
+        paramIndex++;
+      }
+      // Admin and Director can see all products (no created_by filter)
 
       // Default: only show active products unless includeInactive is true
       // But if status filter is explicitly set, use it instead
@@ -342,10 +280,17 @@ export class ProductsService implements OnModuleDestroy {
         paramIndex += 3;
       }
 
-      // Count total (simplified - use same WHERE clause without ORDER BY params)
+      // 4. Count total (simplified - use same WHERE clause without ORDER BY params)
       const countParams: (string | number | boolean)[] = [];
       let countParamIndex = 1;
       let countWhereClause = 'WHERE deleted_at IS NULL';
+
+      // Apply data isolation to count query
+      if (!isAdminOrDirector) {
+        countWhereClause += ` AND created_by = $${countParamIndex}`;
+        countParams.push(userId);
+        countParamIndex++;
+      }
 
       if (query.status) {
         countWhereClause += ` AND status = $${countParamIndex}`;
@@ -381,12 +326,20 @@ export class ProductsService implements OnModuleDestroy {
       );
       const total = parseInt(countResult.rows[0].count);
 
-      // Get products with proper ORDER BY
+      // 5. Get products with proper ORDER BY (reuse whereClause and params from above)
+      // Note: We need to rebuild params for SELECT query to match ORDER BY params
       const selectParams: (string | number | boolean)[] = [];
       let selectParamIndex = 1;
       let selectWhereClause = 'WHERE deleted_at IS NULL';
       
-      // Rebuild WHERE clause for SELECT
+      // Apply data isolation to select query
+      if (!isAdminOrDirector) {
+        selectWhereClause += ` AND created_by = $${selectParamIndex}`;
+        selectParams.push(userId);
+        selectParamIndex++;
+      }
+
+      // Rebuild WHERE clause for SELECT (matching count query structure)
       if (query.status) {
         selectWhereClause += ` AND status = $${selectParamIndex}`;
         selectParams.push(query.status);
@@ -440,14 +393,18 @@ export class ProductsService implements OnModuleDestroy {
   }
 
   /**
-   * Find one product by ID
+   * Find one product by ID with permission check
+   * Implements permission validation:
+   * - ADMIN and DIRECTOR: can access all products
+   * - Other roles: can only access products they created
    */
-  async findOne(id: string, token: string): Promise<ProductResponseDto> {
+  async findOne(id: string, userId: string, token: string): Promise<ProductResponseDto> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
     }
 
     try {
+      // 1. Query product
       const result = await this.pgPool.query(
         'SELECT * FROM products WHERE id = $1 AND deleted_at IS NULL',
         [id]
@@ -457,9 +414,33 @@ export class ProductsService implements OnModuleDestroy {
         throw new NotFoundException('产品不存在');
       }
 
-      return this.mapToResponseDto(result.rows[0]);
+      const product = result.rows[0];
+
+      // 2. Permission validation
+      const user = await this.authService.validateToken(token);
+      if (!user || !user.role) {
+        throw new UnauthorizedException('用户信息无效');
+      }
+
+      const isAdminOrDirector = user.role === 'ADMIN' || user.role === 'DIRECTOR';
+      const isOwner = product.created_by === userId;
+
+      if (!isAdminOrDirector && !isOwner) {
+        // Log permission violation
+        await this.permissionAuditService.logPermissionViolation(
+          token,
+          'PRODUCT',
+          id,
+          'ACCESS',
+          null,
+          null
+        );
+        throw new ForbiddenException('您没有权限访问该产品');
+      }
+
+      return this.mapToResponseDto(product);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException || error instanceof UnauthorizedException) {
         throw error;
       }
       this.logger.error('Failed to find product', error);
@@ -470,13 +451,13 @@ export class ProductsService implements OnModuleDestroy {
   /**
    * Update a product
    */
-  async update(id: string, updateProductDto: UpdateProductDto, token: string, userId: string): Promise<ProductResponseDto> {
+  async update(id: string, updateProductDto: UpdateProductDto, userId: string, token: string): Promise<ProductResponseDto> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
     }
 
-    // Check if product exists
-    await this.findOne(id, token);
+    // Check if product exists and user has permission
+    await this.findOne(id, userId, token);
 
     try {
       const updateFields: string[] = [];
@@ -531,7 +512,7 @@ export class ProductsService implements OnModuleDestroy {
       }
 
       if (updateFields.length === 0) {
-        return this.findOne(id, token);
+        return this.findOne(id, userId, token);
       }
 
       // Validate userId is a valid UUID, if not, use null (for audit purposes)
@@ -549,7 +530,7 @@ export class ProductsService implements OnModuleDestroy {
       values.push(id);
 
       // Get old product data for audit
-      const oldProduct = await this.findOne(id, token);
+      const oldProduct = await this.findOne(id, userId, token);
 
       const result = await this.pgPool.query(
         `UPDATE products SET ${updateFields.join(', ')} WHERE id = $${paramIndex} AND deleted_at IS NULL RETURNING *`,
@@ -588,13 +569,13 @@ export class ProductsService implements OnModuleDestroy {
   /**
    * Delete a product (soft delete or hard delete)
    */
-  async remove(id: string, token: string, userId: string): Promise<void> {
+  async remove(id: string, userId: string, token: string): Promise<void> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
     }
 
-    // Check if product exists
-    const product = await this.findOne(id, token);
+    // Check if product exists and user has permission
+    const product = await this.findOne(id, userId, token);
 
     // Check for associated interactions
     const hasInteractions = await this.hasAssociatedInteractions(id);
@@ -671,7 +652,6 @@ export class ProductsService implements OnModuleDestroy {
       status: row.status,
       specifications: row.specifications ? (typeof row.specifications === 'string' ? JSON.parse(row.specifications) : row.specifications) : undefined,
       imageUrl: row.image_url,
-      workspaceId: row.created_by || '', // Use created_by as fallback for workspaceId (for backward compatibility)
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       deletedAt: row.deleted_at,

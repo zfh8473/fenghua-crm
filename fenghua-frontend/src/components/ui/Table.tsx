@@ -43,7 +43,7 @@ export interface Column<T> {
   /**
    * Custom render function for cell content
    */
-  render?: (value: unknown, row: T) => React.ReactNode;
+  render?: (value: any, row: T) => React.ReactNode;
   
   /**
    * Enable sorting for this column
@@ -96,7 +96,7 @@ export interface TableProps<T> {
   'aria-label'?: string;
 }
 
-export function Table<T extends Record<string, unknown>>({
+export function Table<T extends Record<string, any>>({
   columns,
   data,
   onRowClick,
@@ -198,13 +198,12 @@ export function Table<T extends Record<string, unknown>>({
             ) : (
               sortedData.map((row, rowIndex) => {
                 // Generate unique key: use rowKey function if provided, otherwise try row.id or first column value, fallback to index
-                const rowWithId = row as T & { id?: string | number };
                 const uniqueKey = rowKey
                   ? rowKey(row, rowIndex)
-                  : rowWithId.id !== undefined
-                  ? rowWithId.id
+                  : (row as any).id !== undefined
+                  ? (row as any).id
                   : row[columns[0]?.key] !== undefined
-                  ? `${String(row[columns[0].key])}-${rowIndex}`
+                  ? `${row[columns[0].key]}-${rowIndex}`
                   : rowIndex;
                 
                 return (

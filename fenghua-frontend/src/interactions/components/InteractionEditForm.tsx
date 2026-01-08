@@ -1,0 +1,527 @@
+/**
+ * Interaction Edit Form Component
+ * 
+ * Form for editing an existing interaction record
+ * All custom code is proprietary and not open source.
+ */
+
+import { useState, useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import {
+  UpdateInteractionDto,
+  InteractionStatus,
+  InteractionWithAttachments,
+  interactionsService,
+} from '../services/interactions.service';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+import { useAuth } from '../../auth/AuthContext';
+import { Customer } from '../../customers/customers.service';
+import { customersService } from '../../customers/customers.service';
+import { Product } from '../../products/products.service';
+import { productsService } from '../../products/products.service';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { FileUpload } from '../../attachments/components/FileUpload';
+import {
+  Attachment,
+  linkAttachmentToInteraction,
+  deleteAttachment,
+  updateAttachmentMetadata,
+} from '../../attachments/services/attachments.service';
+import { INTERACTION_EDIT_ERRORS, GENERIC_ERRORS } from '../../common/constants/error-messages';
+import { getInteractionTypeLabel } from '../constants/interaction-types';
+import {
+  FrontendInteractionType,
+  BackendInteractionType,
+  InteractionType,
+} from '../services/interactions.service';
+
+interface InteractionEditFormProps {
+  interactionId: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+const STATUS_OPTIONS_FRONTEND = [
+  { value: InteractionStatus.IN_PROGRESS, label: '进行中' },
+  { value: InteractionStatus.COMPLETED, label: '已完成' },
+  { value: InteractionStatus.CANCELLED, label: '已取消' },
+];
+
+const STATUS_OPTIONS_BACKEND = [
+  { value: InteractionStatus.IN_PROGRESS, label: '进行中' },
+  { value: InteractionStatus.COMPLETED, label: '已完成' },
+  { value: InteractionStatus.CANCELLED, label: '已取消' },
+  { value: InteractionStatus.NEEDS_FOLLOW_UP, label: '需要跟进' },
+];
+
+const INTERACTION_TYPE_OPTIONS_FRONTEND = [
+  { value: FrontendInteractionType.INITIAL_CONTACT, label: '初步接触' },
+  { value: FrontendInteractionType.PRODUCT_INQUIRY, label: '产品询价' },
+  { value: FrontendInteractionType.QUOTATION, label: '报价' },
+  { value: FrontendInteractionType.QUOTATION_ACCEPTED, label: '接受报价' },
+  { value: FrontendInteractionType.QUOTATION_REJECTED, label: '拒绝报价' },
+  { value: FrontendInteractionType.ORDER_SIGNED, label: '签署订单' },
+  { value: FrontendInteractionType.ORDER_COMPLETED, label: '完成订单' },
+];
+
+const INTERACTION_TYPE_OPTIONS_BACKEND = [
+  { value: BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER, label: '询价产品' },
+  { value: BackendInteractionType.QUOTATION_RECEIVED, label: '接收报价' },
+  { value: BackendInteractionType.SPECIFICATION_CONFIRMED, label: '产品规格确认' },
+  { value: BackendInteractionType.PRODUCTION_PROGRESS, label: '生产进度跟进' },
+  { value: BackendInteractionType.PRE_SHIPMENT_INSPECTION, label: '发货前验收' },
+  { value: BackendInteractionType.SHIPPED, label: '已发货' },
+];
+
+const MAX_DESCRIPTION_LENGTH = 5000;
+
+/**
+ * Interaction Edit Form Component
+ * 
+ * Allows users to edit their own interaction records.
+ * Customer, product, and interaction type fields are read-only.
+ * 
+ * @param interactionId - ID of the interaction to edit
+ * @param onSuccess - Callback when edit succeeds
+ * @param onCancel - Callback when user cancels
+ */
+export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
+  interactionId,
+  onSuccess,
+  onCancel,
+}) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [existingAttachments, setExistingAttachments] = useState<Attachment[]>([]);
+  const [newAttachments, setNewAttachments] = useState<Attachment[]>([]);
+  const [attachmentsToDelete, setAttachmentsToDelete] = useState<string[]>([]);
+
+  const isBackendSpecialist = user?.role === 'BACKEND_SPECIALIST';
+  const statusOptions = isBackendSpecialist ? STATUS_OPTIONS_BACKEND : STATUS_OPTIONS_FRONTEND;
+  const interactionTypeOptions = isBackendSpecialist ? INTERACTION_TYPE_OPTIONS_BACKEND : INTERACTION_TYPE_OPTIONS_FRONTEND;
+
+  // Fetch interaction data
+  const {
+    data: interaction,
+    isLoading,
+    error,
+  } = useQuery<InteractionWithAttachments>({
+    queryKey: ['interaction', interactionId],
+    queryFn: () => interactionsService.getInteraction(interactionId),
+    enabled: !!interactionId,
+  });
+
+  // Load customer and product data when interaction is loaded
+  useEffect(() => {
+    if (interaction) {
+      // Load customer
+      customersService
+        .getCustomer(interaction.customerId)
+        .then((customer) => {
+          setSelectedCustomer(customer);
+        })
+        .catch((error) => {
+          console.error('Failed to load customer', error);
+          toast.error('加载客户信息失败');
+        });
+
+      // Load product
+      productsService
+        .getProduct(interaction.productId)
+        .then((product) => {
+          setSelectedProduct(product);
+        })
+        .catch((error) => {
+          console.error('Failed to load product', error);
+          toast.error('加载产品信息失败');
+        });
+
+      // Load existing attachments
+      if (interaction.attachments && interaction.attachments.length > 0) {
+        const existing: Attachment[] = interaction.attachments.map((att) => ({
+          id: att.id,
+          fileName: att.fileName,
+          fileUrl: att.fileUrl,
+          fileSize: att.fileSize,
+          fileType: att.fileType,
+          mimeType: att.mimeType,
+          storageProvider: 'interaction-edit',
+          storageKey: att.id,
+          createdAt: new Date(),
+          createdBy: '',
+        }));
+        setExistingAttachments(existing);
+      }
+    }
+  }, [interaction]);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<UpdateInteractionDto>({
+    defaultValues: {
+      interactionType: interaction?.interactionType,
+      description: interaction?.description || '',
+      interactionDate: interaction?.interactionDate
+        ? new Date(interaction.interactionDate).toISOString().slice(0, 16)
+        : new Date().toISOString().slice(0, 16),
+      status: interaction?.status || InteractionStatus.IN_PROGRESS,
+    },
+  });
+
+  // Reset form when interaction data is loaded
+  useEffect(() => {
+    if (interaction) {
+      reset({
+        interactionType: interaction.interactionType,
+        description: interaction.description || '',
+        interactionDate: interaction.interactionDate
+          ? new Date(interaction.interactionDate).toISOString().slice(0, 16)
+          : new Date().toISOString().slice(0, 16),
+        status: interaction.status || InteractionStatus.IN_PROGRESS,
+      });
+    }
+  }, [interaction, reset]);
+
+  // Watch description field for character count
+  const descriptionValue = watch('description');
+  const descriptionLength = descriptionValue?.length || 0;
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: UpdateInteractionDto) =>
+      interactionsService.updateInteraction(interactionId, data),
+    onSuccess: async () => {
+      // Handle attachments
+      try {
+        // 1. Delete attachments marked for deletion
+        for (const attachmentId of attachmentsToDelete) {
+          await deleteAttachment(attachmentId);
+        }
+
+        // 2. Link new attachments to interaction
+        for (let i = 0; i < newAttachments.length; i++) {
+          const attachment = newAttachments[i];
+          await linkAttachmentToInteraction(attachment.id, interactionId);
+
+          // Update metadata (order and annotation)
+          await updateAttachmentMetadata(attachment.id, {
+            order: existingAttachments.length + i,
+            annotation: attachment.metadata?.annotation,
+          });
+        }
+
+        // 3. Update existing attachments metadata if needed
+        for (let i = 0; i < existingAttachments.length; i++) {
+          const attachment = existingAttachments[i];
+          if (attachment.metadata) {
+            await updateAttachmentMetadata(attachment.id, {
+              order: i,
+              annotation: attachment.metadata.annotation,
+            });
+          }
+        }
+
+        toast.success('互动记录更新成功');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '更新附件失败';
+        toast.error(`互动记录已更新，但${errorMessage}`);
+      }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['interaction', interactionId] });
+      queryClient.invalidateQueries({ queryKey: ['customer-interactions'] });
+      queryClient.invalidateQueries({ queryKey: ['product-interactions'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-product-interactions'] });
+
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        navigate(-1); // Go back to previous page
+      }
+    },
+    onError: (error: Error) => {
+      const errorMessage =
+        error.message || INTERACTION_EDIT_ERRORS.UPDATE_FAILED;
+      toast.error(errorMessage);
+    },
+  });
+
+  const onSubmit = async (data: UpdateInteractionDto) => {
+    // Validate interactionDate is not in the future
+    if (data.interactionDate) {
+      const interactionDate = new Date(data.interactionDate);
+      const now = new Date();
+      if (interactionDate > now) {
+        toast.error(INTERACTION_EDIT_ERRORS.FUTURE_DATE_ERROR);
+        return;
+      }
+    }
+
+    await updateMutation.mutateAsync(data);
+  };
+
+  /**
+   * Handle attachment deletion
+   */
+  const handleDeleteAttachment = (attachmentId: string) => {
+    // Confirm deletion
+    if (!window.confirm('确定要删除这个附件吗？')) {
+      return;
+    }
+
+    // Remove from existing attachments
+    setExistingAttachments((prev) => prev.filter((att) => att.id !== attachmentId));
+    // Mark for deletion
+    setAttachmentsToDelete((prev) => [...prev, attachmentId]);
+  };
+
+  /**
+   * Handle new attachment upload
+   */
+  const handleNewAttachments = (attachments: Attachment[]) => {
+    setNewAttachments(attachments);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-monday-8">
+        <span className="animate-spin">⏳</span>
+        <span className="ml-monday-2 text-monday-sm text-monday-text-secondary">
+          {GENERIC_ERRORS.LOAD_FAILED}
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-monday-8">
+        <p className="text-monday-sm text-primary-red mb-monday-2">
+          {error instanceof Error
+            ? error.message
+            : INTERACTION_EDIT_ERRORS.LOAD_FAILED}
+        </p>
+        <Button size="sm" onClick={() => window.location.reload()}>
+          {GENERIC_ERRORS.RETRY}
+        </Button>
+      </div>
+    );
+  }
+
+  if (!interaction) {
+    return (
+      <div className="text-center py-monday-8">
+        <p className="text-monday-sm text-primary-red">
+          {INTERACTION_EDIT_ERRORS.NOT_FOUND}
+        </p>
+      </div>
+    );
+  }
+
+  // Check if current user is the creator
+  if (interaction.createdBy !== user?.id) {
+    return (
+      <div className="text-center py-monday-8">
+        <p className="text-monday-sm text-primary-red">
+          {INTERACTION_EDIT_ERRORS.NO_PERMISSION}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-monday-6">
+      {/* Customer field (read-only) */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          客户 <span className="text-primary-red">*</span>
+        </label>
+        <Input
+          value={selectedCustomer?.name || '加载中...'}
+          disabled
+          className="bg-gray-50 cursor-not-allowed"
+        />
+      </div>
+
+      {/* Product field (read-only) */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          产品 <span className="text-primary-red">*</span>
+        </label>
+        <Input
+          value={selectedProduct?.name || '加载中...'}
+          disabled
+          className="bg-gray-50 cursor-not-allowed"
+        />
+      </div>
+
+      {/* Interaction type field (editable) */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          互动类型 <span className="text-primary-red">*</span>
+        </label>
+        <select
+          {...register('interactionType', { required: '互动类型不能为空' })}
+          className={`w-full px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 min-h-[48px] ${
+            errors.interactionType
+              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+              : 'border-monday-border focus:ring-primary-blue focus:border-primary-blue'
+          }`}
+        >
+          {interactionTypeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        {errors.interactionType && (
+          <p className="mt-monday-1 text-monday-xs text-red-500">
+            {errors.interactionType.message}
+          </p>
+        )}
+      </div>
+
+      {/* Interaction date field */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          互动时间 <span className="text-primary-red">*</span>
+        </label>
+        <Input
+          type="datetime-local"
+          {...register('interactionDate', {
+            required: '互动时间是必填项',
+            validate: (value) => {
+              if (value) {
+                const date = new Date(value);
+                const now = new Date();
+                if (date > now) {
+                  return '互动时间不能是未来时间';
+                }
+              }
+              return true;
+            },
+          })}
+        />
+        {errors.interactionDate && (
+          <p className="text-monday-xs text-primary-red mt-monday-1">
+            {errors.interactionDate.message}
+          </p>
+        )}
+      </div>
+
+      {/* Description field */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          互动描述
+        </label>
+        <textarea
+          {...register('description', {
+            maxLength: {
+              value: MAX_DESCRIPTION_LENGTH,
+              message: `描述不能超过 ${MAX_DESCRIPTION_LENGTH} 个字符`,
+            },
+          })}
+          rows={6}
+          className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+          placeholder="请输入互动描述..."
+        />
+        <div className="flex justify-between mt-monday-1">
+          {errors.description && (
+            <p className="text-monday-xs text-primary-red">
+              {errors.description.message}
+            </p>
+          )}
+          <p
+            className={`text-monday-xs ml-auto ${
+              descriptionLength > MAX_DESCRIPTION_LENGTH
+                ? 'text-primary-red'
+                : 'text-monday-text-secondary'
+            }`}
+          >
+            {descriptionLength} / {MAX_DESCRIPTION_LENGTH}
+          </p>
+        </div>
+      </div>
+
+      {/* Status field */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          状态
+        </label>
+        <select
+          {...register('status')}
+          className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+        >
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Existing attachments */}
+      {existingAttachments.length > 0 && (
+        <div>
+          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+            现有附件
+          </label>
+          <div className="space-y-monday-2">
+            {existingAttachments.map((attachment) => (
+              <div
+                key={attachment.id}
+                className="flex items-center justify-between p-monday-2 border border-gray-200 rounded"
+              >
+                <span className="text-monday-sm">{attachment.fileName}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleDeleteAttachment(attachment.id)}
+                  className="text-primary-red hover:text-primary-red/80"
+                >
+                  删除
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* New attachments upload */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          添加附件
+        </label>
+        <FileUpload
+          onFilesUploaded={handleNewAttachments}
+          maxFiles={10}
+          maxFileSize={10 * 1024 * 1024}
+        />
+      </div>
+
+      {/* Form actions */}
+      <div className="flex gap-monday-3 justify-end pt-monday-4 border-t border-gray-200">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            取消
+          </Button>
+        )}
+        <Button type="submit" variant="primary" disabled={isSubmitting || updateMutation.isPending}>
+          {isSubmitting || updateMutation.isPending ? '保存中...' : '保存'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+

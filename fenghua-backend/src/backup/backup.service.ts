@@ -16,8 +16,8 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { TwentyClientService } from '../services/twenty-client/twenty-client.service';
 import { SettingsService } from '../settings/settings.service';
-import { LogsService } from '../logs/logs.service';
-import { LogLevel, ErrorType } from '../logs/dto/log-query.dto';
+// import { LogsService } from '../logs/logs.service'; // TODO: LogsModule not implemented yet
+// import { LogLevel, ErrorType } from '../logs/dto/log-query.dto'; // TODO: LogsModule not implemented yet
 import { BackupMetadata } from './dto/backup-status.dto';
 
 const execAsync = promisify(exec);
@@ -34,7 +34,7 @@ export class BackupService {
     private readonly configService: ConfigService,
     private readonly twentyClient: TwentyClientService,
     private readonly settingsService: SettingsService,
-    private readonly logsService: LogsService,
+    // private readonly logsService: LogsService, // TODO: LogsModule not implemented yet
   ) {
     // Initialize backup storage path
     this.backupStoragePath = this.configService.get<string>('BACKUP_STORAGE_PATH', './backups');
@@ -234,11 +234,12 @@ export class BackupService {
       await this.saveBackupMetadata(metadata);
 
       // Log backup success
-      this.logsService.log(LogLevel.INFO, `Backup completed successfully: ${backupFileName}`, 'BackupService', undefined, {
-        backupId,
-        fileSize: stats.size,
-        workspaceId,
-      });
+      // TODO: LogsModule not implemented yet
+      // this.logsService.log(LogLevel.INFO, `Backup completed successfully: ${backupFileName}`, 'BackupService', undefined, {
+      //   backupId,
+      //   fileSize: stats.size,
+      //   workspaceId,
+      // });
 
       this.logger.log(`Backup completed: ${backupFileName} (${stats.size} bytes)`);
 
@@ -272,9 +273,10 @@ export class BackupService {
       await this.saveBackupMetadata(metadata);
 
       // Log backup failure
-      await this.logsService.logError(ErrorType.SYSTEM, `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : '', undefined, '/backup', undefined, {
-        backupId,
-      });
+      // TODO: LogsModule not implemented yet
+      // await this.logsService.logError(ErrorType.SYSTEM, `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : '', undefined, '/backup', undefined, {
+      //   backupId,
+      // });
 
       // Send notification (MVP: log to console, production: send email)
       await this.sendBackupFailureNotification(error instanceof Error ? error.message : 'Unknown error');
@@ -302,10 +304,11 @@ export class BackupService {
         this.logger.warn(`Notification message: Backup failed - ${errorMessage}`);
         
         // Log to system logs
-        this.logsService.log(LogLevel.WARN, `Backup failure notification (would send to: ${settings.notificationRecipients.join(', ')})`, 'BackupService', undefined, {
-          errorMessage,
-          recipients: settings.notificationRecipients,
-        });
+        // TODO: LogsModule not implemented yet
+        // this.logsService.log(LogLevel.WARN, `Backup failure notification (would send to: ${settings.notificationRecipients.join(', ')})`, 'BackupService', undefined, {
+        //   errorMessage,
+        //   recipients: settings.notificationRecipients,
+        // });
         
         // TODO: In production, implement email sending using SendGrid, AWS SES, etc.
       } else {
@@ -402,7 +405,8 @@ export class BackupService {
 
       if (backupsToDelete.length > 0) {
         this.logger.log(`Cleaned up ${backupsToDelete.length} old backup(s)`);
-        this.logsService.log(LogLevel.INFO, `Cleaned up ${backupsToDelete.length} old backup(s)`, 'BackupService');
+        // TODO: LogsModule not implemented yet
+        // this.logsService.log(LogLevel.INFO, `Cleaned up ${backupsToDelete.length} old backup(s)`, 'BackupService');
       }
     } catch (error) {
       this.logger.error('Failed to cleanup old backups', error);

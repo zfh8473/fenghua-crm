@@ -593,7 +593,7 @@ So that **团队成员可以快速了解和使用设计系统**.
 
 ## Epic List
 
-**总计：15 个 Epic（Epic 15 为 Growth 阶段）**
+**总计：17 个 Epic（Epic 15 为 Growth 阶段）**
 
 **横切关注点说明：**
 - **数据验证和错误处理（FR115-FR121）**：作为横切关注点，贯穿所有 Epic。FR115 分配到 Epic 3, 4, 5；FR116 分配到 Epic 4；FR117 分配到所有 Epic；FR118, FR119 分配到 Epic 4, 5；FR120, FR121 已分配到 Epic 7。
@@ -673,6 +673,16 @@ So that **团队成员可以快速了解和使用设计系统**.
 用户成果：系统可以自动提醒用户跟进客户、处理待办事项，用户可以设置提醒偏好
 **FRs covered:** FR136, FR137, FR138, FR139, FR140
 **Implementation Notes:** Notification system, reminder preferences (Growth stage feature)
+
+### Epic 16: 移除 Twenty CRM 依赖，实现原生技术栈
+用户成果：系统完全独立，无需 Docker 容器，支持 Vercel 部署，移除所有集成问题
+**FRs covered:** (重构需求，未在原始 FR 列表中)
+**Implementation Notes:** Native tech stack (NestJS + PostgreSQL + NextAuth.js), Vercel Serverless deployment, remove all Twenty CRM dependencies
+
+### Epic 17: 产品-客户关联管理
+用户成果：用户可以主动建立和管理产品与客户的关联关系，支持"先关联后互动"的业务场景，在创建产品/客户时快速关联，在详情页进行完整的关联管理
+**FRs covered:** (新需求，未在原始 FR 列表中)
+**Implementation Notes:** Product-customer association management, independent association table, create-time quick association, detail page full management, integration with interaction records
 
 ## Epic 1: 系统基础设置和用户管理
 
@@ -5392,6 +5402,442 @@ So that **系统完全独立，代码库干净，无过时依赖**.
 - 更新 `package.json`
 - 运行完整测试套件
 - 更新文档（已完成）
+
+---
+
+## Epic 17: 产品-客户关联管理
+
+**用户成果：** 用户可以主动建立和管理产品与客户的关联关系，支持"先关联后互动"的业务场景，在创建产品/客户时快速关联，在详情页进行完整的关联管理。
+
+**Epic 描述：**
+实现产品与客户之间的显式关联管理功能，允许用户在创建产品/客户时快速建立关联，或在详情页进行完整的关联管理。关联关系独立于互动记录存在，支持"先关联后互动"的业务流程。关联的业务含义：对于供应商来说，建立关联意味着它可以供应该产品；对于采购商来说，建立关联意味着它潜在会购买此产品。
+
+**FRs covered:** (新需求，未在原始 FR 列表中)
+**Implementation Notes:** 
+- 创建 `product_customer_associations` 表存储关联关系
+- 关联类型：`POTENTIAL_SUPPLIER`（供应商可以供应该产品）、`POTENTIAL_BUYER`（采购商潜在会购买此产品）
+- 创建产品/客户时支持快速关联（可选）
+- 详情页提供完整的关联管理界面
+- 查询时合并显示关联关系和互动记录
+- 创建互动记录时，如果关联关系不存在，自动创建
+
+**Stories：**
+- Story 17.1: 产品-客户关联数据模型和 API（后端）
+- Story 17.2: 产品创建时关联客户（前端）
+- Story 17.3: 客户创建时关联产品（前端）
+- Story 17.4: 产品详情页关联管理界面
+- Story 17.5: 客户详情页关联管理界面
+- Story 17.6: 关联关系与互动记录的集成
+
+---
+
+### Story 17.1: 产品-客户关联数据模型和 API（后端）
+
+As a **开发团队**,
+I want **创建产品-客户关联的数据模型和 API**,
+So that **系统可以存储和管理产品与客户之间的关联关系，支持"先关联后互动"的业务场景**.
+
+**Acceptance Criteria:**
+
+1. **Given** 数据库需要支持产品-客户关联
+   **When** 开发团队创建数据库迁移脚本
+   **Then** 创建 `product_customer_associations` 表，包含以下字段：
+     - `id` (UUID, PRIMARY KEY)
+     - `product_id` (UUID, NOT NULL, REFERENCES products(id) ON DELETE CASCADE)
+     - `customer_id` (UUID, NOT NULL, REFERENCES companies(id) ON DELETE CASCADE)
+     - `association_type` (VARCHAR(20), NOT NULL) - 'POTENTIAL_SUPPLIER' 或 'POTENTIAL_BUYER'
+     - `created_by` (UUID)
+     - `created_at` (TIMESTAMP WITH TIME ZONE, DEFAULT NOW())
+     - `updated_by` (UUID)
+     - `updated_at` (TIMESTAMP WITH TIME ZONE, DEFAULT NOW())
+     - `deleted_at` (TIMESTAMP WITH TIME ZONE, NULL)
+   **And** 创建唯一约束：`UNIQUE(product_id, customer_id)` 防止重复关联（考虑软删除）
+   **And** 创建索引：`CREATE INDEX idx_product_customer_associations_product_id ON product_customer_associations(product_id) WHERE deleted_at IS NULL`
+   **And** 创建索引：`CREATE INDEX idx_product_customer_associations_customer_id ON product_customer_associations(customer_id) WHERE deleted_at IS NULL`
+
+2. **Given** 后端需要提供关联管理 API
+   **When** 开发团队创建关联服务
+   **Then** 创建 `ProductCustomerAssociationService`，实现以下方法：
+     - `createAssociation(productId, customerId, associationType, token)` - 建立关联
+     - `deleteAssociation(productId, customerId, token)` - 删除关联（软删除）
+     - `getProductAssociations(productId, token, page, limit)` - 获取产品关联的客户列表（合并互动记录）
+     - `getCustomerAssociations(customerId, token, page, limit)` - 获取客户关联的产品列表（合并互动记录）
+   **And** 所有方法实现权限验证（使用 `PermissionService.getDataAccessFilter`）
+   **And** 所有方法实现角色过滤（前端专员只能操作采购商，后端专员只能操作供应商）
+
+3. **Given** 后端需要提供关联管理端点
+   **When** 开发团队创建关联控制器
+   **Then** 创建 `ProductCustomerAssociationManagementController`，提供以下端点：
+     - `POST /api/products/:id/associations` - 建立产品与客户的关联
+     - `DELETE /api/products/:id/associations/:customerId` - 删除产品与客户的关联
+     - `POST /api/customers/:id/associations` - 建立客户与产品的关联
+     - `DELETE /api/customers/:id/associations/:productId` - 删除客户与产品的关联
+   **And** 所有端点使用 `@UseGuards(JwtAuthGuard)` 保护
+   **And** 所有端点实现错误处理（400, 403, 404, 500）
+
+4. **Given** 查询关联时需要合并显示关联关系和互动记录
+   **When** 开发团队实现查询逻辑
+   **Then** `getProductAssociations` 方法使用 UNION 查询：
+     - 查询 `product_customer_associations` 表获取关联关系
+     - 查询 `product_customer_interactions` 表获取有互动记录的关联
+     - 合并结果并去重（同一个客户只显示一次）
+     - 标记每个关联是否有互动记录
+   **And** 返回结果包含：客户信息、关联类型、是否有互动记录、互动数量
+
+5. **Given** 创建关联时需要验证数据
+   **When** 开发团队实现创建关联逻辑
+   **Then** 验证产品存在且未被删除
+   **And** 验证客户存在且未被删除
+   **And** 验证客户类型与用户角色匹配（前端专员只能关联采购商，后端专员只能关联供应商）
+   **And** 验证关联类型与客户类型匹配（采购商使用 POTENTIAL_BUYER，供应商使用 POTENTIAL_SUPPLIER）
+   **And** 验证关联关系不存在（防止重复关联）
+   **And** 如果验证失败，返回相应的错误消息（400 Bad Request）
+
+6. **Given** 删除关联时需要记录审计日志
+   **When** 开发团队实现删除关联逻辑
+   **Then** 执行软删除（设置 `deleted_at = NOW()`）
+   **And** 记录 `updated_by` 和 `updated_at`
+   **And** 记录审计日志（action: 'ASSOCIATION_DELETED'）
+   **And** 不影响已有的互动记录
+
+**Implementation Notes:**
+- 参考 Winston 的架构设计：独立关联表，与互动记录解耦
+- 使用数据库事务确保数据一致性
+- 实现软删除支持审计
+- 查询时使用 UNION 合并关联关系和互动记录
+- 权限验证使用 `PermissionService.getDataAccessFilter`
+- 角色过滤确保数据隔离
+
+---
+
+### Story 17.2: 产品创建时关联客户（前端）
+
+As a **所有用户**,
+I want **在创建产品时快速关联客户**,
+So that **我可以一步完成产品创建和客户关联，提升工作效率**.
+
+**Acceptance Criteria:**
+
+1. **Given** 用户已登录系统并进入产品创建页面
+   **When** 用户填写产品创建表单
+   **Then** 表单包含"关联客户"部分（可折叠，默认折叠）
+   **And** 用户可以选择展开"关联客户"部分
+   **And** "关联客户"部分显示搜索下拉组件（支持多选）
+   **And** 搜索下拉组件根据用户角色过滤客户类型：
+     - 前端专员：只显示采购商
+     - 后端专员：只显示供应商
+     - 总监/管理员：显示所有客户
+
+2. **Given** 用户在"关联客户"部分搜索客户
+   **When** 用户输入客户名称或代码
+   **Then** 系统显示匹配的客户列表（支持模糊搜索）
+   **And** 用户可以选择多个客户
+   **And** 系统显示已选择的客户数量："已选择 3 个客户"
+   **And** 用户可以取消选择已选客户
+
+3. **Given** 用户填写完产品信息和关联客户
+   **When** 用户提交产品创建表单
+   **Then** 系统首先创建产品
+   **And** 如果用户选择了关联客户，系统为每个客户建立关联关系
+   **And** 关联类型根据客户类型自动设置：
+     - 采购商：`POTENTIAL_BUYER`
+     - 供应商：`POTENTIAL_SUPPLIER`
+   **And** 系统显示成功消息："产品创建成功，已关联 X 个客户"
+   **And** 如果关联失败，系统显示错误消息，但产品创建成功
+
+4. **Given** 用户未选择关联客户
+   **When** 用户提交产品创建表单
+   **Then** 系统正常创建产品
+   **And** 不建立任何关联关系
+   **And** 系统显示成功消息："产品创建成功"
+
+5. **Given** 用户创建产品时关联客户失败
+   **When** 产品创建成功但关联失败
+   **Then** 系统显示警告消息："产品已创建，但部分客户关联失败"
+   **And** 系统提供"在详情页管理关联"的链接
+   **And** 用户可以稍后在产品详情页手动建立关联
+
+**Implementation Notes:**
+- 参考 Sally 的 UI 设计：创建时快速关联（可选）
+- 使用 React Hook Form 管理表单状态
+- 使用 React Query 处理 API 调用
+- 搜索下拉组件支持多选和搜索
+- 错误处理：产品创建和关联建立分开处理
+- 使用统一的错误消息常量
+
+---
+
+### Story 17.3: 客户创建时关联产品（前端）
+
+As a **所有用户**,
+I want **在创建客户时快速关联产品**,
+So that **我可以一步完成客户创建和产品关联，提升工作效率**.
+
+**Acceptance Criteria:**
+
+1. **Given** 用户已登录系统并进入客户创建页面
+   **When** 用户填写客户创建表单
+   **Then** 表单包含"关联产品"部分（可折叠，默认折叠）
+   **And** 用户可以选择展开"关联产品"部分
+   **And** "关联产品"部分显示搜索下拉组件（支持多选）
+   **And** 搜索下拉组件显示所有 active 状态的产品
+
+2. **Given** 用户在"关联产品"部分搜索产品
+   **When** 用户输入产品名称、HS编码或类别
+   **Then** 系统显示匹配的产品列表（支持模糊搜索）
+   **And** 用户可以选择多个产品
+   **And** 系统显示已选择的产品数量："已选择 5 个产品"
+   **And** 用户可以取消选择已选产品
+
+3. **Given** 用户填写完客户信息和关联产品
+   **When** 用户提交客户创建表单
+   **Then** 系统首先创建客户
+   **And** 如果用户选择了关联产品，系统为每个产品建立关联关系
+   **And** 关联类型根据客户类型自动设置：
+     - 采购商：`POTENTIAL_BUYER`
+     - 供应商：`POTENTIAL_SUPPLIER`
+   **And** 系统显示成功消息："客户创建成功，已关联 X 个产品"
+   **And** 如果关联失败，系统显示错误消息，但客户创建成功
+
+4. **Given** 用户未选择关联产品
+   **When** 用户提交客户创建表单
+   **Then** 系统正常创建客户
+   **And** 不建立任何关联关系
+   **And** 系统显示成功消息："客户创建成功"
+
+5. **Given** 用户创建客户时关联产品失败
+   **When** 客户创建成功但关联失败
+   **Then** 系统显示警告消息："客户已创建，但部分产品关联失败"
+   **And** 系统提供"在详情页管理关联"的链接
+   **And** 用户可以稍后在客户详情页手动建立关联
+
+**Implementation Notes:**
+- 参考 Sally 的 UI 设计：创建时快速关联（可选）
+- 使用 React Hook Form 管理表单状态
+- 使用 React Query 处理 API 调用
+- 搜索下拉组件支持多选和搜索
+- 错误处理：客户创建和关联建立分开处理
+- 使用统一的错误消息常量
+
+---
+
+### Story 17.4: 产品详情页关联管理界面
+
+As a **所有用户**,
+I want **在产品详情页管理产品与客户的关联**,
+So that **我可以添加、删除和查看产品的所有关联关系，包括有互动记录和无互动记录的关联**.
+
+**Acceptance Criteria:**
+
+1. **Given** 用户已登录系统并查看产品详情页
+   **When** 用户查看"关联的客户"部分
+   **Then** 系统显示"管理关联"按钮
+   **And** 点击"管理关联"按钮后，打开全屏抽屉或弹窗
+   **And** 抽屉/弹窗标题为"管理产品关联客户"
+
+2. **Given** 用户在关联管理界面
+   **When** 系统加载关联列表
+   **Then** 左侧显示已关联的客户列表
+   **And** 每个客户显示：
+     - 客户名称
+     - 客户类型（采购商/供应商）
+     - 关联状态标签：
+       - "有互动记录"（绿色）+ 互动数量徽章
+       - "待互动"（灰色）
+     - 删除按钮（仅当前用户创建的关联可以删除）
+   **And** 客户列表支持搜索和过滤
+   **And** 系统显示关联统计："共 10 个关联，其中 7 个有互动记录"
+
+3. **Given** 用户在关联管理界面
+   **When** 用户点击"添加关联"或搜索框
+   **Then** 右侧显示搜索和添加区域
+   **And** 搜索框支持输入客户名称或代码
+   **And** 系统根据用户角色过滤客户类型：
+     - 前端专员：只显示采购商
+     - 后端专员：只显示供应商
+     - 总监/管理员：显示所有客户
+   **And** 搜索结果排除已关联的客户
+   **And** 用户可以选择客户并点击"添加关联"
+
+4. **Given** 用户添加关联
+   **When** 用户选择客户并点击"添加关联"
+   **Then** 系统调用 API 建立关联关系
+   **And** 关联类型根据客户类型自动设置
+   **And** 系统显示成功消息："关联已建立"
+   **And** 关联列表自动刷新，新关联显示在列表中
+   **And** 新关联显示为"待互动"状态
+
+5. **Given** 用户删除关联
+   **When** 用户点击客户的"删除"按钮
+   **Then** 系统显示确认对话框："确定要删除此关联吗？"
+   **And** 确认对话框提示："删除关联不会影响已有的互动记录"
+   **And** 用户确认后，系统调用 API 删除关联（软删除）
+   **And** 系统显示成功消息："关联已删除"
+   **And** 关联列表自动刷新，删除的关联从列表中移除
+
+6. **Given** 用户查看关联列表
+   **When** 关联数量较多（> 10 个）
+   **Then** 系统使用分页或滚动加载显示关联列表
+   **And** 系统显示关联总数和当前页信息
+
+7. **Given** 用户关闭关联管理界面
+   **When** 用户点击"关闭"按钮或点击遮罩层
+   **Then** 抽屉/弹窗关闭
+   **And** 产品详情页的"关联的客户"部分自动刷新
+   **And** 显示更新后的关联列表
+
+**Implementation Notes:**
+- 参考 Sally 的 UI 设计：详情页完整关联管理界面
+- 使用 React Query 管理关联数据
+- 使用抽屉或弹窗组件（参考现有 UI 组件）
+- 区分"有互动记录"和"仅关联关系"的视觉样式
+- 支持搜索、过滤、分页
+- 使用统一的错误消息常量
+- 权限控制：只有创建者可以删除关联
+
+---
+
+### Story 17.5: 客户详情页关联管理界面
+
+As a **所有用户**,
+I want **在客户详情页管理客户与产品的关联**,
+So that **我可以添加、删除和查看客户的所有关联关系，包括有互动记录和无互动记录的关联**.
+
+**Acceptance Criteria:**
+
+1. **Given** 用户已登录系统并查看客户详情页
+   **When** 用户查看"关联的产品"部分
+   **Then** 系统显示"管理关联"按钮
+   **And** 点击"管理关联"按钮后，打开全屏抽屉或弹窗
+   **And** 抽屉/弹窗标题为"管理客户关联产品"
+
+2. **Given** 用户在关联管理界面
+   **When** 系统加载关联列表
+   **Then** 左侧显示已关联的产品列表
+   **And** 每个产品显示：
+     - 产品名称
+     - 产品HS编码
+     - 关联状态标签：
+       - "有互动记录"（绿色）+ 互动数量徽章
+       - "待互动"（灰色）
+     - 删除按钮（仅当前用户创建的关联可以删除）
+   **And** 产品列表支持搜索和过滤
+   **And** 系统显示关联统计："共 15 个关联，其中 12 个有互动记录"
+
+3. **Given** 用户在关联管理界面
+   **When** 用户点击"添加关联"或搜索框
+   **Then** 右侧显示搜索和添加区域
+   **And** 搜索框支持输入产品名称、HS编码或类别
+   **And** 系统只显示 active 状态的产品
+   **And** 搜索结果排除已关联的产品
+   **And** 用户可以选择产品并点击"添加关联"
+
+4. **Given** 用户添加关联
+   **When** 用户选择产品并点击"添加关联"
+   **Then** 系统调用 API 建立关联关系
+   **And** 关联类型根据客户类型自动设置
+   **And** 系统显示成功消息："关联已建立"
+   **And** 关联列表自动刷新，新关联显示在列表中
+   **And** 新关联显示为"待互动"状态
+
+5. **Given** 用户删除关联
+   **When** 用户点击产品的"删除"按钮
+   **Then** 系统显示确认对话框："确定要删除此关联吗？"
+   **And** 确认对话框提示："删除关联不会影响已有的互动记录"
+   **And** 用户确认后，系统调用 API 删除关联（软删除）
+   **And** 系统显示成功消息："关联已删除"
+   **And** 关联列表自动刷新，删除的关联从列表中移除
+
+6. **Given** 用户查看关联列表
+   **When** 关联数量较多（> 10 个）
+   **Then** 系统使用分页或滚动加载显示关联列表
+   **And** 系统显示关联总数和当前页信息
+
+7. **Given** 用户关闭关联管理界面
+   **When** 用户点击"关闭"按钮或点击遮罩层
+   **Then** 抽屉/弹窗关闭
+   **And** 客户详情页的"关联的产品"部分自动刷新
+   **And** 显示更新后的关联列表
+
+**Implementation Notes:**
+- 参考 Sally 的 UI 设计：详情页完整关联管理界面
+- 使用 React Query 管理关联数据
+- 使用抽屉或弹窗组件（参考现有 UI 组件）
+- 区分"有互动记录"和"仅关联关系"的视觉样式
+- 支持搜索、过滤、分页
+- 使用统一的错误消息常量
+- 权限控制：只有创建者可以删除关联
+
+---
+
+### Story 17.6: 关联关系与互动记录的集成
+
+As a **所有用户**,
+I want **系统自动处理关联关系与互动记录的集成**,
+So that **创建互动记录时自动建立关联关系，查看关联时合并显示关联关系和互动记录**.
+
+**Acceptance Criteria:**
+
+1. **Given** 用户创建互动记录
+   **When** 用户选择产品和客户并提交互动记录
+   **Then** 系统首先创建互动记录
+   **And** 系统检查产品与客户之间是否存在关联关系
+   **And** 如果关联关系不存在，系统自动创建关联关系
+   **And** 关联类型根据客户类型自动设置：
+     - 采购商：`POTENTIAL_BUYER`
+     - 供应商：`POTENTIAL_SUPPLIER`
+   **And** 如果关联关系已存在，系统不重复创建
+   **And** 系统在事务中完成所有操作，确保数据一致性
+
+2. **Given** 用户查看产品关联的客户
+   **When** 系统加载关联列表
+   **Then** 系统使用 UNION 查询合并显示：
+     - 来自 `product_customer_associations` 表的关联关系
+     - 来自 `product_customer_interactions` 表的互动记录关联
+   **And** 系统去重（同一个客户只显示一次）
+   **And** 系统标记每个关联的状态：
+     - "有互动记录"：客户在 `product_customer_interactions` 表中有记录
+     - "待互动"：客户只在 `product_customer_associations` 表中有记录
+   **And** 系统显示互动数量（如果有互动记录）
+
+3. **Given** 用户查看客户关联的产品
+   **When** 系统加载关联列表
+   **Then** 系统使用 UNION 查询合并显示：
+     - 来自 `product_customer_associations` 表的关联关系
+     - 来自 `product_customer_interactions` 表的互动记录关联
+   **And** 系统去重（同一个产品只显示一次）
+   **And** 系统标记每个关联的状态：
+     - "有互动记录"：产品在 `product_customer_interactions` 表中有记录
+     - "待互动"：产品只在 `product_customer_associations` 表中有记录
+   **And** 系统显示互动数量（如果有互动记录）
+
+4. **Given** 用户删除关联关系
+   **When** 用户删除产品与客户的关联关系
+   **Then** 系统执行软删除（设置 `deleted_at = NOW()`）
+   **And** 不影响已有的互动记录
+   **And** 如果该客户/产品有互动记录，在查看关联时仍然显示（因为互动记录本身也建立了关联）
+   **And** 系统显示提示："删除关联不会影响已有的互动记录"
+
+5. **Given** 系统需要确保数据一致性
+   **When** 创建互动记录时自动创建关联关系
+   **Then** 使用数据库事务确保所有操作原子性
+   **And** 如果关联关系创建失败，回滚整个事务
+   **And** 记录审计日志（action: 'ASSOCIATION_CREATED'）
+
+6. **Given** 系统需要优化查询性能
+   **When** 查询关联列表时合并显示关联关系和互动记录
+   **Then** 使用高效的 SQL UNION 查询
+   **And** 使用索引优化查询性能
+   **And** 实现查询结果缓存（5 分钟）
+   **And** 分页加载减少数据传输量
+
+**Implementation Notes:**
+- 参考 Mary 的业务规则：关联关系独立于互动记录存在
+- 创建互动记录时自动创建关联关系（如果不存在）
+- 查询时使用 UNION 合并关联关系和互动记录
+- 使用数据库事务确保数据一致性
+- 优化查询性能（索引、缓存、分页）
+- 软删除不影响已有互动记录
 
 ---
 

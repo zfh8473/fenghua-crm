@@ -11,7 +11,7 @@ import { RestoreService } from './restore.service';
 import { RestoreController } from './restore.controller';
 import { BackupModule } from '../backup/backup.module';
 import { AuditModule } from '../audit/audit.module';
-import { LogsModule } from '../logs/logs.module';
+// import { LogsModule } from '../logs/logs.module'; // TODO: LogsModule not implemented yet
 import { SettingsModule } from '../settings/settings.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -20,7 +20,7 @@ import { AuthModule } from '../auth/auth.module';
     ConfigModule,
     BackupModule,
     AuditModule,
-    LogsModule,
+    // LogsModule, // TODO: LogsModule not implemented yet
     SettingsModule,
     AuthModule,
   ],

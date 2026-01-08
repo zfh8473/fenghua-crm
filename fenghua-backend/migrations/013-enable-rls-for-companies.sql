@@ -93,3 +93,5 @@ COMMENT ON POLICY interactions_filter_by_role ON product_customer_interactions I
 -- 6. Consider creating index on customer_type column for better RLS performance:
 --    CREATE INDEX IF NOT EXISTS idx_companies_customer_type ON companies(customer_type);
 
+
+

@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { BackupService } from './backup.service';
 import { TwentyClientService } from '../services/twenty-client/twenty-client.service';
 import { SettingsService } from '../settings/settings.service';
-import { LogsService } from '../logs/logs.service';
+// import { LogsService } from '../logs/logs.service'; // TODO: LogsModule not implemented yet
 import { BadRequestException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -34,7 +34,7 @@ describe('BackupService', () => {
   let configService: jest.Mocked<ConfigService>;
   let twentyClient: jest.Mocked<TwentyClientService>;
   let settingsService: jest.Mocked<SettingsService>;
-  let logsService: jest.Mocked<LogsService>;
+  // let logsService: jest.Mocked<LogsService>; // TODO: LogsModule not implemented yet
 
   const mockWorkspaceId = 'workspace-123';
   const mockToken = 'test-token';
@@ -70,10 +70,11 @@ describe('BackupService', () => {
       }),
     };
 
-    const mockLogsService = {
-      log: jest.fn(),
-      logError: jest.fn().mockResolvedValue(undefined),
-    };
+    // TODO: LogsModule not implemented yet
+    // const mockLogsService = {
+    //   log: jest.fn(),
+    //   logError: jest.fn().mockResolvedValue(undefined),
+    // };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -90,10 +91,11 @@ describe('BackupService', () => {
           provide: SettingsService,
           useValue: mockSettingsService,
         },
-        {
-          provide: LogsService,
-          useValue: mockLogsService,
-        },
+        // TODO: LogsModule not implemented yet
+        // {
+        //   provide: LogsService,
+        //   useValue: mockLogsService,
+        // },
       ],
     }).compile();
 
@@ -101,7 +103,7 @@ describe('BackupService', () => {
     configService = module.get(ConfigService);
     twentyClient = module.get(TwentyClientService);
     settingsService = module.get(SettingsService);
-    logsService = module.get(LogsService);
+    // logsService = module.get(LogsService); // TODO: LogsModule not implemented yet
 
     // Mock fs.existsSync
     jest.spyOn(fs, 'existsSync').mockReturnValue(true);

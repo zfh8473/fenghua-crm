@@ -41,11 +41,12 @@ export const ProductCustomerInteractionHistoryPage: React.FC = () => {
     queryKey: ['customer', customerId],
     queryFn: async () => {
       if (!customerId) throw new Error('客户ID不能为空');
-      const apiBaseUrl =
-        import.meta.env.VITE_API_BASE_URL ||
-        import.meta.env.VITE_BACKEND_URL ||
-        'http://localhost:3006';
-      const response = await fetch(`${apiBaseUrl}/api/companies/${customerId}`, {
+      // Use relative path /api to leverage Vite proxy in development
+      // In production, set VITE_API_BASE_URL to the full backend URL
+      const apiBaseUrl = (import.meta.env?.VITE_API_BASE_URL as string) || 
+                        (import.meta.env?.VITE_BACKEND_URL as string) || 
+                        '/api';
+      const response = await fetch(`${apiBaseUrl}/customers/${customerId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

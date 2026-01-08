@@ -6,12 +6,25 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { CreateProductDto } from '../products.service';
+import { useNavigate } from 'react-router-dom';
+import { CreateProductDto, productsService } from '../products.service';
 import { Category, categoriesService } from '../../product-categories/categories.service';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { SpecificationsTable } from '../../components/SpecificationsTable';
 import { HsCodeSelect } from '../../components/ui/HsCodeSelect';
+import { CustomerMultiSelect } from '../../customers/components/CustomerMultiSelect';
+import { Customer } from '../../customers/customers.service';
+import { useAuth } from '../../auth/AuthContext';
+import { toast } from 'react-toastify';
+import {
+  PRODUCT_CREATE_SUCCESS,
+  PRODUCT_CREATE_WITH_ASSOCIATIONS_SUCCESS,
+  PRODUCT_CREATE_ASSOCIATIONS_PARTIAL_FAILURE,
+  PRODUCT_CREATE_ASSOCIATIONS_ALL_FAILURE,
+  MANAGE_ASSOCIATIONS_IN_DETAIL,
+} from '../../common/constants/error-messages';
+import { AssociationType } from '../types/association-types';
 // import './ProductCreateForm.css'; // Removed
 
 interface ProductCreateFormProps {
@@ -23,6 +36,8 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<CreateProductDto>({
     name: '',
@@ -36,7 +51,11 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [syncInProgress, setSyncInProgress] = useState(false);
-  const [hsCodeLookupTimeout, setHsCodeLookupTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hsCodeLookupTimeout, setHsCodeLookupTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Association state
+  const [isAssociationExpanded, setIsAssociationExpanded] = useState(false);
+  const [selectedCustomers, setSelectedCustomers] = useState<Customer[]>([]);
 
   // Load categories on mount
   useEffect(() => {
@@ -203,9 +222,119 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
         ...formData,
         // specifications is already in the correct format from SpecificationsTable
       };
+      
+      // First, create the product
+      const createdProduct = await productsService.createProduct(submitData);
+      
+      // Then, create associations if customers are selected
+      if (selectedCustomers.length > 0) {
+        const associationPromises = selectedCustomers.map(async (customer) => {
+          // Determine association type based on customer type
+          const associationType: AssociationType =
+            customer.customerType === 'BUYER'
+              ? 'POTENTIAL_BUYER'
+              : 'POTENTIAL_SUPPLIER';
+          
+          try {
+            await productsService.createProductCustomerAssociation(
+              createdProduct.id,
+              customer.id,
+              associationType,
+            );
+            return { customer, success: true, error: null };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : '未知错误';
+            console.error(`Failed to create association for customer ${customer.name}:`, error);
+            return { customer, success: false, error: errorMessage };
+          }
+        });
+
+        // Use Promise.allSettled to allow partial failures
+        const results = await Promise.allSettled(associationPromises);
+        const successful = results
+          .filter((r) => r.status === 'fulfilled' && r.value.success)
+          .map((r) => (r.status === 'fulfilled' ? r.value.customer : null))
+          .filter(Boolean) as Customer[];
+        const failed = results
+          .filter((r) => r.status === 'fulfilled' && !r.value.success)
+          .map((r) => (r.status === 'fulfilled' ? r.value : null))
+          .filter(Boolean) as Array<{ customer: Customer; error: string }>;
+        const successCount = successful.length;
+        const failureCount = failed.length;
+
+        // Log failed associations for debugging
+        if (failed.length > 0) {
+          console.warn('Failed associations:', failed.map((f) => ({
+            customer: f.customer.name,
+            error: f.error,
+          })));
+        }
+
+        // Show appropriate message based on results
+        if (failureCount === 0) {
+          // All associations succeeded
+          toast.success(PRODUCT_CREATE_WITH_ASSOCIATIONS_SUCCESS(selectedCustomers.length));
+        } else if (successCount > 0) {
+          // Partial failure
+          toast.warning(PRODUCT_CREATE_ASSOCIATIONS_PARTIAL_FAILURE(successCount, failureCount), {
+            autoClose: 6000,
+          });
+          // Show navigation button immediately (no delay)
+          toast.info(
+            <div className="flex flex-col gap-2">
+              <p>{MANAGE_ASSOCIATIONS_IN_DETAIL}</p>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate(`/products/${createdProduct.id}`)}
+                className="w-full"
+              >
+                前往产品详情页
+              </Button>
+            </div>,
+            {
+              autoClose: 10000,
+              closeButton: true,
+            },
+          );
+        } else {
+          // All associations failed
+          toast.warning(PRODUCT_CREATE_ASSOCIATIONS_ALL_FAILURE, {
+            autoClose: 6000,
+          });
+          // Show navigation button immediately (no delay)
+          toast.info(
+            <div className="flex flex-col gap-2">
+              <p>{MANAGE_ASSOCIATIONS_IN_DETAIL}</p>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate(`/products/${createdProduct.id}`)}
+                className="w-full"
+              >
+                前往产品详情页
+              </Button>
+            </div>,
+            {
+              autoClose: 10000,
+              closeButton: true,
+            },
+          );
+        }
+      } else {
+        // No associations to create
+        toast.success(PRODUCT_CREATE_SUCCESS);
+      }
+
+      // Call the parent's onSubmit callback for consistency (it will handle navigation/state)
+      // Note: Product is already created, so parent's handleSubmit should not create it again
       await onSubmit(submitData);
     } catch (error: unknown) {
-      setErrors({ submit: error.message || '创建产品失败' });
+      const errorMessage = error instanceof Error ? error.message : '创建产品失败';
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage);
+      // Re-throw to let parent handle it
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -345,6 +474,45 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
           onChange={(e) => handleChange('imageUrl', e.target.value)}
           placeholder="https://example.com/image.jpg"
         />
+      </div>
+
+      {/* Association Section - Collapsible */}
+      <div className="border border-gray-200 rounded-monday-md p-monday-4">
+        <button
+          type="button"
+          onClick={() => setIsAssociationExpanded(!isAssociationExpanded)}
+          className="w-full flex items-center justify-between text-monday-base font-semibold text-monday-text hover:text-primary-blue transition-colors"
+          aria-expanded={isAssociationExpanded}
+          aria-controls="association-section"
+        >
+          <span>关联客户（可选）</span>
+          <span className="text-monday-text-secondary">
+            {isAssociationExpanded ? '▼' : '▶'}
+          </span>
+        </button>
+        
+        {isAssociationExpanded && (
+          <div
+            id="association-section"
+            className="mt-monday-4 transition-all duration-200"
+          >
+            <div className="flex flex-col gap-monday-2">
+              <label className="text-monday-sm font-semibold text-monday-text">
+                选择要关联的客户
+              </label>
+              <CustomerMultiSelect
+                selectedCustomers={selectedCustomers}
+                onChange={setSelectedCustomers}
+                userRole={user?.role}
+                placeholder="搜索客户名称或代码..."
+                disabled={isSubmitting}
+              />
+              <span className="text-monday-xs text-monday-text-placeholder">
+                创建产品后，系统将自动为选中的客户建立关联关系
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {errors.submit && (

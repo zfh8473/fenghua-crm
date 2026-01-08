@@ -62,7 +62,19 @@ export class CompaniesController {
     @Query(ValidationPipe) query: CustomerQueryDto,
     @Token() token: string,
   ): Promise<{ customers: CustomerResponseDto[]; total: number }> {
-    return this.companiesService.findAll(query, token);
+    try {
+      this.logger.log(`[Controller] Received GET /customers request with query: ${JSON.stringify(query)}`);
+      const result = await this.companiesService.findAll(query, token);
+      this.logger.log(`[Controller] Returning ${result.customers.length} customers`);
+      return result;
+    } catch (error) {
+      this.logger.error('[Controller] Error in findAll', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        query: query,
+      });
+      throw error;
+    }
   }
 
   /**

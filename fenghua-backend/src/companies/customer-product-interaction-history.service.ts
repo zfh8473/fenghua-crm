@@ -69,6 +69,7 @@ export class CustomerProductInteractionHistoryService implements OnModuleDestroy
     token: string,
     page: number = 1,
     limit: number = 20,
+    sortOrder: 'asc' | 'desc' = 'desc',
   ): Promise<{ interactions: CustomerProductInteractionDto[]; total: number }> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
@@ -167,7 +168,7 @@ export class CustomerProductInteractionHistoryService implements OnModuleDestroy
       GROUP BY pci.id, pci.interaction_type, pci.interaction_date, pci.description, 
                pci.status, pci.additional_info, pci.created_at, pci.created_by,
                u.email, u.first_name, u.last_name
-      ORDER BY pci.interaction_date DESC
+      ORDER BY pci.interaction_date ${sortOrder === 'asc' ? 'ASC' : 'DESC'}
       LIMIT $4 OFFSET $5
     `;
 

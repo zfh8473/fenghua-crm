@@ -158,11 +158,11 @@ export const ProductBusinessProcess: React.FC<ProductBusinessProcessProps> = ({
     queryKey: ['product-business-process', productId, customerId],
     queryFn: async () => {
       const apiBaseUrl =
-        import.meta.env.VITE_API_BASE_URL ||
-        import.meta.env.VITE_BACKEND_URL ||
-        'http://localhost:3006';
+        import.meta.env?.VITE_API_BASE_URL ||
+        import.meta.env?.VITE_BACKEND_URL ||
+        '/api';
       const response = await fetch(
-        `${apiBaseUrl}/api/products/${productId}/business-process?customerId=${customerId}`,
+        `${apiBaseUrl}/products/${productId}/business-process?customerId=${customerId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

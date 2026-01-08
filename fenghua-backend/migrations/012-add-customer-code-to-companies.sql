@@ -15,3 +15,5 @@ WHERE deleted_at IS NULL;
 -- Add comment
 COMMENT ON COLUMN companies.customer_code IS 'Customer code for identification (alphanumeric, 1-50 characters, unique)';
 
+
+

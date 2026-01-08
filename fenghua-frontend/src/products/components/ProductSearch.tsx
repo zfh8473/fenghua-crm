@@ -20,6 +20,7 @@ interface ProductSearchProps {
   onSearch: (filters: ProductSearchFilters) => void;
   initialFilters?: ProductSearchFilters;
   loading?: boolean;
+  inputMode?: 'search' | 'text' | 'none' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal';
 }
 
 export const ProductSearch: React.FC<ProductSearchProps> = ({
@@ -27,6 +28,7 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
   onSearch,
   initialFilters = {},
   loading = false,
+  inputMode = 'text',
 }) => {
   const [searchQuery, setSearchQuery] = useState(initialFilters.search || '');
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || '');
@@ -88,6 +90,7 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
             disabled={loading}
+            inputMode={inputMode}
             rightIcon={
               loading ? (
                 <span className="text-monday-text-secondary animate-spin">⏳</span>

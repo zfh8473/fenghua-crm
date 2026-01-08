@@ -180,3 +180,5 @@ if ((updateProductDto as any).hsCode !== undefined) {
 **修复完成时间：** 2025-01-03  
 **修复状态：** ✅ 完成（除 H3 需要手动处理）
 
+
+

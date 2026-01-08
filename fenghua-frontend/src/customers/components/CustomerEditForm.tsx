@@ -37,6 +37,7 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
     employees: customer.employees,
     website: customer.website,
     phone: customer.phone,
+    email: customer.email,
     notes: customer.notes,
   });
 
@@ -68,12 +69,13 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
       }
     }
 
-    if (formData.customerCode !== undefined) {
-      const trimmedCustomerCode = formData.customerCode.trim();
-      if (trimmedCustomerCode.length === 0) {
-        newErrors.customerCode = '客户代码不能为空';
-      } else if (!/^[a-zA-Z0-9]{1,50}$/.test(trimmedCustomerCode)) {
-        newErrors.customerCode = '客户代码格式不正确，应为1-50个字母数字字符';
+    // Email validation (optional field)
+    if (formData.email !== undefined && formData.email && formData.email.trim().length > 0) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = '邮箱格式不正确';
+      } else if (formData.email.trim().length > 255) {
+        newErrors.email = '邮箱长度不能超过255个字符';
       }
     }
 
@@ -125,7 +127,10 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
         industry: formData.industry?.trim() || undefined,
         website: formData.website?.trim() || undefined,
         phone: formData.phone?.trim() || undefined,
+        email: formData.email?.trim() || undefined,
         notes: formData.notes?.trim() || undefined,
+        // Don't allow updating customerCode
+        customerCode: undefined,
       };
       await onSubmit(submitData);
     } catch (error: unknown) {
@@ -176,17 +181,15 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
           maxLength={255}
         />
 
-        <Input
-          id="customerCode"
-          label="客户代码"
-          type="text"
-          value={formData.customerCode || ''}
-          onChange={(e) => handleChange('customerCode', e.target.value.toUpperCase())}
-          error={!!errors.customerCode}
-          errorMessage={errors.customerCode}
-          maxLength={50}
-          placeholder="字母数字组合，1-50字符"
-        />
+        <div className="flex flex-col gap-monday-2">
+          <label className="text-monday-sm font-semibold text-monday-text">
+            客户代码
+          </label>
+          <div className="px-monday-3 py-monday-2 border border-gray-300 rounded-monday-md bg-gray-100">
+            {customer.customerCode}
+          </div>
+          <p className="text-monday-xs text-monday-text-secondary">客户代码由系统自动生成，不可修改</p>
+        </div>
 
         <div className="flex flex-col gap-monday-2">
           <label className="text-monday-sm font-semibold text-monday-text">
@@ -293,6 +296,18 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
           value={formData.phone || ''}
           onChange={(e) => handleChange('phone', e.target.value)}
           maxLength={50}
+        />
+
+        <Input
+          id="email"
+          label="邮箱"
+          type="email"
+          value={formData.email || ''}
+          onChange={(e) => handleChange('email', e.target.value)}
+          error={!!errors.email}
+          errorMessage={errors.email}
+          maxLength={255}
+          placeholder="example@company.com"
         />
       </div>
 

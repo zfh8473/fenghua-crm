@@ -152,13 +152,26 @@ export const ProductSearchResults: React.FC<ProductSearchResultsProps> = ({
 
               {/* Right: Action */}
               <div className="flex-shrink-0">
-                <Link
-                  to={`/products/${product.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-primary-blue hover:text-primary-blue-hover font-medium text-monday-sm"
-                >
-                  查看详情 →
-                </Link>
+                {onProductClick ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProductClick(product);
+                    }}
+                    className="text-primary-blue hover:text-primary-blue-hover font-medium text-monday-sm cursor-pointer"
+                  >
+                    查看详情 →
+                  </button>
+                ) : (
+                  <Link
+                    to={`/products?productId=${product.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-primary-blue hover:text-primary-blue-hover font-medium text-monday-sm"
+                  >
+                    查看详情 →
+                  </Link>
+                )}
               </div>
             </div>
           </Card>

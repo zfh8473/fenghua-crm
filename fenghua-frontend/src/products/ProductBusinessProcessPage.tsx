@@ -43,10 +43,10 @@ export const ProductBusinessProcessPage: React.FC = () => {
     queryFn: async () => {
       if (!customerId) throw new Error('客户ID不能为空');
       const apiBaseUrl =
-        import.meta.env.VITE_API_BASE_URL ||
-        import.meta.env.VITE_BACKEND_URL ||
-        'http://localhost:3006';
-      const response = await fetch(`${apiBaseUrl}/api/companies/${customerId}`, {
+        import.meta.env?.VITE_API_BASE_URL ||
+        import.meta.env?.VITE_BACKEND_URL ||
+        '/api';
+      const response = await fetch(`${apiBaseUrl}/customers/${customerId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

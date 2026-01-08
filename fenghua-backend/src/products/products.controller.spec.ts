@@ -70,17 +70,26 @@ describe('ProductsController', () => {
         hsCode: '123456',
         category: '电子产品',
         status: 'active',
-        workspaceId: 'workspace-id',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       productsService.create.mockResolvedValueOnce(mockProduct);
 
-      const result = await controller.create(createDto, 'token', { user: { id: 'user-id' } } as any);
+      const result = await controller.create(createDto, { user: { id: 'user-id' } } as any);
 
       expect(result).toEqual(mockProduct);
-      expect(productsService.create).toHaveBeenCalledWith(createDto, 'token', 'user-id');
+      expect(productsService.create).toHaveBeenCalledWith(createDto, 'user-id');
+    });
+
+    it('should throw BadRequestException if userId is missing', async () => {
+      const createDto: CreateProductDto = {
+        name: 'Test Product',
+        hsCode: '123456',
+        category: '电子产品',
+      };
+
+      await expect(controller.create(createDto, { user: {} } as any)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -94,10 +103,15 @@ describe('ProductsController', () => {
 
       productsService.findAll.mockResolvedValueOnce(mockResponse);
 
-      const result = await controller.findAll(query, 'token');
+      const result = await controller.findAll(query, 'token', { user: { id: 'user-id' } } as any);
 
       expect(result).toEqual(mockResponse);
-      expect(productsService.findAll).toHaveBeenCalledWith(query, 'token');
+      expect(productsService.findAll).toHaveBeenCalledWith(query, 'user-id', 'token');
+    });
+
+    it('should throw BadRequestException if userId is missing', async () => {
+      const query: ProductQueryDto = { limit: 20, offset: 0 };
+      await expect(controller.findAll(query, 'token', { user: {} } as any)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -108,17 +122,20 @@ describe('ProductsController', () => {
         name: 'Test Product',
         hsCode: '123456',
         status: 'active',
-        workspaceId: 'workspace-id',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       productsService.findOne.mockResolvedValueOnce(mockProduct);
 
-      const result = await controller.findOne('product-id', 'token');
+      const result = await controller.findOne('product-id', 'token', { user: { id: 'user-id' } } as any);
 
       expect(result).toEqual(mockProduct);
-      expect(productsService.findOne).toHaveBeenCalledWith('product-id', 'token');
+      expect(productsService.findOne).toHaveBeenCalledWith('product-id', 'user-id', 'token');
+    });
+
+    it('should throw BadRequestException if userId is missing', async () => {
+      await expect(controller.findOne('product-id', 'token', { user: {} } as any)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for invalid UUID', async () => {
@@ -127,9 +144,9 @@ describe('ProductsController', () => {
       const validUUID = '123e4567-e89b-12d3-a456-426614174000';
       productsService.findOne.mockResolvedValueOnce({} as ProductResponseDto);
 
-      await controller.findOne(validUUID, 'token');
+      await controller.findOne(validUUID, 'token', { user: { id: 'user-id' } } as any);
 
-      expect(productsService.findOne).toHaveBeenCalledWith(validUUID, 'token');
+      expect(productsService.findOne).toHaveBeenCalledWith(validUUID, 'user-id', 'token');
     });
   });
 
@@ -143,7 +160,6 @@ describe('ProductsController', () => {
         name: 'Updated Product',
         hsCode: '123456',
         status: 'active',
-        workspaceId: 'workspace-id',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -153,7 +169,12 @@ describe('ProductsController', () => {
       const result = await controller.update('product-id', updateDto, 'token', { user: { id: 'user-id' } } as any);
 
       expect(result).toEqual(mockProduct);
-      expect(productsService.update).toHaveBeenCalledWith('product-id', updateDto, 'token', 'user-id');
+      expect(productsService.update).toHaveBeenCalledWith('product-id', updateDto, 'user-id', 'token');
+    });
+
+    it('should throw BadRequestException if userId is missing', async () => {
+      const updateDto: UpdateProductDto = { name: 'Updated Product' };
+      await expect(controller.update('product-id', updateDto, 'token', { user: {} } as any)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -163,7 +184,11 @@ describe('ProductsController', () => {
 
       await controller.remove('product-id', 'token', { user: { id: 'user-id' } } as any);
 
-      expect(productsService.remove).toHaveBeenCalledWith('product-id', 'token', 'user-id');
+      expect(productsService.remove).toHaveBeenCalledWith('product-id', 'user-id', 'token');
+    });
+
+    it('should throw BadRequestException if userId is missing', async () => {
+      await expect(controller.remove('product-id', 'token', { user: {} } as any)).rejects.toThrow(BadRequestException);
     });
   });
 });

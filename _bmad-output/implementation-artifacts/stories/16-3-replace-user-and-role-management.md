@@ -1,6 +1,6 @@
 # Story 16.3: 替换用户和角色管理
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 <!-- Code Review: 2025-12-26 - All ACs implemented, HIGH issue fixed, ready for integration testing -->

@@ -23,6 +23,10 @@ export class CustomerProductAssociationDto {
   @IsNotEmpty()
   hsCode: string;
 
+  @IsOptional()
+  @IsString()
+  category?: string;
+
   @IsInt()
   @Min(0)
   interactionCount: number;
