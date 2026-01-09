@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.0.0",
     "@nestjs/core": "^10.0.0",
@@ -28,14 +29,19 @@
     "@nestjs/platform-express": "^10.4.20",
     "@nestjs/schedule": "^3.0.4",
     "@types/bcrypt": "^5.0.2",
+    "@types/csv-stringify": "^1.4.3",
     "@types/node-fetch": "^2.6.13",
     "@types/pg": "^8.16.0",
     "@types/redis": "^4.0.10",
     "@types/uuid": "^10.0.0",
     "bcrypt": "^5.1.1",
+    "bullmq": "^5.66.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "csv-parser": "^3.2.0",
+    "csv-stringify": "^6.6.0",
     "graphql-request": "^6.1.0",
+    "ioredis": "^5.9.1",
     "node-fetch": "^3.3.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -44,7 +50,8 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "uuid": "^13.0.0",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

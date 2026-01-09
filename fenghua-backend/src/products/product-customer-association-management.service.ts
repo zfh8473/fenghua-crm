@@ -124,7 +124,7 @@ export class ProductCustomerAssociationManagementService implements OnModuleDest
       }
 
       // 2. Validate product exists and is not deleted
-      const product = await this.productsService.findOne(productId, token);
+      const product = await this.productsService.findOne(productId, user.id, token);
       if (!product || product.status !== 'active') {
         await client.query('ROLLBACK');
         throw new BadRequestException('产品不存在或非 active 状态');

@@ -1,0 +1,5 @@
+客户名称,客户类型,邮箱,电话,员工数,地址
+测试公司1,BUYER,test1@example.com,123-456-7890,100,测试地址1
+测试公司2,SUPPLIER,test2@example.com,234-567-8901,200,测试地址2
+测试公司3,BUYER,test3@example.com,345-678-9012,300,测试地址3
+

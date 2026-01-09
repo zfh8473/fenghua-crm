@@ -191,6 +191,138 @@ export class ProductsService implements OnModuleDestroy {
   }
 
   /**
+   * Bulk create products
+   * Optimized for batch imports with category validation and HS code uniqueness checks
+   */
+  async bulkCreate(
+    products: CreateProductDto[],
+    userId: string,
+    token: string,
+  ): Promise<ProductResponseDto[]> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    if (products.length === 0) {
+      return [];
+    }
+
+    // Step 1: Batch load all product categories (optimization: 1 query instead of N)
+    const allCategories = await this.productCategoriesService.findAll();
+    const categorySet = new Set(allCategories.map(cat => cat.name.toLowerCase()));
+
+    // Step 2: Batch check existing HS codes (considering created_by)
+    const hsCodesToCheck = products.map(p => p.hsCode.trim());
+    const existingHsCodes = new Set<string>();
+    if (hsCodesToCheck.length > 0) {
+      try {
+        // Validate userId format
+        let validUserId: string | null = userId;
+        if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+          validUserId = null;
+        }
+
+        const hsCodeQuery = `
+          SELECT hs_code
+          FROM products
+          WHERE hs_code = ANY($1::text[])
+          AND created_by ${validUserId ? '= $2' : 'IS NULL'}
+          AND deleted_at IS NULL
+        `;
+        const params = validUserId ? [hsCodesToCheck, validUserId] : [hsCodesToCheck];
+        const result = await this.pgPool.query(hsCodeQuery, params);
+        result.rows.forEach(row => {
+          existingHsCodes.add(row.hs_code);
+        });
+      } catch (error) {
+        this.logger.error('Failed to check existing HS codes', error);
+        // Continue with import, but may fail on duplicate constraint
+      }
+    }
+
+    const client = await this.pgPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const results: ProductResponseDto[] = [];
+
+      for (const createProductDto of products) {
+        // Validate category exists (using pre-loaded categorySet)
+        if (!categorySet.has(createProductDto.category.trim().toLowerCase())) {
+          throw new BadRequestException(`产品类别"${createProductDto.category}"不存在`);
+        }
+
+        // Check HS code uniqueness (using pre-loaded existingHsCodes)
+        if (existingHsCodes.has(createProductDto.hsCode.trim())) {
+          throw new ConflictException(`HS编码"${createProductDto.hsCode}"已存在`);
+        }
+
+        // Validate userId format
+        let validUserId: string | null = userId;
+        if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+          validUserId = null;
+        }
+
+        // Insert product
+        const result = await client.query(
+          `INSERT INTO products (
+            name, hs_code, description, category, status, specifications, image_url, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING *`,
+          [
+            createProductDto.name,
+            createProductDto.hsCode,
+            createProductDto.description || null,
+            createProductDto.category,
+            'active',
+            createProductDto.specifications ? JSON.stringify(createProductDto.specifications) : null,
+            createProductDto.imageUrl || null,
+            validUserId,
+          ],
+        );
+
+        const product = result.rows[0];
+        const productDto = this.mapToResponseDto(product);
+        results.push(productDto);
+
+        // Add to existingHsCodes set to prevent duplicates within batch
+        existingHsCodes.add(createProductDto.hsCode.trim());
+      }
+
+      await client.query('COMMIT');
+
+      // Log audit for bulk import
+      try {
+        await this.auditService.log({
+          action: 'BULK_CREATE',
+          entityType: 'PRODUCT',
+          entityId: null,
+          userId: userId || 'system',
+          operatorId: userId || 'system',
+          timestamp: new Date(),
+          metadata: {
+            count: results.length,
+            categories: [...new Set(products.map(p => p.category))],
+          },
+        });
+      } catch (error) {
+        this.logger.warn('Failed to log audit entry for bulk product create', error);
+      }
+
+      return results;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      this.logger.error('Failed to bulk create products', error);
+      if (error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+      throw new BadRequestException('批量创建产品失败');
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Find all products with pagination and filters
    * Implements data isolation based on user role:
    * - ADMIN and DIRECTOR: can see all products

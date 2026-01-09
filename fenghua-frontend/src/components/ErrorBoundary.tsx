@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env?.MODE === 'development' || import.meta.env?.DEV) {
       console.error('Error caught by boundary:', error, errorInfo);
     }
 
@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-800">发生错误，请刷新页面重试</p>
-          {this.state.error && process.env.NODE_ENV === 'development' && (
+          {this.state.error && (import.meta.env?.MODE === 'development' || import.meta.env?.DEV) && (
             <p className="text-xs text-red-600 mt-2">{this.state.error.message}</p>
           )}
         </div>

@@ -17,3 +17,4 @@ COMMENT ON COLUMN companies.customer_code IS 'Customer code for identification (
 
 
 
+

@@ -209,6 +209,112 @@ export class CompaniesService implements OnModuleDestroy {
   }
 
   /**
+   * Bulk create customers (for import operations)
+   * Uses transaction to ensure atomicity
+   */
+  async bulkCreate(
+    customers: CreateCustomerDto[],
+    userId: string,
+    token: string,
+  ): Promise<CustomerResponseDto[]> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    if (customers.length === 0) {
+      return [];
+    }
+
+    const client = await this.pgPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const results: CustomerResponseDto[] = [];
+
+      for (const createCustomerDto of customers) {
+        // Generate customer code if not provided
+        let customerCode = createCustomerDto.customerCode;
+        if (!customerCode || customerCode.trim() === '') {
+          customerCode = await this.generateCustomerCode(createCustomerDto.customerType);
+        } else {
+          // Check if code already exists in this batch or database
+          const existsInBatch = results.some(c => c.customerCode === customerCode);
+          const existsInDb = await this.checkCustomerCodeExists(customerCode);
+          if (existsInBatch || existsInDb) {
+            // Generate new code if conflict
+            customerCode = await this.generateCustomerCode(createCustomerDto.customerType);
+          }
+        }
+
+        // Validate userId format
+        let validUserId: string | null = userId;
+        if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+          validUserId = null;
+        }
+
+        // Insert customer
+        const result = await client.query(
+          `INSERT INTO companies (
+            name, customer_code, customer_type, domain_name, address, city, state, country, 
+            postal_code, industry, employees, website, phone, email, notes, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          RETURNING *`,
+          [
+            createCustomerDto.name,
+            customerCode,
+            createCustomerDto.customerType,
+            createCustomerDto.domainName || null,
+            createCustomerDto.address || null,
+            createCustomerDto.city || null,
+            createCustomerDto.state || null,
+            createCustomerDto.country || null,
+            createCustomerDto.postalCode || null,
+            createCustomerDto.industry || null,
+            createCustomerDto.employees || null,
+            createCustomerDto.website || null,
+            createCustomerDto.phone || null,
+            createCustomerDto.email || null,
+            createCustomerDto.notes || null,
+            validUserId,
+          ],
+        );
+
+        const customer = result.rows[0];
+        const customerDto = this.mapToResponseDto(customer);
+        results.push(customerDto);
+      }
+
+      await client.query('COMMIT');
+
+      // Log audit for bulk import
+      try {
+        await this.auditService.log({
+          action: 'BULK_CREATE',
+          entityType: 'CUSTOMER',
+          entityId: null,
+          userId: userId || 'system',
+          operatorId: userId || 'system',
+          timestamp: new Date(),
+          metadata: {
+            count: results.length,
+            customerTypes: [...new Set(customers.map(c => c.customerType))],
+          },
+        });
+      } catch (error) {
+        this.logger.warn('Failed to log audit entry for bulk customer create', error);
+      }
+
+      return results;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      this.logger.error('Failed to bulk create customers', error);
+      throw new BadRequestException('批量创建客户失败');
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Find all customers with pagination and role-based filtering
    */
   async findAll(query: CustomerQueryDto, token: string): Promise<{ customers: CustomerResponseDto[]; total: number }> {

@@ -325,6 +325,132 @@ export class InteractionsService implements OnModuleDestroy {
   }
 
   /**
+   * Bulk create interaction records
+   * 
+   * Creates multiple interaction records in a single transaction.
+   * Each CreateInteractionDto can create multiple interaction records (one per product).
+   * Uses SAVEPOINT for partial success (some records succeed, some fail).
+   * 
+   * @param interactions - Array of CreateInteractionDto
+   * @param userId - User ID creating the interactions
+   * @param token - JWT token for authentication
+   * @returns Array of created interaction records
+   */
+  async bulkCreate(
+    interactions: CreateInteractionDto[],
+    userId: string,
+    token: string,
+  ): Promise<InteractionResponseDto[]> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    if (interactions.length === 0) {
+      return [];
+    }
+
+    // Validate user token
+    const user = await this.authService.validateToken(token);
+    if (!user || !user.id) {
+      throw new UnauthorizedException('无效的用户 token');
+    }
+
+    const client = await this.pgPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const results: InteractionResponseDto[] = [];
+      const insertQuery = `
+        INSERT INTO product_customer_interactions 
+          (product_id, customer_id, interaction_type, interaction_date, description, status, additional_info, created_by, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id, product_id, customer_id, interaction_type, interaction_date, description, status, additional_info, created_at, created_by
+      `;
+
+      for (let i = 0; i < interactions.length; i++) {
+        const createDto = interactions[i];
+        
+        // Create savepoint for each interaction group
+        const savepointName = `sp_interaction_${i}`;
+        await client.query(`SAVEPOINT ${savepointName}`);
+
+        try {
+          // Create interaction records for all products in this DTO
+          const createdInteractions: any[] = [];
+          for (const productId of createDto.productIds) {
+            const result = await client.query(insertQuery, [
+              productId,
+              createDto.customerId,
+              createDto.interactionType,
+              new Date(createDto.interactionDate),
+              createDto.description || null,
+              createDto.status || null,
+              createDto.additionalInfo ? JSON.stringify(createDto.additionalInfo) : null,
+              userId,
+              new Date(),
+            ]);
+            createdInteractions.push(result.rows[0]);
+          }
+
+          // Map to response DTOs
+          for (const interaction of createdInteractions) {
+            results.push({
+              id: interaction.id,
+              productId: interaction.product_id,
+              customerId: interaction.customer_id,
+              interactionType: interaction.interaction_type,
+              interactionDate: interaction.interaction_date,
+              description: interaction.description,
+              status: interaction.status,
+              additionalInfo: interaction.additional_info
+                ? (typeof interaction.additional_info === 'string'
+                    ? JSON.parse(interaction.additional_info)
+                    : interaction.additional_info)
+                : undefined,
+              createdAt: interaction.created_at,
+              createdBy: interaction.created_by,
+            });
+          }
+
+          await client.query(`RELEASE SAVEPOINT ${savepointName}`);
+        } catch (error) {
+          await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+          this.logger.error(`Failed to create interaction group ${i}:`, error);
+          // Continue with next interaction group
+        }
+      }
+
+      await client.query('COMMIT');
+
+      // Log audit for bulk import
+      try {
+        await this.auditService.log({
+          action: 'BULK_CREATE',
+          entityType: 'INTERACTION',
+          entityId: null,
+          userId: userId || 'system',
+          operatorId: userId || 'system',
+          timestamp: new Date(),
+          metadata: {
+            count: results.length,
+            totalGroups: interactions.length,
+          },
+        });
+      } catch (error) {
+        this.logger.warn('Failed to log audit entry for bulk interaction create', error);
+      }
+
+      return results;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      this.logger.error('Failed to bulk create interactions', error);
+      throw new BadRequestException('批量创建互动记录失败');
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Get a single interaction record by ID with role-based permission check
    */
   /**
@@ -464,6 +590,175 @@ export class InteractionsService implements OnModuleDestroy {
       updatedBy: interaction.updated_by || undefined,
       attachments: attachments.length > 0 ? attachments : undefined,
     };
+  }
+
+  /**
+   * Find all interaction records with filters and pagination
+   * 
+   * Supports filtering by customerId, productId, interactionType, dateRange, status.
+   * Applies role-based data filtering (Frontend Specialist can only see BUYER customers,
+   * Backend Specialist can only see SUPPLIER customers).
+   * 
+   * @param filters - Query filters (customerId, productId, interactionType, startDate, endDate, status, limit, offset)
+   * @param token - JWT token for authentication
+   * @returns Array of interaction records and total count
+   * @throws {BadRequestException} If database connection is not initialized
+   * @throws {UnauthorizedException} If token is invalid
+   */
+  async findAll(
+    filters: {
+      customerId?: string;
+      productId?: string;
+      interactionType?: string;
+      startDate?: string;
+      endDate?: string;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    },
+    token: string,
+  ): Promise<{ interactions: InteractionResponseDto[]; total: number }> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    // 1. Validate user token and get user info
+    const user = await this.authService.validateToken(token);
+    if (!user || !user.id) {
+      throw new UnauthorizedException('无效的用户 token');
+    }
+
+    // 2. Get user permissions and data access filter
+    const dataFilter = await this.permissionService.getDataAccessFilter(token);
+
+    // 3. Convert customer_type to uppercase (PermissionService returns lowercase, database stores uppercase)
+    const customerTypeFilter = dataFilter?.customerType
+      ? dataFilter.customerType.toUpperCase()
+      : null;
+
+    // 4. Handle permission check failure
+    if (dataFilter?.customerType === 'NONE') {
+      // User has no access, return empty result
+      return { interactions: [], total: 0 };
+    }
+
+    // 5. Build WHERE clause
+    const whereConditions: string[] = ['pci.deleted_at IS NULL', 'c.deleted_at IS NULL'];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    // Role-based customer type filter
+    if (customerTypeFilter) {
+      whereConditions.push(`c.customer_type = $${paramIndex}`);
+      params.push(customerTypeFilter);
+      paramIndex++;
+    }
+
+    // Customer filter
+    if (filters.customerId) {
+      whereConditions.push(`pci.customer_id = $${paramIndex}`);
+      params.push(filters.customerId);
+      paramIndex++;
+    }
+
+    // Product filter
+    if (filters.productId) {
+      whereConditions.push(`pci.product_id = $${paramIndex}`);
+      params.push(filters.productId);
+      paramIndex++;
+    }
+
+    // Interaction type filter
+    if (filters.interactionType) {
+      whereConditions.push(`pci.interaction_type = $${paramIndex}`);
+      params.push(filters.interactionType);
+      paramIndex++;
+    }
+
+    // Date range filter
+    if (filters.startDate) {
+      whereConditions.push(`pci.interaction_date >= $${paramIndex}`);
+      params.push(new Date(filters.startDate));
+      paramIndex++;
+    }
+    if (filters.endDate) {
+      whereConditions.push(`pci.interaction_date <= $${paramIndex}`);
+      params.push(new Date(filters.endDate));
+      paramIndex++;
+    }
+
+    // Status filter
+    if (filters.status) {
+      whereConditions.push(`pci.status = $${paramIndex}`);
+      params.push(filters.status);
+      paramIndex++;
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // 6. Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM product_customer_interactions pci
+      INNER JOIN companies c ON c.id = pci.customer_id
+      ${whereClause}
+    `;
+    const countResult = await this.pgPool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    // 7. Get paginated results
+    const limit = filters.limit || 20;
+    const offset = filters.offset || 0;
+
+    const query = `
+      SELECT
+        pci.id,
+        pci.product_id,
+        pci.customer_id,
+        pci.interaction_type,
+        pci.interaction_date,
+        pci.description,
+        pci.status,
+        pci.additional_info,
+        pci.created_at,
+        pci.created_by,
+        pci.updated_at,
+        pci.updated_by,
+        u.email as creator_email,
+        u.first_name as creator_first_name,
+        u.last_name as creator_last_name
+      FROM product_customer_interactions pci
+      INNER JOIN companies c ON c.id = pci.customer_id
+      LEFT JOIN users u ON u.id = pci.created_by
+      ${whereClause}
+      ORDER BY pci.interaction_date DESC, pci.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const queryParams = [...params, limit, offset];
+    const result = await this.pgPool.query(query, queryParams);
+
+    // 8. Map to response DTOs
+    const interactions: InteractionResponseDto[] = result.rows.map((row) => ({
+      id: row.id,
+      productId: row.product_id,
+      customerId: row.customer_id,
+      interactionType: row.interaction_type,
+      interactionDate: row.interaction_date,
+      description: row.description,
+      status: row.status,
+      additionalInfo: row.additional_info
+        ? typeof row.additional_info === 'string'
+          ? JSON.parse(row.additional_info)
+          : row.additional_info
+        : undefined,
+      createdAt: row.created_at,
+      createdBy: row.created_by,
+      updatedAt: row.updated_at,
+      updatedBy: row.updated_by,
+    }));
+
+    return { interactions, total };
   }
 
   /**

@@ -54,3 +54,4 @@ GROUP BY customer_type;
 
 
 
+

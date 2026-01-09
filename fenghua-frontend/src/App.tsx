@@ -17,11 +17,15 @@ import { ProductBusinessProcessPage } from './products/ProductBusinessProcessPag
 import { ProductIntegrityValidationPage } from './products/ProductIntegrityValidationPage'
 import { CustomerManagementPage } from './customers/CustomerManagementPage'
 import { CustomerProductInteractionHistoryPage } from './customers/CustomerProductInteractionHistoryPage'
-import { PersonManagementPage } from './people/PersonManagementPage'
+// import { PersonManagementPage } from './people/PersonManagementPage' // Temporarily commented out - file not found
 import { InteractionsPage } from './interactions/pages/InteractionsPage'
 import { InteractionCreatePage } from './interactions/pages/InteractionCreatePage'
 import { InteractionEditPage } from './interactions/pages/InteractionEditPage'
-import { GlobalSearchPage } from './search/GlobalSearchPage'
+// import { GlobalSearchPage } from './search/GlobalSearchPage' // Temporarily commented out - file not found
+import { CustomerImportPage } from './import/CustomerImportPage'
+import { ProductImportPage } from './import/ProductImportPage'
+import { InteractionImportPage } from './import/InteractionImportPage'
+import { ExportPage } from './export/ExportPage'
 import { TestTailwind } from './components/TestTailwind'
 import { Card } from './components/ui'
 import './App.css'
@@ -52,6 +56,10 @@ function HomePage() {
     { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
     { path: '/people', label: '联系人管理', icon: '👤', adminOnly: false },
     { path: '/interactions', label: '互动记录', icon: '💬', adminOnly: false },
+    { path: '/customers/import', label: '客户批量导入', icon: '📥', adminOnly: true },
+    { path: '/products/import', label: '产品批量导入', icon: '📥', adminOnly: true },
+    { path: '/interactions/import', label: '互动记录批量导入', icon: '📥', adminOnly: true },
+    { path: '/export', label: '数据导出', icon: '📤', adminOnly: true },
     { path: '/settings', label: '系统设置', icon: '⚙️', adminOnly: true },
     { path: '/monitoring', label: '系统监控', icon: '📊', adminOnly: true },
     { path: '/logs', label: '系统日志', icon: '📝', adminOnly: true },
@@ -281,10 +289,46 @@ function App() {
         }
       />
       <Route
+        path="/customers/import"
+        element={
+          <ProtectedRoute>
+            <CustomerImportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/products/import"
+        element={
+          <ProtectedRoute>
+            <ProductImportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interactions/import"
+        element={
+          <ProtectedRoute>
+            <InteractionImportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/export"
+        element={
+          <ProtectedRoute>
+            <ExportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/people"
         element={
           <ProtectedRoute>
-            <PersonManagementPage />
+            {/* <PersonManagementPage /> */} {/* Temporarily commented out - file not found */}
+            <Card variant="default" className="p-monday-8">
+              <h2 className="text-monday-2xl font-semibold mb-monday-4">联系人管理</h2>
+              <p className="text-monday-text-secondary">联系人管理功能正在开发中...</p>
+            </Card>
           </ProtectedRoute>
         }
       />
@@ -316,7 +360,13 @@ function App() {
         path="/search"
         element={
           <ProtectedRoute>
-            <GlobalSearchPage />
+            {/* <GlobalSearchPage /> */} {/* Temporarily commented out - file not found */}
+            <MainLayout title="全局搜索">
+              <Card variant="default" className="p-monday-8">
+                <h2 className="text-monday-2xl font-semibold mb-monday-4">全局搜索</h2>
+                <p className="text-monday-text-secondary">全局搜索功能正在开发中...</p>
+              </Card>
+            </MainLayout>
           </ProtectedRoute>
         }
       />

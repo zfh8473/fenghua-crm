@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { customersService, Customer, CreateCustomerDto, UpdateCustomerDto, CustomerQueryParams } from './customers.service';
 import { CustomerList } from './components/CustomerList';
@@ -22,6 +23,7 @@ import { isFrontendSpecialist, isBackendSpecialist, isDirector, isAdmin } from '
 type ViewMode = 'list' | 'create' | 'edit';
 
 export const CustomerManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
@@ -213,12 +215,34 @@ export const CustomerManagementPage: React.FC = () => {
 
   // Check if user can see customer type filter (Director/Admin only)
   const canFilterByType = isDirector(currentUser?.role) || isAdmin(currentUser?.role);
+  
+  // Check if user can see import button (Director/Admin only)
+  // Debug: Log user role and permission check FIRST
+  useEffect(() => {
+    if (currentUser) {
+      console.log('[CustomerManagementPage] Current user:', currentUser);
+      console.log('[CustomerManagementPage] User role (raw):', currentUser.role);
+      console.log('[CustomerManagementPage] User role (type):', typeof currentUser.role);
+      console.log('[CustomerManagementPage] isAdmin check:', isAdmin(currentUser.role));
+      console.log('[CustomerManagementPage] isDirector check:', isDirector(currentUser.role));
+    } else {
+      console.log('[CustomerManagementPage] Current user is null or undefined');
+    }
+  }, [currentUser]);
+  
+  const canSeeImportButton = isAdmin(currentUser?.role) || isDirector(currentUser?.role);
+  
+  // Debug: Log final permission check
+  useEffect(() => {
+    console.log('[CustomerManagementPage] canSeeImportButton:', canSeeImportButton);
+    console.log('[CustomerManagementPage] viewMode:', viewMode);
+  }, [canSeeImportButton, viewMode]);
 
   // Toolbar component
   const toolbar = viewMode === 'list' ? (
     <Card variant="default" className="w-full p-monday-4">
-      <div className="flex items-center gap-monday-3 flex-nowrap">
-        <div className="flex-1">
+      <div className="flex items-center gap-monday-3 flex-wrap">
+        <div className="flex-1 min-w-[300px]">
           <CustomerSearch
             onSearch={handleSearch}
             initialFilters={searchFilters}
@@ -226,15 +250,28 @@ export const CustomerManagementPage: React.FC = () => {
             userRole={currentUser?.role}
           />
         </div>
-        <Button 
-          variant="primary" 
-          size="md" 
-          onClick={handleCreate}
-          className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-monday-md hover:shadow-monday-lg font-semibold whitespace-nowrap"
-        >
-          <span className="mr-monday-2">✨</span>
-          {getCreateButtonText()}
-        </Button>
+        <div className="flex items-center gap-monday-3 flex-shrink-0">
+          {(isAdmin(currentUser?.role) || isDirector(currentUser?.role)) && (
+            <Button 
+              variant="primary" 
+              size="md" 
+              onClick={() => navigate('/customers/import')}
+              className="bg-gradient-to-r from-primary-green to-primary-green-hover hover:from-primary-green-hover hover:to-primary-green shadow-monday-md hover:shadow-monday-lg font-semibold whitespace-nowrap"
+            >
+              <span className="mr-monday-2">📥</span>
+              批量导入
+            </Button>
+          )}
+          <Button 
+            variant="primary" 
+            size="md" 
+            onClick={handleCreate}
+            className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-monday-md hover:shadow-monday-lg font-semibold whitespace-nowrap"
+          >
+            <span className="mr-monday-2">✨</span>
+            {getCreateButtonText()}
+          </Button>
+        </div>
       </div>
     </Card>
   ) : null;

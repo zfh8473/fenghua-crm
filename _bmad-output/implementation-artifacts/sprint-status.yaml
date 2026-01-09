@@ -110,12 +110,12 @@ development_status:
   6-7-search-results-filtering: done
   epic-6-retrospective: optional
   epic-7: in-progress
-  7-1-customer-data-bulk-import: ready-for-dev
-  7-2-product-data-bulk-import: backlog
-  7-3-interaction-record-data-bulk-import: backlog
-  7-4-data-export: backlog
-  7-5-custom-field-export: backlog
-  7-6-import-history-and-error-reports: backlog
+  7-1-customer-data-bulk-import: done
+  7-2-product-data-bulk-import: done
+  7-3-interaction-record-data-bulk-import: done
+  7-4-data-export: done
+  7-5-custom-field-export: done
+  7-6-import-history-and-error-reports: done
   epic-7-retrospective: optional
   epic-8: backlog
   8-1-business-dashboard-overview: backlog

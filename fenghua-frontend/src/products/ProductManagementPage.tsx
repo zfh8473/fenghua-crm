@@ -344,6 +344,18 @@ export const ProductManagementPage: React.FC = () => {
             类别管理
           </Button>
         </Link>
+        {(userIsAdmin || userIsDirector) && (
+          <Link to="/products/import">
+            <Button 
+              variant="outline" 
+              size="md"
+              className="bg-gradient-to-r from-primary-green/10 to-primary-blue/10 border-primary-green/30 text-primary-green hover:from-primary-green/20 hover:to-primary-blue/20 hover:border-primary-green/50 hover:text-primary-green font-medium shadow-monday-sm whitespace-nowrap"
+            >
+              <span className="mr-monday-2">📥</span>
+              批量导入
+            </Button>
+          </Link>
+        )}
         {userIsAdmin && (
           <Button 
             variant="primary" 

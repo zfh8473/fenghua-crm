@@ -44,3 +44,4 @@ COMMENT ON COLUMN audit_logs.user_id IS 'ID of the user affected by the action';
 
 
 
+

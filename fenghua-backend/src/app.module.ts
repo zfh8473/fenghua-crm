@@ -13,10 +13,13 @@ import { BackupModule } from './backup/backup.module';
 import { RestoreModule } from './restore/restore.module';
 import { ProductsModule } from './products/products.module';
 import { CompaniesModule } from './companies/companies.module';
-import { PeopleModule } from './people/people.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { InteractionsModule } from './interactions/interactions.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { CustomersImportModule } from './import/customers/customers-import.module';
+import { ProductsImportModule } from './import/products/products-import.module';
+import { InteractionsImportModule } from './import/interactions/interactions-import.module';
+import { ExportModule } from './export/export.module';
 // Note: ProductCustomerAssociationManagementModule is now deprecated
 // ProductCustomerAssociationManagementController is in ProductsModule
 // CustomerProductAssociationManagementController is in CompaniesModule
@@ -42,9 +45,12 @@ import { AttachmentsModule } from './attachments/attachments.module';
     ProductCategoriesModule,
     ProductsModule,
     CompaniesModule,
-    PeopleModule,
     InteractionsModule,
     AttachmentsModule,
+    CustomersImportModule,
+    ProductsImportModule,
+    InteractionsImportModule,
+    ExportModule,
     // Note: ProductCustomerAssociationManagementModule is deprecated, controllers are in ProductsModule and CompaniesModule
   ],
 })

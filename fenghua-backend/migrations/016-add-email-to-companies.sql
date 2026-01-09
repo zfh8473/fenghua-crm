@@ -16,3 +16,4 @@ COMMENT ON COLUMN companies.email IS 'Official email address of the company';
 
 
 
+

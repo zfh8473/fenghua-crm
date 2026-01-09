@@ -40,3 +40,4 @@ COMMENT ON COLUMN integrity_validation_reports.validation_type IS 'Type of valid
 
 
 
+
