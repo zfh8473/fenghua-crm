@@ -22,6 +22,7 @@ import {
   Req,
   Res,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -43,6 +44,8 @@ import { Token } from '../../common/decorators/token.decorator';
 @Controller('import/customers')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class CustomersImportController {
+  private readonly logger = new Logger(CustomersImportController.name);
+
   constructor(private readonly importService: CustomersImportService) {}
 
   /**
@@ -184,10 +187,10 @@ export class CustomersImportController {
   @HttpCode(HttpStatus.OK)
   async getErrorDetails(
     @Param('taskId') taskId: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
     @Token() token: string,
     @Req() req: Request & { user?: { id: string } },
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ): Promise<{ items: any[]; total: number; limit: number; offset: number }> {
     const userId = req.user?.id;
     if (!userId) {
@@ -214,10 +217,10 @@ export class CustomersImportController {
   @Get('history/stats')
   @HttpCode(HttpStatus.OK)
   async getImportHistoryStats(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
     @Token() token: string,
     @Req() req: Request & { user?: { id: string } },
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<{
     total: number;
     completed: number;
@@ -257,10 +260,10 @@ export class CustomersImportController {
   @Get('reports/:taskId')
   async downloadErrorReport(
     @Param('taskId') taskId: string,
-    @Query('format') format?: string,
     @Token() token: string,
     @Res() res: Response,
     @Req() req: Request & { user?: { id: string } },
+    @Query('format') format?: string,
   ): Promise<void> {
     const userId = req.user?.id;
     if (!userId) {
@@ -324,7 +327,9 @@ export class CustomersImportController {
     const fileStream = fs.createReadStream(reportPath);
     
     // Track if this is a temporary file that needs cleanup
-    const isTemporaryFile = reportPath.includes('tmp') && (reportFormat === 'csv' || (!existingPath && reportFormat === 'xlsx'));
+    // For CSV, always temporary. For XLSX, temporary if no existing report was found
+    const existingReportPath = reportFormat === 'xlsx' ? await this.importService.getErrorReportPath(taskId) : null;
+    const isTemporaryFile = reportPath.includes('tmp') && (reportFormat === 'csv' || (!existingReportPath && reportFormat === 'xlsx'));
     
     fileStream.on('error', (error) => {
       this.logger.error('Error streaming file', error);

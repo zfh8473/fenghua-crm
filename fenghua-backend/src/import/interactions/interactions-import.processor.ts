@@ -356,7 +356,7 @@ export class InteractionsImportProcessor extends WorkerHost implements OnModuleD
           const fileName = await this.interactionsImportService.getFileName(fileId);
           
           // Determine final status
-          let finalStatus: 'processing' | 'completed' | 'failed' | 'partial';
+          let finalStatus: 'completed' | 'failed' | 'partial';
           if (failureCount === 0) {
             finalStatus = 'completed';
           } else if (successCount > 0 && failureCount > 0) {
@@ -398,7 +398,7 @@ export class InteractionsImportProcessor extends WorkerHost implements OnModuleD
               errorDetailsJsonb,
               'INTERACTION',
               now,
-              finalStatus === 'processing' ? null : now,
+              now, // completed_at is always set when job completes
             ],
           );
           this.logger.log(`Import history saved for task ${job.id} with status ${finalStatus}`);

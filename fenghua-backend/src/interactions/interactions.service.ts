@@ -26,6 +26,7 @@ import { AuditService } from '../audit/audit.service';
 import { CreateInteractionDto } from './dto/create-interaction.dto';
 import { UpdateInteractionDto } from './dto/update-interaction.dto';
 import { InteractionResponseDto } from './dto/interaction-response.dto';
+import { InteractionSearchQueryDto } from './dto/interaction-search-query.dto';
 
 /**
  * Error codes for interaction operations (3000-3999)
@@ -739,6 +740,221 @@ export class InteractionsService implements OnModuleDestroy {
     const result = await this.pgPool.query(query, queryParams);
 
     // 8. Map to response DTOs
+    const interactions: InteractionResponseDto[] = result.rows.map((row) => ({
+      id: row.id,
+      productId: row.product_id,
+      customerId: row.customer_id,
+      interactionType: row.interaction_type,
+      interactionDate: row.interaction_date,
+      description: row.description,
+      status: row.status,
+      additionalInfo: row.additional_info
+        ? typeof row.additional_info === 'string'
+          ? JSON.parse(row.additional_info)
+          : row.additional_info
+        : undefined,
+      createdAt: row.created_at,
+      createdBy: row.created_by,
+      updatedAt: row.updated_at,
+      updatedBy: row.updated_by,
+    }));
+
+    return { interactions, total };
+  }
+
+  /**
+   * Search interaction records with advanced filtering
+   * 
+   * Supports multi-select filtering by:
+   * - interactionTypes: Array of interaction types
+   * - statuses: Array of interaction statuses
+   * - categories: Array of product categories
+   * - createdBy: Creator user ID
+   * - customerId: Specific customer
+   * - productId: Specific product
+   * - startDate/endDate: Date range
+   * 
+   * Also supports sorting by various fields and pagination.
+   * Applies role-based data filtering (Frontend Specialist can only see BUYER customers,
+   * Backend Specialist can only see SUPPLIER customers).
+   * 
+   * @param searchDto - Search query DTO with filters, sorting, and pagination
+   * @param token - JWT token for authentication
+   * @returns Array of interaction records and total count
+   * @throws {BadRequestException} If database connection is not initialized
+   * @throws {UnauthorizedException} If token is invalid
+   */
+  async search(
+    searchDto: InteractionSearchQueryDto,
+    token: string,
+  ): Promise<{ interactions: InteractionResponseDto[]; total: number }> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    // 1. Validate user token and get user info
+    const user = await this.authService.validateToken(token);
+    if (!user || !user.id) {
+      throw new UnauthorizedException('无效的用户 token');
+    }
+
+    // 2. Get user permissions and data access filter
+    const dataFilter = await this.permissionService.getDataAccessFilter(token);
+
+    // 3. Convert customer_type to uppercase (PermissionService returns lowercase, database stores uppercase)
+    const customerTypeFilter = dataFilter?.customerType
+      ? dataFilter.customerType.toUpperCase()
+      : null;
+
+    // 4. Handle permission check failure
+    if (dataFilter?.customerType === 'NONE') {
+      // User has no access, return empty result
+      return { interactions: [], total: 0 };
+    }
+
+    // 5. Build WHERE clause
+    const whereConditions: string[] = ['pci.deleted_at IS NULL', 'c.deleted_at IS NULL'];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    // Role-based customer type filter
+    if (customerTypeFilter) {
+      whereConditions.push(`c.customer_type = $${paramIndex}`);
+      params.push(customerTypeFilter);
+      paramIndex++;
+    }
+
+    // Multi-select interaction types filter
+    if (searchDto.interactionTypes && searchDto.interactionTypes.length > 0) {
+      whereConditions.push(`pci.interaction_type = ANY($${paramIndex}::text[])`);
+      params.push(searchDto.interactionTypes);
+      paramIndex++;
+    }
+
+    // Multi-select statuses filter
+    if (searchDto.statuses && searchDto.statuses.length > 0) {
+      whereConditions.push(`pci.status = ANY($${paramIndex}::text[])`);
+      params.push(searchDto.statuses);
+      paramIndex++;
+    }
+
+    // Date range filter
+    if (searchDto.startDate) {
+      whereConditions.push(`pci.interaction_date >= $${paramIndex}`);
+      params.push(new Date(searchDto.startDate));
+      paramIndex++;
+    }
+    if (searchDto.endDate) {
+      whereConditions.push(`pci.interaction_date <= $${paramIndex}`);
+      params.push(new Date(searchDto.endDate));
+      paramIndex++;
+    }
+
+    // Customer filter
+    if (searchDto.customerId) {
+      whereConditions.push(`pci.customer_id = $${paramIndex}`);
+      params.push(searchDto.customerId);
+      paramIndex++;
+    }
+
+    // Product filter
+    if (searchDto.productId) {
+      whereConditions.push(`pci.product_id = $${paramIndex}`);
+      params.push(searchDto.productId);
+      paramIndex++;
+    }
+
+    // Product categories filter (requires JOIN with products table)
+    if (searchDto.categories && searchDto.categories.length > 0) {
+      whereConditions.push(`p.category = ANY($${paramIndex}::text[])`);
+      params.push(searchDto.categories);
+      paramIndex++;
+    }
+
+    // Creator filter
+    if (searchDto.createdBy) {
+      whereConditions.push(`pci.created_by = $${paramIndex}`);
+      params.push(searchDto.createdBy);
+      paramIndex++;
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // 6. Build ORDER BY clause
+    const sortBy = searchDto.sortBy || 'interactionDate';
+    const sortOrder = searchDto.sortOrder || 'desc';
+    const orderDirection = sortOrder.toUpperCase();
+    
+    let orderByClause = '';
+    switch (sortBy) {
+      case 'customerName':
+        orderByClause = `ORDER BY c.name ${orderDirection}, pci.interaction_date DESC`;
+        break;
+      case 'productName':
+        orderByClause = `ORDER BY p.name ${orderDirection}, pci.interaction_date DESC`;
+        break;
+      case 'productHsCode':
+        orderByClause = `ORDER BY p.hs_code ${orderDirection}, pci.interaction_date DESC`;
+        break;
+      case 'interactionType':
+        orderByClause = `ORDER BY pci.interaction_type ${orderDirection}, pci.interaction_date DESC`;
+        break;
+      case 'interactionDate':
+      default:
+        orderByClause = `ORDER BY pci.interaction_date ${orderDirection}, pci.created_at DESC`;
+        break;
+    }
+
+    // 7. Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM product_customer_interactions pci
+      INNER JOIN companies c ON c.id = pci.customer_id
+      ${searchDto.categories && searchDto.categories.length > 0 ? 'INNER JOIN products p ON p.id = pci.product_id' : ''}
+      ${whereClause}
+    `;
+    const countResult = await this.pgPool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    // 8. Get paginated results
+    const limit = searchDto.limit || 20;
+    const offset = searchDto.offset || 0;
+
+    const query = `
+      SELECT
+        pci.id,
+        pci.product_id,
+        pci.customer_id,
+        pci.interaction_type,
+        pci.interaction_date,
+        pci.description,
+        pci.status,
+        pci.additional_info,
+        pci.created_at,
+        pci.created_by,
+        pci.updated_at,
+        pci.updated_by,
+        c.name as customer_name,
+        c.customer_type,
+        p.name as product_name,
+        p.hs_code as product_hs_code,
+        p.category as product_category,
+        u.email as creator_email,
+        u.first_name as creator_first_name,
+        u.last_name as creator_last_name
+      FROM product_customer_interactions pci
+      INNER JOIN companies c ON c.id = pci.customer_id
+      ${searchDto.categories && searchDto.categories.length > 0 ? 'INNER JOIN products p ON p.id = pci.product_id' : 'LEFT JOIN products p ON p.id = pci.product_id'}
+      LEFT JOIN users u ON u.id = pci.created_by
+      ${whereClause}
+      ${orderByClause}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const queryParams = [...params, limit, offset];
+    const result = await this.pgPool.query(query, queryParams);
+
+    // 9. Map to response DTOs
     const interactions: InteractionResponseDto[] = result.rows.map((row) => ({
       id: row.id,
       productId: row.product_id,

@@ -79,6 +79,38 @@ export interface UpdateInteractionDto {
   additionalInfo?: Record<string, unknown>;
 }
 
+/**
+ * Interaction search filters
+ * 
+ * Supports multi-select filtering and advanced search options
+ */
+export interface InteractionSearchFilters {
+  /** Array of interaction types to filter by (multi-select) */
+  interactionTypes?: InteractionType[];
+  /** Array of interaction statuses to filter by (multi-select) */
+  statuses?: InteractionStatus[];
+  /** Start date for date range filter (ISO 8601 format) */
+  startDate?: string;
+  /** End date for date range filter (ISO 8601 format) */
+  endDate?: string;
+  /** Filter by specific customer ID */
+  customerId?: string;
+  /** Filter by specific product ID */
+  productId?: string;
+  /** Array of product categories to filter by (multi-select) */
+  categories?: string[];
+  /** Filter by creator user ID */
+  createdBy?: string;
+  /** Field to sort by */
+  sortBy?: 'interactionDate' | 'customerName' | 'productName' | 'productHsCode' | 'interactionType';
+  /** Sort order */
+  sortOrder?: 'asc' | 'desc';
+  /** Number of results per page */
+  limit?: number;
+  /** Offset for pagination */
+  offset?: number;
+}
+
 export interface FileAttachment {
   id: string;
   fileName: string;
@@ -220,6 +252,80 @@ class InteractionsService {
     return this.request<void>(`/interactions/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  /**
+   * Search interaction records with advanced filtering
+   * 
+   * Supports filtering by:
+   * - interactionTypes: Array of interaction types (multi-select)
+   * - statuses: Array of interaction statuses (multi-select)
+   * - categories: Array of product categories (multi-select)
+   * - createdBy: Creator user ID
+   * - customerId: Specific customer
+   * - productId: Specific product
+   * - startDate/endDate: Date range
+   * 
+   * Also supports sorting and pagination.
+   */
+  async searchInteractions(
+    filters: InteractionSearchFilters,
+  ): Promise<{ interactions: Interaction[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    
+    // Multi-select filters (arrays) - only add if array is not empty
+    if (filters.interactionTypes && filters.interactionTypes.length > 0) {
+      filters.interactionTypes.forEach((type) => {
+        if (type && type.trim()) {
+          queryParams.append('interactionTypes', type);
+        }
+      });
+    }
+    if (filters.statuses && filters.statuses.length > 0) {
+      filters.statuses.forEach((status) => {
+        if (status && status.trim()) {
+          queryParams.append('statuses', status);
+        }
+      });
+    }
+    if (filters.categories && filters.categories.length > 0) {
+      filters.categories.forEach((category) => {
+        if (category && category.trim()) {
+          queryParams.append('categories', category);
+        }
+      });
+    }
+    
+    // Single value filters - only add if value exists and is not empty
+    if (filters.startDate && filters.startDate.trim()) {
+      queryParams.append('startDate', filters.startDate);
+    }
+    if (filters.endDate && filters.endDate.trim()) {
+      queryParams.append('endDate', filters.endDate);
+    }
+    // Only add UUID fields if they are valid (non-empty strings)
+    if (filters.customerId && filters.customerId.trim()) {
+      queryParams.append('customerId', filters.customerId.trim());
+    }
+    if (filters.productId && filters.productId.trim()) {
+      queryParams.append('productId', filters.productId.trim());
+    }
+    if (filters.createdBy && filters.createdBy.trim()) {
+      queryParams.append('createdBy', filters.createdBy.trim());
+    }
+    
+    // Sorting - always include defaults
+    queryParams.append('sortBy', filters.sortBy || 'interactionDate');
+    queryParams.append('sortOrder', filters.sortOrder || 'desc');
+    
+    // Pagination - always include
+    queryParams.append('limit', (filters.limit || 20).toString());
+    queryParams.append('offset', (filters.offset || 0).toString());
+
+    const queryString = queryParams.toString();
+    const endpoint = `/interactions/search${queryString ? `?${queryString}` : ''}`;
+
+    return this.request<{ interactions: Interaction[]; total: number }>(endpoint);
   }
 }
 

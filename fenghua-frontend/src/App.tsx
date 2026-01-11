@@ -21,7 +21,6 @@ import { CustomerProductInteractionHistoryPage } from './customers/CustomerProdu
 import { InteractionsPage } from './interactions/pages/InteractionsPage'
 import { InteractionCreatePage } from './interactions/pages/InteractionCreatePage'
 import { InteractionEditPage } from './interactions/pages/InteractionEditPage'
-// import { GlobalSearchPage } from './search/GlobalSearchPage' // Temporarily commented out - file not found
 import { CustomerImportPage } from './import/CustomerImportPage'
 import { ProductImportPage } from './import/ProductImportPage'
 import { InteractionImportPage } from './import/InteractionImportPage'
@@ -353,20 +352,6 @@ function App() {
         element={
           <ProtectedRoute>
             <InteractionEditPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/search"
-        element={
-          <ProtectedRoute>
-            {/* <GlobalSearchPage /> */} {/* Temporarily commented out - file not found */}
-            <MainLayout title="全局搜索">
-              <Card variant="default" className="p-monday-8">
-                <h2 className="text-monday-2xl font-semibold mb-monday-4">全局搜索</h2>
-                <p className="text-monday-text-secondary">全局搜索功能正在开发中...</p>
-              </Card>
-            </MainLayout>
           </ProtectedRoute>
         }
       />

@@ -25,6 +25,7 @@ import {
   ImportResult,
 } from './customers-import.service';
 import { toast } from 'react-toastify';
+import { authService } from '../auth/auth.service';
 
 type Step = 'upload' | 'mapping' | 'validation' | 'importing' | 'result' | 'history';
 
@@ -206,7 +207,7 @@ export const CustomerImportPage: React.FC = () => {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      const token = localStorage.getItem('token');
+                      const token = authService.getToken();
                       if (token) {
                         fetch(importResult.errorReportUrl!, {
                           headers: {

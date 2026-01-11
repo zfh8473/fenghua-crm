@@ -13,6 +13,7 @@ import { Table } from '../../components/ui/Table';
 import { getImportHistory, getImportHistoryStats, ImportHistoryItem, ImportHistoryQuery, ImportType } from '../customers-import.service';
 import { ImportTaskDetail } from './ImportTaskDetail';
 import { toast } from 'react-toastify';
+import { authService } from '../../auth/auth.service';
 
 export interface ImportHistoryProps {
   onSelectTask?: (taskId: string) => void;
@@ -84,7 +85,7 @@ export const ImportHistory: React.FC<ImportHistoryProps> = ({ onSelectTask }) =>
     // Generate download URL
     const API_URL = (import.meta.env?.VITE_API_BASE_URL as string) ||
       (import.meta.env?.VITE_BACKEND_URL as string) || '/api';
-    const token = localStorage.getItem('token');
+    const token = authService.getToken();
     const url = `${API_URL}/import/customers/reports/${item.taskId}`;
 
     // Create a temporary link and trigger download

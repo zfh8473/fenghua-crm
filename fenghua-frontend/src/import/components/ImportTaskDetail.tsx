@@ -11,6 +11,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { getImportTaskDetail, getErrorDetails, retryImport, ImportTaskDetail as ImportTaskDetailType, ErrorDetailItem } from '../customers-import.service';
 import { toast } from 'react-toastify';
+import { authService } from '../../auth/auth.service';
 
 export interface ImportTaskDetailProps {
   taskId: string;
@@ -82,7 +83,7 @@ export const ImportTaskDetail: React.FC<ImportTaskDetailProps> = ({ taskId, onCl
 
     const API_URL = (import.meta.env?.VITE_API_BASE_URL as string) ||
       (import.meta.env?.VITE_BACKEND_URL as string) || '/api';
-    const token = localStorage.getItem('token');
+    const token = authService.getToken();
     const url = `${API_URL}/import/customers/reports/${taskId}?format=${format}`;
 
     if (token) {

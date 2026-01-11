@@ -148,7 +148,7 @@ export class ProductsImportController {
       userId,
       query.limit,
       query.offset,
-      query.status,
+      query.status as 'processing' | 'completed' | 'failed' | undefined,
     );
 
     return {

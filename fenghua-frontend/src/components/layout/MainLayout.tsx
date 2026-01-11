@@ -43,7 +43,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   // Simplified sidebar navigation - only main items
   const navigationItems = [
     { path: '/', label: '首页', icon: '🏠' },
-    { path: '/search', label: '搜索', icon: '🔍', adminOnly: false },
     { path: '/users', label: '用户管理', icon: '👥', adminOnly: true },
     { path: '/products', label: '产品管理', icon: '📦', adminOnly: false }, // Allow all roles to access products
     { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },

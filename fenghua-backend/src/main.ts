@@ -45,6 +45,12 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true, // Enable implicit type conversion
+      },
+      skipMissingProperties: false, // Don't skip missing properties - validate all
+      skipNullProperties: false, // Don't skip null properties
+      skipUndefinedProperties: true, // Skip undefined properties (after Transform)
       exceptionFactory: (errors) => {
         // Format validation errors for better error messages
         const messages = errors.map((error) => {

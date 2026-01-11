@@ -820,7 +820,7 @@ export class CustomersImportService implements OnModuleDestroy {
     if (this.redisEnabled && this.redisClient) {
       try {
         const cached = await this.redisClient.get(cacheKey);
-        if (cached) {
+        if (cached && typeof cached === 'string') {
           this.logger.debug(`Cache hit for error details: ${cacheKey}`);
           return JSON.parse(cached);
         }
@@ -1233,6 +1233,7 @@ export class CustomersImportService implements OnModuleDestroy {
       
       // Auto-generate column mappings (assuming standard field names)
       const columnMappings: ColumnMappingDto[] = columns.map(col => ({
+        excelColumn: col,
         sourceColumn: col,
         targetField: col.toLowerCase().replace(/\s+/g, ''),
       }));

@@ -5,15 +5,17 @@
  * All custom code is proprietary and not open source.
  */
 
+import { authService } from '../auth/auth.service';
+
 // Use relative path /api to leverage Vite proxy in development
 // In production, set VITE_API_BASE_URL to the full backend URL
 const API_URL = (import.meta.env?.VITE_API_BASE_URL as string) || (import.meta.env?.VITE_BACKEND_URL as string) || '/api';
 
 /**
- * Get authentication token from localStorage
+ * Get authentication token from authService
  */
 function getAuthToken(): string | null {
-  return localStorage.getItem('fenghua_auth_token');
+  return authService.getToken();
 }
 
 /**

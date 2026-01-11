@@ -44,11 +44,13 @@ export interface UpdateAttachmentMetadataDto {
   annotation?: string;
 }
 
+import { authService } from '../../auth/auth.service';
+
 /**
- * Get authentication token from localStorage
+ * Get authentication token from authService
  */
 function getAuthToken(): string | null {
-  return localStorage.getItem('token');
+  return authService.getToken();
 }
 
 /**
