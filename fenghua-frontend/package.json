@@ -25,7 +25,8 @@
     "react-hook-form": "^7.69.0",
     "react-router-dom": "^7.11.0",
     "react-swipeable": "^7.0.2",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "recharts": "^2.15.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

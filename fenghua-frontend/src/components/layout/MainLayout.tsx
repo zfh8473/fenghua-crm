@@ -10,10 +10,13 @@
  * All custom code is proprietary and not open source.
  */
 
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthContext';
+import { isAdmin, isDirector } from '../../common/constants/roles';
 import { Button } from '../ui';
+import { getDashboardOverview } from '../../dashboard/services/dashboard.service';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -34,15 +37,47 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onCloseDetailPanel,
   detailPanelTitle,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const userIsAdmin = isAdmin(user?.role);
+  const userIsDirector = isDirector(user?.role);
+  const canAccessDashboard = userIsAdmin || userIsDirector;
+
+  // Prefetch dashboard data when user has access and is on a page that might lead to dashboard
+  useEffect(() => {
+    if (canAccessDashboard && token && location.pathname !== '/dashboard') {
+      // Prefetch dashboard data in the background when user is on other pages
+      // This improves perceived performance when user navigates to dashboard
+      const prefetchDashboard = async () => {
+        try {
+          await queryClient.prefetchQuery({
+            queryKey: ['dashboard-overview'],
+            queryFn: () => getDashboardOverview(token),
+            staleTime: 5 * 60 * 1000, // 5 minutes
+          });
+        } catch (error) {
+          // Silently fail - prefetch is optional
+          console.debug('Dashboard prefetch failed (non-critical):', error);
+        }
+      };
+
+      // Delay prefetch slightly to avoid blocking initial page load
+      const timeoutId = setTimeout(prefetchDashboard, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [canAccessDashboard, token, location.pathname, queryClient]);
 
   const isActive = (path: string) => location.pathname === path;
 
   // Simplified sidebar navigation - only main items
   const navigationItems = [
     { path: '/', label: '首页', icon: '🏠' },
+    { path: '/dashboard', label: '业务仪表板', icon: '📊', directorOrAdminOnly: true },
+    { path: '/dashboard/product-association-analysis', label: '产品关联分析', icon: '🔗', directorOrAdminOnly: true },
+    { path: '/dashboard/customer-analysis', label: '客户分析', icon: '👥', directorOrAdminOnly: true },
     { path: '/users', label: '用户管理', icon: '👥', adminOnly: true },
     { path: '/products', label: '产品管理', icon: '📦', adminOnly: false }, // Allow all roles to access products
     { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
@@ -50,9 +85,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     { path: '/settings', label: '系统', icon: '⚙️', adminOnly: true },
   ];
 
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'admin';
   const visibleNavItems = navigationItems.filter(
-    (item) => !item.adminOnly || isAdmin
+    (item) => {
+      if (item.directorOrAdminOnly) {
+        return userIsAdmin || userIsDirector;
+      }
+      if (item.adminOnly) {
+        return userIsAdmin;
+      }
+      return true;
+    }
   );
 
   // Get role label in Chinese

@@ -117,10 +117,10 @@ development_status:
   7-5-custom-field-export: done
   7-6-import-history-and-error-reports: done
   epic-7-retrospective: optional
-  epic-8: backlog
-  8-1-business-dashboard-overview: backlog
-  8-2-product-association-analysis: backlog
-  8-3-customer-analysis: backlog
+  epic-8: in-progress
+  8-1-business-dashboard-overview: done
+  8-2-product-association-analysis: done
+  8-3-customer-analysis: review
   8-4-supplier-analysis: backlog
   8-5-buyer-analysis: backlog
   8-6-business-trend-analysis: backlog

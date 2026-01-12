@@ -20,6 +20,7 @@ import { CustomersImportModule } from './import/customers/customers-import.modul
 import { ProductsImportModule } from './import/products/products-import.module';
 import { InteractionsImportModule } from './import/interactions/interactions-import.module';
 import { ExportModule } from './export/export.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 // Note: ProductCustomerAssociationManagementModule is now deprecated
 // ProductCustomerAssociationManagementController is in ProductsModule
 // CustomerProductAssociationManagementController is in CompaniesModule
@@ -51,6 +52,7 @@ import { ExportModule } from './export/export.module';
     ProductsImportModule,
     InteractionsImportModule,
     ExportModule,
+    DashboardModule,
     // Note: ProductCustomerAssociationManagementModule is deprecated, controllers are in ProductsModule and CompaniesModule
   ],
 })

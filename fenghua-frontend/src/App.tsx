@@ -25,6 +25,9 @@ import { CustomerImportPage } from './import/CustomerImportPage'
 import { ProductImportPage } from './import/ProductImportPage'
 import { InteractionImportPage } from './import/InteractionImportPage'
 import { ExportPage } from './export/ExportPage'
+import { DashboardPage } from './dashboard/pages/DashboardPage'
+import { ProductAssociationAnalysisPage } from './dashboard/pages/ProductAssociationAnalysisPage'
+import { CustomerAnalysisPage } from './dashboard/pages/CustomerAnalysisPage'
 import { TestTailwind } from './components/TestTailwind'
 import { Card } from './components/ui'
 import './App.css'
@@ -180,6 +183,30 @@ function App() {
         element={
           <ProtectedRoute>
             <SystemSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/product-association-analysis"
+        element={
+          <ProtectedRoute>
+            <ProductAssociationAnalysisPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/customer-analysis"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'DIRECTOR']}>
+            <CustomerAnalysisPage />
           </ProtectedRoute>
         }
       />
