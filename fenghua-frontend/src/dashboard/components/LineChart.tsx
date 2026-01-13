@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { getChartLabel } from '../utils/chart-labels';
 
 export interface LineChartData {
   name: string;
@@ -35,6 +36,11 @@ export interface LineChartProps {
    * Colors for each data key
    */
   colors?: string[];
+  
+  /**
+   * Custom label mappings (optional, defaults to Chinese labels)
+   */
+  labels?: Record<string, string>;
 }
 
 export const LineChartComponent: React.FC<LineChartProps> = ({
@@ -42,7 +48,11 @@ export const LineChartComponent: React.FC<LineChartProps> = ({
   title,
   dataKeys,
   colors = ['#3b82f6', '#10b981', '#f59e0b'],
+  labels,
 }) => {
+  // Use custom labels or default to Chinese labels
+  const labelMap = labels || {};
+  const getLabel = (key: string) => labelMap[key] || getChartLabel(key);
   // Handle empty data
   if (!data || data.length === 0) {
     return (
@@ -86,12 +96,19 @@ export const LineChartComponent: React.FC<LineChartProps> = ({
               padding: '8px',
             }}
           />
-          <Legend />
+          <Legend 
+            formatter={(value) => {
+              // Find the data key that matches this legend value
+              const key = dataKeys.find(k => k === value || getLabel(k) === value);
+              return key ? getLabel(key) : value;
+            }}
+          />
           {dataKeys.map((key, index) => (
             <Line
               key={key}
               type="monotone"
               dataKey={key}
+              name={getLabel(key)}
               stroke={colors[index % colors.length]}
               strokeWidth={2}
               dot={{ r: 4 }}

@@ -14,6 +14,7 @@ import { SettingsForm } from './components/SettingsForm';
 import { UserRole } from '../common/constants/roles';
 import { Card } from '../components/ui/Card';
 import { MainLayout } from '../components/layout';
+import { getErrorMessage } from '../utils/error-handling';
 // import './SystemSettingsPage.css'; // Removed
 
 export function SystemSettingsPage() {
@@ -55,7 +56,7 @@ export function SystemSettingsPage() {
       const data = await getSettings(token);
       setSettings(data);
     } catch (err: unknown) {
-      setError(err.message || '加载系统设置失败');
+      setError(getErrorMessage(err, '加载系统设置失败'));
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +71,7 @@ export function SystemSettingsPage() {
       const updatedSettings = await updateSettings(token, updateDto);
       setSettings(updatedSettings);
     } catch (err: unknown) {
-      setError(err.message || '更新系统设置失败');
+      setError(getErrorMessage(err, '更新系统设置失败'));
       throw err; // Re-throw to let form handle it
     } finally {
       setIsSaving(false);

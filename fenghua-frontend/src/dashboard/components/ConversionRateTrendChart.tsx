@@ -59,7 +59,6 @@ export const ConversionRateTrendChart: React.FC<ConversionRateTrendChartProps> =
     <Suspense fallback={<ChartSkeleton />}>
       <LineChartComponent
         data={chartData}
-        title="订单转化率趋势"
         dataKeys={['conversionRate']}
         colors={['#3b82f6']}
       />

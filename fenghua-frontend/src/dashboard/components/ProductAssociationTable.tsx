@@ -42,7 +42,12 @@ export const ProductAssociationTable: React.FC<ProductAssociationTableProps> = (
   const navigate = useNavigate();
 
   const handleRowClick = (row: ProductAssociationAnalysisItem) => {
-    navigate(`/products/${row.productId}`);
+    navigate(`/products?productId=${row.productId}`);
+  };
+
+  const handleProductNameClick = (row: ProductAssociationAnalysisItem, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click event
+    navigate(`/products?productId=${row.productId}`);
   };
 
   const columns: Column<ProductAssociationAnalysisItem>[] = [
@@ -50,6 +55,14 @@ export const ProductAssociationTable: React.FC<ProductAssociationTableProps> = (
       key: 'productName',
       header: '产品名称',
       sortable: true,
+      render: (value, row) => (
+        <span
+          className="text-primary-blue hover:underline cursor-pointer"
+          onClick={(e) => handleProductNameClick(row, e)}
+        >
+          {value}
+        </span>
+      ),
     },
     {
       key: 'categoryName',

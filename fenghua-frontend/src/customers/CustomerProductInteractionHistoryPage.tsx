@@ -65,7 +65,7 @@ export const CustomerProductInteractionHistoryPage: React.FC = () => {
 
   if (!customerId || !productId) {
     return (
-      <MainLayout>
+      <MainLayout title="客户与产品互动历史">
         <div className="p-monday-4">
           <p className="text-monday-sm text-primary-red">缺少必要参数</p>
         </div>
@@ -75,7 +75,7 @@ export const CustomerProductInteractionHistoryPage: React.FC = () => {
 
   if (customerLoading || productLoading) {
     return (
-      <MainLayout>
+      <MainLayout title="客户与产品互动历史">
         <div className="p-monday-4">
           <div className="flex items-center justify-center py-monday-8">
             <span className="animate-spin">⏳</span>
@@ -89,7 +89,7 @@ export const CustomerProductInteractionHistoryPage: React.FC = () => {
   // Handle errors
   if (customerError || productError) {
     return (
-      <MainLayout>
+      <MainLayout title="客户与产品互动历史">
         <div className="p-monday-4">
           <div className="text-center py-monday-8">
             <p className="text-monday-sm text-primary-red mb-monday-2">
@@ -106,7 +106,7 @@ export const CustomerProductInteractionHistoryPage: React.FC = () => {
   }
 
   return (
-    <MainLayout>
+    <MainLayout title="客户与产品互动历史">
       <div className="p-monday-4">
         <h1 className="text-monday-xl font-bold text-monday-text mb-monday-4">
           客户与产品互动历史

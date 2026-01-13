@@ -14,6 +14,7 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { MainLayout } from '../components/layout';
+import { getErrorMessage } from '../utils/error-handling';
 // import './SystemLogsPage.css'; // Removed
 
 export function SystemLogsPage() {
@@ -64,23 +65,28 @@ export function SystemLogsPage() {
       }));
       retryCountRef.current = 0; // Reset retry count on success
     } catch (err: unknown) {
-      let errorMessage = '加载日志失败';
-      if (err.response?.status === 401) {
-        errorMessage = '认证失败，请重新登录';
-      } else if (err.response?.status === 403) {
-        errorMessage = '权限不足，只有管理员可以查看日志';
-      } else if (err.response?.status >= 500) {
-        errorMessage = '服务器错误，请稍后重试';
-        // Retry on server errors
-        if (retryCountRef.current < maxRetries) {
-          retryCountRef.current += 1;
-          setTimeout(() => loadLogs(), 2000 * retryCountRef.current);
-          return;
+      const errorMessage = getErrorMessage(err, '加载日志失败');
+      // Check for retryable server errors
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { status?: number } }).response;
+        if (response?.status === 401) {
+          setError('认证失败，请重新登录');
+        } else if (response?.status === 403) {
+          setError('权限不足，只有管理员可以查看日志');
+        } else if (response?.status && response.status >= 500) {
+          setError('服务器错误，请稍后重试');
+          // Retry on server errors
+          if (retryCountRef.current < maxRetries) {
+            retryCountRef.current += 1;
+            setTimeout(() => loadLogs(), 2000 * retryCountRef.current);
+            return;
+          }
+        } else {
+          setError(errorMessage);
         }
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else {
+        setError(errorMessage);
       }
-      setError(errorMessage);
       retryCountRef.current = 0; // Reset retry count on success or non-retryable error
       console.error('Failed to load logs', err);
     } finally {

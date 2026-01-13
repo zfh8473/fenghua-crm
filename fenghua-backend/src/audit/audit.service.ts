@@ -8,7 +8,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, QueryResult } from 'pg';
-import { AuditLogDto, RoleChangeAuditLogDto } from './dto/audit-log.dto';
+import { AuditLogDto, RoleChangeAuditLogDto, DataAccessAuditLogDto } from './dto/audit-log.dto';
 
 @Injectable()
 export class AuditService implements OnModuleDestroy {
@@ -105,6 +105,50 @@ export class AuditService implements OnModuleDestroy {
   }
 
   /**
+   * Log a data access event
+   * This method is specifically for logging data access operations (who accessed what data)
+   * It uses async processing to avoid impacting main request performance
+   */
+  async logDataAccess(dataAccessLog: DataAccessAuditLogDto): Promise<void> {
+    if (!this.pgPool) {
+      this.logger.warn('Database pool not initialized, skipping data access audit log');
+      return;
+    }
+
+    try {
+      // Map DataAccessAuditLogDto to AuditLogDto format
+      const auditLog: AuditLogDto = {
+        action: 'DATA_ACCESS',
+        entityType: dataAccessLog.resourceType,
+        entityId: dataAccessLog.resourceId,
+        userId: dataAccessLog.userId,
+        operatorId: dataAccessLog.userId, // For data access, operator is the same as user
+        timestamp: dataAccessLog.timestamp,
+        reason: dataAccessLog.failureReason,
+        metadata: {
+          operationResult: dataAccessLog.operationResult,
+        },
+        ipAddress: dataAccessLog.ipAddress,
+        userAgent: dataAccessLog.userAgent,
+      };
+
+      // Use setImmediate to defer database write (async processing)
+      setImmediate(async () => {
+        try {
+          await this.saveToDatabase(auditLog);
+          this.logger.debug(`Data access audit log: ${dataAccessLog.operationResult} access to ${dataAccessLog.resourceType} ${dataAccessLog.resourceId} by ${dataAccessLog.userId}`);
+        } catch (error) {
+          this.logger.error(`Failed to log data access event: ${error instanceof Error ? error.message : String(error)}`, error);
+          // Don't throw - audit logging failure should not affect main request
+        }
+      });
+    } catch (error) {
+      this.logger.error(`Failed to prepare data access audit log: ${error instanceof Error ? error.message : String(error)}`, error);
+      // Don't throw - audit logging failure should not affect main request
+    }
+  }
+
+  /**
    * Save audit log to database
    */
   private async saveToDatabase(auditLog: AuditLogDto): Promise<void> {
@@ -112,11 +156,13 @@ export class AuditService implements OnModuleDestroy {
       throw new Error('Database pool not initialized');
     }
 
+    // Check if ip_address and user_agent columns exist (for backward compatibility)
     const query = `
       INSERT INTO audit_logs (
         action, entity_type, entity_id, old_value, new_value,
-        user_id, operator_id, timestamp, reason, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        user_id, operator_id, timestamp, reason, metadata,
+        ip_address, user_agent
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     `;
 
     await this.pgPool.query(query, [
@@ -130,6 +176,8 @@ export class AuditService implements OnModuleDestroy {
       auditLog.timestamp,
       auditLog.reason || null,
       auditLog.metadata ? JSON.stringify(auditLog.metadata) : null,
+      auditLog.ipAddress || null,
+      auditLog.userAgent || null,
     ]);
   }
 
@@ -145,8 +193,9 @@ export class AuditService implements OnModuleDestroy {
     try {
       const query = `
         SELECT 
-          action, entity_type, entity_id, old_value, new_value,
-          user_id, operator_id, timestamp, reason, metadata
+          id, action, entity_type, entity_id, old_value, new_value,
+          user_id, operator_id, timestamp, reason, metadata,
+          ip_address, user_agent
         FROM audit_logs
         WHERE user_id = $1 OR entity_id = $1
         ORDER BY timestamp DESC
@@ -173,8 +222,9 @@ export class AuditService implements OnModuleDestroy {
     try {
       const query = `
         SELECT 
-          action, entity_type, entity_id, old_value, new_value,
-          user_id, operator_id, timestamp, reason, metadata
+          id, action, entity_type, entity_id, old_value, new_value,
+          user_id, operator_id, timestamp, reason, metadata,
+          ip_address, user_agent
         FROM audit_logs
         WHERE action = $1
         ORDER BY timestamp DESC
@@ -190,12 +240,44 @@ export class AuditService implements OnModuleDestroy {
   }
 
   /**
+   * Get audit log by ID
+   */
+  async getAuditLogById(id: string): Promise<AuditLogDto | null> {
+    if (!this.pgPool) {
+      this.logger.warn('Database pool not initialized, returning null');
+      return null;
+    }
+
+    try {
+      const query = `
+        SELECT 
+          id, action, entity_type, entity_id, old_value, new_value,
+          user_id, operator_id, timestamp, reason, metadata,
+          ip_address, user_agent
+        FROM audit_logs
+        WHERE id = $1
+      `;
+
+      const result = await this.pgPool.query(query, [id]);
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      return this.mapRowToAuditLogDto(result.rows[0]);
+    } catch (error) {
+      this.logger.error(`Failed to get audit log by ID: ${error instanceof Error ? error.message : String(error)}`, error);
+      return null;
+    }
+  }
+
+  /**
    * Query audit logs with filters and pagination
    */
   async getAuditLogs(filters: {
     action?: string;
     operatorId?: string;
     operatorEmail?: string;
+    entityType?: string;
     startDate?: Date;
     endDate?: Date;
   }, pagination: {
@@ -241,6 +323,12 @@ export class AuditService implements OnModuleDestroy {
         paramIndex++;
       }
 
+      if (filters.entityType) {
+        whereConditions.push(`entity_type = $${paramIndex}`);
+        queryParams.push(filters.entityType);
+        paramIndex++;
+      }
+
       if (filters.startDate) {
         whereConditions.push(`timestamp >= $${paramIndex}`);
         queryParams.push(filters.startDate);
@@ -268,8 +356,9 @@ export class AuditService implements OnModuleDestroy {
       // Get paginated results
       const dataQuery = `
         SELECT 
-          action, entity_type, entity_id, old_value, new_value,
-          user_id, operator_id, timestamp, reason, metadata
+          id, action, entity_type, entity_id, old_value, new_value,
+          user_id, operator_id, timestamp, reason, metadata,
+          ip_address, user_agent
         FROM audit_logs
         ${whereClause}
         ORDER BY timestamp DESC
@@ -302,8 +391,9 @@ export class AuditService implements OnModuleDestroy {
   /**
    * Map database row to AuditLogDto
    */
-  private mapRowToAuditLogDto(row: any): AuditLogDto {
+  private mapRowToAuditLogDto(row: any): AuditLogDto & { id?: string } {
     return {
+      id: row.id,
       action: row.action,
       entityType: row.entity_type,
       entityId: row.entity_id,
@@ -314,6 +404,8 @@ export class AuditService implements OnModuleDestroy {
       timestamp: new Date(row.timestamp),
       reason: row.reason || undefined,
       metadata: row.metadata ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata) : undefined,
+      ipAddress: row.ip_address || undefined,
+      userAgent: row.user_agent || undefined,
     };
   }
 

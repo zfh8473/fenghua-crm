@@ -237,7 +237,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             // 使用 setTimeout 避免同步递归，防止调用栈溢出
             setTimeout(() => processUploadQueue(), 0);
           })
-          .catch((error) => {
+          .catch(() => {
             activeUploadsRef.current--;
             // 错误已在 uploadSingleFile 中处理
             // 使用 setTimeout 避免同步递归

@@ -1,5 +1,13 @@
+/**
+ * User List Component
+ * 
+ * Displays a list of users in a table using the Table component
+ * All custom code is proprietary and not open source.
+ */
+
 import { User } from '../users.service';
 import { Button } from '../../components/ui';
+import { Table, Column } from '../../components/ui/Table';
 
 interface UserListProps {
   users: User[];
@@ -40,100 +48,105 @@ export const UserList: React.FC<UserListProps> = ({
     return colorMap[role] || 'bg-gray-100 text-gray-600';
   };
 
+  const columns: Column<User>[] = [
+    {
+      key: 'email',
+      header: '邮箱',
+    },
+    {
+      key: 'name',
+      header: '姓名',
+      render: (_, user) => {
+        return user.firstName || user.lastName
+          ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+          : '-';
+      },
+    },
+    {
+      key: 'role',
+      header: '角色',
+      render: (role) => {
+        if (role) {
+          return (
+            <span className={`inline-flex items-center px-linear-2 py-linear-1 rounded-linear-sm text-linear-sm font-medium ${getRoleBadgeColor(role as string)}`}>
+              {getRoleLabel(role as string)}
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center px-linear-2 py-linear-1 rounded-linear-sm bg-gray-100 text-linear-text-secondary text-linear-sm font-medium">
+            无角色
+          </span>
+        );
+      },
+    },
+    {
+      key: 'department',
+      header: '部门',
+      render: (value) => value || '-',
+    },
+    {
+      key: 'phone',
+      header: '联系方式',
+      render: (value) => value || '-',
+    },
+    {
+      key: 'createdAt',
+      header: '创建时间',
+      render: (value) => {
+        return value ? new Date(value as string).toLocaleDateString('zh-CN') : '-';
+      },
+    },
+    {
+      key: 'actions',
+      header: '操作',
+      render: (_, user) => (
+        <div 
+          className="flex gap-linear-2" 
+          onClick={(e) => e.stopPropagation()}
+          role="group"
+          aria-label="用户操作按钮组"
+        >
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onEdit(user)}
+            title="编辑"
+            leftIcon={<span>✏️</span>}
+            className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50"
+          >
+            编辑
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(user)}
+            disabled={user.id === currentUserId}
+            title={user.id === currentUserId ? '不能删除自己的账户' : '删除'}
+            leftIcon={<span>🗑️</span>}
+            className={`text-primary-red hover:text-primary-red hover:bg-primary-red/10 border border-transparent hover:border-primary-red/20 ${
+              user.id === currentUserId ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            删除
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="w-full">
       {/* Page Title */}
-      <h2 className="text-monday-2xl font-bold text-monday-text mb-monday-6 tracking-tight">用户列表</h2>
+      <h2 className="text-linear-2xl font-bold text-linear-text mb-linear-6 tracking-tight">用户列表</h2>
       
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-monday-bg border-b border-gray-200">
-            <th className="p-monday-2 p-monday-3 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">邮箱</th>
-            <th className="p-monday-2 p-monday-3 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">姓名</th>
-            <th className="p-monday-2 p-monday-3 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">角色</th>
-            <th className="p-monday-2 p-monday-3 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">部门</th>
-            <th className="p-monday-2 p-monday-3 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">联系方式</th>
-            <th className="p-monday-2 p-monday-3 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">创建时间</th>
-            <th className="p-monday-2 p-monday-3 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="p-monday-6 text-center text-monday-text-secondary text-monday-sm">
-                暂无用户
-              </td>
-            </tr>
-          ) : (
-            users.map((user) => (
-              <tr
-                key={user.id}
-                className="border-b border-gray-200 hover:bg-monday-bg transition-colors duration-150"
-              >
-                <td className="p-monday-2 p-monday-3 text-monday-sm text-monday-text">{user.email}</td>
-                <td className="p-monday-2 p-monday-3 text-monday-sm text-monday-text">
-                  {user.firstName || user.lastName
-                    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                    : '-'}
-                </td>
-                <td className="p-monday-2 p-monday-3 text-monday-sm">
-                  {user.role ? (
-                    <span className={`inline-flex items-center px-monday-2 py-monday-1 rounded-monday-sm text-monday-sm font-medium ${getRoleBadgeColor(user.role)}`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-monday-2 py-monday-1 rounded-monday-sm bg-gray-100 text-monday-text-secondary text-monday-sm font-medium">
-                      无角色
-                    </span>
-                  )}
-                </td>
-                <td className="p-monday-2 p-monday-3 text-monday-sm text-monday-text">{user.department || '-'}</td>
-                <td className="p-monday-2 p-monday-3 text-monday-sm text-monday-text">{user.phone || '-'}</td>
-                <td className="p-monday-2 p-monday-3 text-monday-sm text-monday-text">
-                  {user.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString('zh-CN')
-                    : '-'}
-                </td>
-                <td className="p-monday-2 p-monday-4 text-monday-sm">
-                  {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events */}
-                  <div 
-                    className="flex gap-monday-2" 
-                    onClick={(e) => e.stopPropagation()}
-                    role="group"
-                    aria-label="用户操作按钮组"
-                  >
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onEdit(user)}
-                      title="编辑"
-                      leftIcon={<span>✏️</span>}
-                      className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50"
-                    >
-                      编辑
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(user)}
-                      disabled={user.id === currentUserId}
-                      title={user.id === currentUserId ? '不能删除自己的账户' : '删除'}
-                      leftIcon={<span>🗑️</span>}
-                      className={`text-primary-red hover:text-primary-red hover:bg-primary-red/10 border border-transparent hover:border-primary-red/20 ${
-                        user.id === currentUserId ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-      </div>
+      <Table
+        columns={columns}
+        data={users}
+        sortable={false}
+        aria-label="用户列表"
+        rowKey={(row) => row.id}
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
   HttpCode,
   HttpStatus,
   ValidationPipe,
@@ -31,9 +32,11 @@ import { AdminGuard } from '../users/guards/admin.guard';
 import { Token } from '../common/decorators/token.decorator';
 import { Request } from 'express';
 import { BadRequestException } from '@nestjs/common';
+import { DataAccessAuditInterceptor } from '../audit/interceptors/data-access-audit.interceptor';
 
 @Controller('products')
 @UseGuards(JwtAuthGuard, AdminGuard)
+@UseInterceptors(DataAccessAuditInterceptor)
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 

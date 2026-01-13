@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from './Input';
-import { Button } from './Button';
 
 /**
  * Generic option type for MultiSelect

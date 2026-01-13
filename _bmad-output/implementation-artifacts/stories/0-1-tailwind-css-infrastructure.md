@@ -50,10 +50,16 @@ So that **后续开发可以直接使用 Tailwind 工具类进行样式开发**.
 
 - [x] Task 4: 创建 Tailwind 配置文件 (AC: #1)
   - [x] 创建 `fenghua-frontend/tailwind.config.js`
-  - [x] 配置 content 路径：`['./index.html', './src/**/*.{js,jsx,ts,tsx}']`
-  - [x] 明确启用 JIT 模式（Tailwind v3 默认启用，已在注释中说明）
-  - [x] 配置深色模式策略：`darkMode: 'class'`（Linear 风格需要深色背景）
-  - [x] 配置主题扩展结构（为 Story 0.2 设计 Token 预留）
+  - [x] **配置 content 路径（关键配置）：** `['./index.html', './src/**/*.{js,jsx,ts,tsx}']`
+    - 必须包含所有源文件路径，确保 Tailwind 可以扫描所有类名
+  - [x] **明确启用 JIT 模式（关键配置）：** Tailwind v3 默认启用，但应在配置中明确说明
+    - JIT 模式确保只生成使用的样式，提高构建性能
+  - [x] **配置深色模式策略（关键配置）：** `darkMode: 'class'`（Linear 风格需要深色背景）
+    - 使用 `class` 策略允许通过添加/移除 `dark` 类来切换深色模式
+    - 这是 Linear 风格的必要配置
+  - [x] **配置主题扩展结构（关键配置）：** 为 Story 0.2 设计 Token 预留 `theme.extend` 结构
+    - 必须使用 `extend` 而非 `replace`，以保留 Tailwind 默认值
+    - 结构示例：`theme: { extend: { colors: {}, spacing: {}, ... } }`
   - [x] 配置插件（当前为空数组，后续可添加）
 
 - [x] Task 5: 创建 PostCSS 配置文件 (AC: #1)
@@ -74,11 +80,21 @@ So that **后续开发可以直接使用 Tailwind 工具类进行样式开发**.
     - 根元素样式
   - [x] 确保导入顺序：Tailwind 指令在前，自定义样式在后
 
-- [x] Task 7: 验证 TypeScript 配置 (AC: #1)
-  - [x] 检查 `fenghua-frontend/tsconfig.json`
-  - [x] 验证路径别名 `@/*` 配置正确（已存在，已确认）
-  - [x] 确认 TypeScript 可以解析 Tailwind 配置文件（无需类型定义）
-  - [x] 验证无需添加 Tailwind 类型定义（Tailwind 类名是运行时处理）
+- [x] Task 7: 验证 TypeScript 配置 (AC: #1) - **关键任务：确保 TypeScript 与 Tailwind 兼容**
+  - [x] **检查 `fenghua-frontend/tsconfig.json`（关键步骤）：**
+    - 验证路径别名 `@/*` 配置正确（已存在，已确认）
+    - 确认 `include` 和 `exclude` 配置正确
+    - 验证 `compilerOptions` 设置与 Tailwind 兼容
+  - [x] **验证 TypeScript 可以解析 Tailwind 配置文件（关键验证）：**
+    - 确认 TypeScript 可以识别 `tailwind.config.js` 文件
+    - 验证无需添加 Tailwind 类型定义（Tailwind 类名是运行时处理）
+    - 如果使用 TypeScript 配置文件（`tailwind.config.ts`），确保类型解析正确
+  - [x] **验证路径别名配置（如需要）：**
+    - 检查是否需要为 Tailwind 配置添加路径别名
+    - 确认 TypeScript 可以解析 Tailwind 配置中的路径引用
+  - [x] **类型定义检查（如需要）：**
+    - 确认无需添加额外的类型定义文件
+    - Tailwind 类名是运行时处理的，不需要编译时类型检查
 
 - [x] Task 8: 验证 Vite 配置 (AC: #1)
   - [x] 检查 `fenghua-frontend/vite.config.ts`

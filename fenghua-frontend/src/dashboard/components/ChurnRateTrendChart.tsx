@@ -59,7 +59,6 @@ export const ChurnRateTrendChart: React.FC<ChurnRateTrendChartProps> = ({
     <Suspense fallback={<ChartSkeleton />}>
       <LineChartComponent
         data={chartData}
-        title="客户流失率趋势"
         dataKeys={['churnRate']}
         colors={['#ef4444']}
       />

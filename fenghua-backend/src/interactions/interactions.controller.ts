@@ -16,6 +16,7 @@ import {
   Query,
   Request,
   UseGuards,
+  UseInterceptors,
   HttpCode,
   HttpStatus,
   ValidationPipe,
@@ -35,9 +36,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Token } from '../common/decorators/token.decorator';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { DataAccessAuditInterceptor } from '../audit/interceptors/data-access-audit.interceptor';
 
 @Controller('interactions')
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(DataAccessAuditInterceptor)
 export class InteractionsController {
   private readonly logger = new Logger(InteractionsController.name);
 

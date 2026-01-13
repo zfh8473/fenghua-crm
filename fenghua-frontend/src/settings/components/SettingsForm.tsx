@@ -14,6 +14,7 @@ import {
 } from '../types/settings.types';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { getErrorMessage, hasResponse } from '../../utils/error-handling';
 // import './SettingsForm.css'; // Removed
 
 interface SettingsFormProps {
@@ -54,11 +55,11 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
       setFormData({});
     } catch (error: unknown) {
       // Display backend validation errors
-      const errorMessage = error.message || '更新设置失败';
+      const errorMessage = getErrorMessage(error, '更新设置失败');
       setErrors({ submit: errorMessage });
       
       // If backend returns structured validation errors, parse and display them
-      if (error.response?.data?.message) {
+      if (hasResponse(error) && error.response?.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
         const backendErrors = error.response.data.message;
         if (Array.isArray(backendErrors)) {
           const parsedErrors: Record<string, string> = {};

@@ -30,6 +30,43 @@ So that **确保所有 UI 改造后的功能正常工作，系统稳定可靠**.
 
 ## Tasks / Subtasks
 
+- [x] Task 0: 测试准备和自动化检查 (AC: #2)
+  - [x] **测试环境准备：**
+    - [x] 创建测试执行计划（`_bmad-output/test-reports/story-0-8-test-execution-plan-2026-01-12.md`）
+    - [x] 创建测试执行指南（`_bmad-output/test-reports/story-0-8-testing-guide-2026-01-12.md`）
+    - [x] 确认测试环境要求（前端应用、后端 API、测试账号）
+  - [x] **自动化检查：**
+    - [x] 构建和类型检查：⚠️ 有 TypeScript 错误（其他文件，与本次修复无关）
+    - [x] 代码质量检查完成 ✅
+    - [x] 组件使用检查：✅ 通过（100%）
+      - LoginPage: Card, Input, Button ✅
+      - UserManagementPage: Card, Button, Input ✅
+      - ProductManagementPage: Card, Button, Input, Table ✅
+      - UserList: ✅ 已改为使用 Table 组件
+    - [x] ARIA 属性检查：✅ 通过（100%）
+      - `role="alert"`: 5 处 ✅
+      - `aria-label`: 30+ 处 ✅（包括 UserList 和 ProductList）
+    - [x] CSS 文件清理检查完成 ✅
+    - [x] 设计 Token 使用检查：✅ 主要部分完成（85%）
+      - LoginPage: ✅ 使用 `linear-*` 前缀（15+ 处）
+      - UserManagementPage: ✅ 已统一为 `linear-*` 前缀（50+ 处已替换）
+      - UserList: ✅ 已统一为 `linear-*` 前缀（30+ 处已替换）
+      - ProductManagementPage: ✅ 主要部分已统一为 `linear-*` 前缀（20+ 处已替换）
+      - ProductList: ✅ 主要部分已统一为 `linear-*` 前缀（15+ 处已替换）
+    - [x] 响应式类名检查：✅ 已添加（主要页面）
+      - UserManagementPage: 添加了 `flex-wrap sm:flex-nowrap` ✅
+      - ProductManagementPage: 添加了 `flex-wrap sm:flex-nowrap` ✅
+  - [x] **自动化测试报告：**
+    - [x] 创建详细测试结果（`_bmad-output/test-reports/automated-regression-test-results-0-8-2026-01-12.md`）
+    - [x] 创建测试总结（`_bmad-output/test-reports/automated-regression-test-summary-0-8-2026-01-12.md`）
+    - [x] 创建修复总结（`_bmad-output/test-reports/story-0-8-fixes-summary-2026-01-12.md`）
+  - [x] **问题修复：**
+    - [x] UserList 使用 Table 组件 ✅
+    - [x] 添加 ARIA 属性 ✅
+    - [x] 统一设计 Token（主要页面）✅
+    - [x] 添加响应式类名 ✅
+    - [x] 更新 Tailwind 配置（添加 linear-* 别名）✅
+
 - [ ] Task 1: Epic 1 Story 1-1 回归测试 (AC: #1)
   - [ ] **功能测试：**
     - [ ] **首页导航功能测试：**

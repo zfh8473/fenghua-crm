@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { getChartLabel } from '../utils/chart-labels';
 
 export interface BarChartData {
   name: string;
@@ -33,6 +34,11 @@ export interface BarChartProps {
    * Colors for each data key
    */
   colors?: string[];
+  
+  /**
+   * Custom label mappings (optional, defaults to Chinese labels)
+   */
+  labels?: Record<string, string>;
 }
 
 export const BarChartComponent: React.FC<BarChartProps> = ({
@@ -40,7 +46,11 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
   title,
   dataKeys,
   colors = ['#3b82f6', '#10b981', '#f59e0b'],
+  labels,
 }) => {
+  // Use custom labels or default to Chinese labels
+  const labelMap = labels || {};
+  const getLabel = (key: string) => labelMap[key] || getChartLabel(key);
   return (
     <div className="w-full">
       {title && (
@@ -68,11 +78,18 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
               padding: '8px',
             }}
           />
-          <Legend />
+          <Legend 
+            formatter={(value) => {
+              // Find the data key that matches this legend value
+              const key = dataKeys.find(k => k === value || getLabel(k) === value);
+              return key ? getLabel(key) : value;
+            }}
+          />
           {dataKeys.map((key, index) => (
             <Bar
               key={key}
               dataKey={key}
+              name={getLabel(key)}
               fill={colors[index % colors.length]}
               radius={[4, 4, 0, 0]}
             />

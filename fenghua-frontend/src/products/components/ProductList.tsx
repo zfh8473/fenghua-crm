@@ -33,7 +33,7 @@ const highlightText = (text: string, keyword?: string): React.ReactNode => {
   return parts.map((part, index) => {
     if (regex.test(part)) {
       return (
-        <mark key={index} className="bg-yellow-200 text-monday-text font-semibold px-monday-0.5 rounded">
+        <mark key={index} className="bg-yellow-200 text-linear-text font-semibold px-linear-0.5 rounded">
           {part}
         </mark>
       );
@@ -64,7 +64,7 @@ export const ProductList: React.FC<ProductListProps> = ({
 
   if (loading) {
     return (
-      <div className="text-center p-monday-12 text-monday-text-secondary text-monday-base">加载中...</div>
+      <div className="text-center p-linear-12 text-linear-text-secondary text-linear-base">加载中...</div>
     );
   }
 
@@ -72,22 +72,22 @@ export const ProductList: React.FC<ProductListProps> = ({
     // Show empty state with search suggestions if searching
     if (searchQuery) {
       return (
-        <div className="flex flex-col items-center justify-center py-monday-12 px-monday-4">
+        <div className="flex flex-col items-center justify-center py-linear-12 px-linear-4">
           <div className="text-center max-w-md">
-            <div className="text-monday-4xl mb-monday-4 opacity-50">
+            <div className="text-linear-4xl mb-linear-4 opacity-50">
               🔍
             </div>
-            <h3 className="text-monday-lg font-semibold text-monday-text mb-monday-2">
+            <h3 className="text-linear-lg font-semibold text-linear-text mb-linear-2">
               未找到匹配的产品
             </h3>
-            <p className="text-monday-sm text-monday-text-secondary mb-monday-4">
-              没有找到与 "<span className="font-semibold text-monday-text">{searchQuery}</span>" 匹配的产品
+            <p className="text-linear-sm text-linear-text-secondary mb-linear-4">
+              没有找到与 "<span className="font-semibold text-linear-text">{searchQuery}</span>" 匹配的产品
             </p>
-            <div className="bg-monday-bg rounded-monday-md p-monday-3">
-              <p className="text-monday-xs font-semibold text-monday-text mb-monday-1">
+            <div className="bg-linear-surface rounded-linear-md p-linear-3">
+              <p className="text-linear-xs font-semibold text-linear-text mb-linear-1">
                 💡 搜索建议：
               </p>
-              <ul className="text-monday-xs text-monday-text-secondary space-y-monday-0.5 text-left list-disc list-inside">
+              <ul className="text-linear-xs text-linear-text-secondary space-y-linear-0.5 text-left list-disc list-inside">
                 <li>检查拼写是否正确</li>
                 <li>尝试使用更通用的关键词</li>
                 <li>使用产品名称或HS编码搜索</li>
@@ -102,12 +102,12 @@ export const ProductList: React.FC<ProductListProps> = ({
     // Show default empty state if not searching
     return (
       <div className="w-full">
-        <div className="rounded-monday-lg overflow-hidden bg-monday-surface border border-gray-200">
-          <table className="w-full">
+        <div className="rounded-linear-lg overflow-hidden bg-linear-surface border border-gray-200">
+          <table className="w-full" aria-label="产品列表（空）">
             <thead>
-              <tr className="bg-monday-bg border-b border-gray-200">
+              <tr className="bg-linear-surface border-b border-gray-200">
                 {['产品名称', 'HS编码', '类别', '状态', '描述', '创建时间', ...(userIsAdmin ? ['操作'] : [])].map((header) => (
-                  <th key={header} className="p-monday-2 px-monday-4 text-left text-monday-sm font-semibold text-monday-text">
+                  <th key={header} className="p-linear-2 px-linear-4 text-left text-linear-sm font-semibold text-linear-text">
                     {header}
                   </th>
                 ))}
@@ -115,7 +115,7 @@ export const ProductList: React.FC<ProductListProps> = ({
             </thead>
             <tbody>
               <tr>
-                <td colSpan={userIsAdmin ? 7 : 6} className="p-monday-12 text-center text-monday-text-secondary">
+                <td colSpan={userIsAdmin ? 7 : 6} className="p-linear-12 text-center text-linear-text-secondary">
                   暂无产品
                 </td>
               </tr>
@@ -146,10 +146,10 @@ export const ProductList: React.FC<ProductListProps> = ({
       key: 'status',
       header: '状态',
       render: (status) => (
-        <span className={`px-monday-2 py-monday-1 rounded-monday-sm text-monday-xs font-medium ${
+        <span className={`px-linear-2 py-linear-1 rounded-linear-sm text-linear-xs font-medium ${
           status === 'active' ? 'bg-primary-green text-white' :
           status === 'inactive' ? 'bg-primary-red text-white' :
-          'bg-gray-100 text-monday-text-secondary'
+          'bg-gray-100 text-linear-text-secondary'
         }`}>
           {getStatusLabel(status)}
         </span>
@@ -176,7 +176,7 @@ export const ProductList: React.FC<ProductListProps> = ({
       key: 'actions',
       header: '操作',
       render: (_, product) => (
-        <div className="flex gap-monday-2">
+        <div className="flex gap-linear-2">
           {userIsAdmin && (
             <>
               <Button
@@ -184,7 +184,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                 variant="secondary"
                 size="sm"
                 title="编辑"
-                className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50 hover:text-primary-blue font-medium shadow-monday-sm"
+                className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50 hover:text-primary-blue font-medium shadow-linear-sm"
               >
                 ✏️ 编辑
               </Button>
@@ -193,14 +193,14 @@ export const ProductList: React.FC<ProductListProps> = ({
                 variant="ghost"
                 size="sm"
                 title="删除"
-                className="bg-primary-red/10 text-primary-red hover:bg-primary-red/20 hover:text-primary-red font-medium border border-primary-red/20 hover:border-primary-red/40 shadow-monday-sm"
+                className="bg-primary-red/10 text-primary-red hover:bg-primary-red/20 hover:text-primary-red font-medium border border-primary-red/20 hover:border-primary-red/40 shadow-linear-sm"
               >
                 🗑️ 删除
               </Button>
             </>
           )}
           {!userIsAdmin && (
-            <span className="text-monday-xs text-monday-text-placeholder">仅查看</span>
+            <span className="text-linear-xs text-linear-text-placeholder">仅查看</span>
           )}
         </div>
       ),

@@ -227,34 +227,33 @@ export class CustomerAnalysisService implements OnModuleDestroy {
           GROUP BY c.id, c.name, c.customer_type, c.created_at
         )
         SELECT 
-          customer_id,
-          customer_name,
-          customer_type,
-          order_count,
-          total_order_amount,
+          cos.customer_id,
+          cos.customer_name,
+          cos.customer_type,
+          cos.order_count,
+          cos.total_order_amount,
           CASE 
             -- If more than 1 order, calculate average order interval (days between orders)
             -- Then convert to orders per day: 1 / (days between orders)
-            WHEN order_count > 1 AND first_order_date IS NOT NULL AND last_order_date IS NOT NULL
+            WHEN cos.order_count > 1 AND cos.first_order_date IS NOT NULL AND cos.last_order_date IS NOT NULL
             THEN ROUND(
-              (order_count - 1)::float / NULLIF(EXTRACT(EPOCH FROM (last_order_date - first_order_date)) / 86400.0, 0),
+              ((cos.order_count - 1)::float / NULLIF(EXTRACT(EPOCH FROM (cos.last_order_date - cos.first_order_date)) / 86400.0, 0))::numeric,
               4
             )
             -- If only 1 order or time range specified, use time range days
-            WHEN $6::integer > 0 AND order_count > 0
-            THEN ROUND((order_count::float / $6::float)::numeric, 4)
+            WHEN $6::integer > 0 AND cos.order_count > 0
+            THEN ROUND((cos.order_count::float / $6::float)::numeric, 4)
             ELSE 0
           END as order_frequency,
-          last_interaction_date,
+          cos.last_interaction_date,
           CASE 
-            WHEN last_interaction_date IS NULL 
+            WHEN cos.last_interaction_date IS NULL 
             THEN EXTRACT(EPOCH FROM (CURRENT_DATE - cos.customer_created_at)) / 86400
-            ELSE EXTRACT(EPOCH FROM (CURRENT_DATE - last_interaction_date)) / 86400
+            ELSE EXTRACT(EPOCH FROM (CURRENT_DATE - cos.last_interaction_date)) / 86400
           END as days_since_last_interaction,
-          total_order_amount as lifetime_value
+          cos.total_order_amount as lifetime_value
         FROM customer_order_stats cos
-        INNER JOIN companies c ON c.id = cos.customer_id
-        ORDER BY total_order_amount DESC, order_count DESC
+        ORDER BY cos.total_order_amount DESC, cos.order_count DESC
         LIMIT $7 OFFSET $8;
       `;
 

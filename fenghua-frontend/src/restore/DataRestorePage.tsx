@@ -13,6 +13,7 @@ import { RestoreOperation } from './components/RestoreOperation';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { MainLayout } from '../components/layout';
+import { getErrorMessage } from '../utils/error-handling';
 // import './DataRestorePage.css'; // Removed
 
 export const DataRestorePage: React.FC = () => {
@@ -39,7 +40,7 @@ export const DataRestorePage: React.FC = () => {
       const history = await getBackupHistory(token, { limit: 100, status: 'success' });
       setBackups(history.backups);
     } catch (err: unknown) {
-      setError(err.message || '加载备份列表失败');
+      setError(getErrorMessage(err, '加载备份列表失败'));
       console.error('Failed to load backups:', err);
     } finally {
       setLoading(false);
@@ -107,7 +108,7 @@ export const DataRestorePage: React.FC = () => {
       const status = await getRestoreStatus(token, result.restoreId);
       setRestoreStatus(status);
     } catch (err: unknown) {
-      setError(err.message || '恢复操作失败');
+      setError(getErrorMessage(err, '恢复操作失败'));
       console.error('Failed to execute restore:', err);
     }
   };

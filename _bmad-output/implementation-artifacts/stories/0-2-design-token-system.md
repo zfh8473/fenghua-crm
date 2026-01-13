@@ -31,30 +31,66 @@ So that **所有组件可以使用统一的设计变量，确保视觉一致性*
 
 ## Tasks / Subtasks
 
-- [x] Task 1: 创建主题文件结构 (AC: #1)
+- [x] Task 1: 创建主题文件结构 (AC: #1) - **关键任务：定义完整的 TypeScript 类型系统**
   - [x] 创建 `fenghua-frontend/src/styles/theme.ts` 文件
-  - [x] 定义 TypeScript 类型和接口（ColorTokens, SpacingTokens, TypographyTokens, ShadowTokens, BackdropBlurTokens, BorderRadiusTokens, ThemeTokens）
-  - [x] 导出主题配置对象（使用 default export 格式，便于 Tailwind 配置导入）
-  - [x] 确保导出格式与 Tailwind config 兼容
+  - [x] **定义 TypeScript 类型和接口（关键：必须提供完整的类型结构）：**
+    - `ColorTokens` 接口：定义颜色系统结构
+      ```typescript
+      export interface ColorTokens {
+        linear: {
+          dark: string;
+          surface: string;
+          // ...
+        };
+        brand: {
+          primary: string;
+          secondary: string;
+          // ...
+        };
+        // ...
+      }
+      ```
+    - `SpacingTokens` 接口：定义间距系统结构
+    - `TypographyTokens` 接口：定义字体系统结构
+    - `ShadowTokens` 接口：定义阴影系统结构
+    - `BackdropBlurTokens` 接口：定义模糊系统结构
+    - `BorderRadiusTokens` 接口：定义圆角系统结构
+    - `ThemeTokens` 接口：整合所有 Token 的主接口
+  - [x] **导出主题配置对象（关键：必须使用 default export 格式）：**
+    - 使用 `export default` 格式，便于 Tailwind 配置导入
+    - 导出结构必须匹配 Tailwind config 的 `theme.extend` 格式
+    - 示例结构：
+      ```typescript
+      const theme: ThemeTokens = {
+        colors: { ... },
+        spacing: { ... },
+        // ...
+      };
+      export default theme;
+      ```
+  - [x] 确保导出格式与 Tailwind config 兼容（支持 TypeScript 配置文件导入）
 
-- [x] Task 2: 定义颜色系统 (AC: #1)
-  - [x] 定义 Linear 风格深色背景色（使用具体 hex 值）：
+- [x] Task 2: 定义颜色系统 (AC: #1) - **关键任务：使用 UX 设计规范中的精确颜色值**
+  - [x] **定义 Linear 风格深色背景色（使用具体 hex 值，来自 Linear 风格规范）：**
     - 主背景：`#0a0a0a` (Linear 深色)
     - 次背景：`#1a1a1a` (Linear 深色变体)
     - 表面色：`#242424`, `#2a2a2a` (稍亮的深色)
-  - [x] 定义文本颜色（高对比度）：
+  - [x] **定义文本颜色（高对比度，确保 WCAG AA 级合规）：**
     - 主文本：`#ffffff`, `#e5e5e5` (高对比度白色)
     - 次文本：`#a0a0a0` (中等对比度灰色)
     - 占位符文本：`#6b6b6b` (低对比度灰色)
-  - [x] 定义品牌色（从 UX 设计规范）：
-    - 主色（专业蓝）：`#2563EB` (Twenty CRM 主色，MVP 阶段为主色)
-    - 次色（柔和蓝紫）：`#7C3AED` (柔和感，MVP 阶段作为辅助色)
-    - 强调色：`#3B82F6` (信息色)
-  - [x] 定义状态色（从 UX 设计规范）：
-    - 成功：`#10B981` (绿色)
-    - 警告：`#F59E0B` (橙色)
-    - 错误：`#EF4444` (红色)
-    - 信息：`#3B82F6` (蓝色)
+  - [x] **定义品牌色（关键：必须使用 UX 设计规范中的精确值）：**
+    - 主色（专业蓝）：`#2563EB` (来自 UX 规范，Twenty CRM 主色，MVP 阶段为主色)
+    - 次色（柔和蓝紫）：`#7C3AED` (来自 UX 规范，柔和感，MVP 阶段作为辅助色)
+    - 强调色（信息色）：`#3B82F6` (来自 UX 规范)
+  - [x] **定义状态色（关键：必须使用 UX 设计规范中的精确值）：**
+    - 成功：`#10B981` (来自 UX 规范，绿色)
+    - 警告：`#F59E0B` (来自 UX 规范，橙色)
+    - 错误：`#EF4444` (来自 UX 规范，红色)
+    - 信息：`#3B82F6` (来自 UX 规范，蓝色)
+  - [x] **颜色值来源验证：**
+    - 所有颜色值必须从 UX 设计规范中提取，确保设计一致性
+    - 参考文件：`_bmad-output/ux-design-specification.md` (Section: 主色调、语义颜色)
   - [x] 定义渐变色（Linear 风格常用渐变）：
     - 主渐变：`linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)` (品牌色渐变)
     - 深色渐变：`linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%)` (背景渐变)
@@ -85,10 +121,35 @@ So that **所有组件可以使用统一的设计变量，确保视觉一致性*
     - `linear-sm` (2px) 到 `linear-full` (9999px)，共 7 个值
   - [x] 确保阴影和模糊符合 Linear 风格：微妙、现代
 
-- [x] Task 6: 集成到 Tailwind 配置 (AC: #1)
-  - [x] 将 `tailwind.config.js` 重命名为 `tailwind.config.ts`（使用方案 1，推荐）
-  - [x] 解决 TypeScript/JavaScript 互操作问题（使用 TypeScript 配置文件）
-  - [x] 在 `theme.extend` 中导入并应用所有设计 Token
+- [x] Task 6: 集成到 Tailwind 配置 (AC: #1) - **关键任务：解决 TypeScript/JavaScript 互操作问题**
+  - [x] **将 `tailwind.config.js` 重命名为 `tailwind.config.ts`（关键步骤：使用 TypeScript 配置文件）：**
+    - 这是推荐的方案，可以避免 TypeScript/JavaScript 互操作问题
+    - 确保 Vite 支持 TypeScript 配置文件（Vite 4.x 原生支持）
+  - [x] **解决 TypeScript/JavaScript 互操作问题（关键：提供具体的集成模式）：**
+    - 使用 TypeScript 配置文件可以直接导入 TypeScript theme.ts 文件
+    - 集成模式示例：
+      ```typescript
+      // tailwind.config.ts
+      import type { Config } from 'tailwindcss';
+      import theme from './src/styles/theme';
+      
+      const config: Config = {
+        content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: theme.colors,
+            spacing: theme.spacing,
+            // ... 其他 Token
+          },
+        },
+      };
+      export default config;
+      ```
+    - 这种方式确保类型安全和正确的互操作
+  - [x] **在 `theme.extend` 中导入并应用所有设计 Token（关键：必须使用 extend 而非 replace）：**
+    - 使用 `theme.extend` 保留 Tailwind 默认值，只添加自定义 Token
+    - 确保所有 Token 正确映射到 Tailwind 配置结构
   - [x] 确保颜色 Token 可通过 Tailwind 类名使用（`bg-linear-dark`, `text-primary-blue` 等）
   - [x] 确保间距 Token 可通过 Tailwind 类名使用（`p-linear-md`, `m-linear-lg` 等）
   - [x] 确保字体 Token 可通过 Tailwind 类名使用（`text-linear-lg` 等）
@@ -141,32 +202,104 @@ So that **所有组件可以使用统一的设计变量，确保视觉一致性*
   - TypeScript 已配置 ✅
   - 需要解决 TypeScript theme.ts 与 JavaScript tailwind.config.js 的互操作问题
 
-- **TypeScript/JavaScript Interop Strategy:**
+- **TypeScript/JavaScript Interop Strategy（关键：必须明确集成模式）：**
   - **推荐方案：** 将 `tailwind.config.js` 重命名为 `tailwind.config.ts`
-    - 优点：直接导入 TypeScript 文件，类型安全
-    - 缺点：需要确保 Vite 支持 TypeScript 配置文件
-  - **备选方案 1：** 在 theme.ts 中同时导出 TypeScript 类型和 JSON 兼容对象
+    - 优点：直接导入 TypeScript 文件，类型安全，无需额外配置
+    - 缺点：需要确保 Vite 支持 TypeScript 配置文件（Vite 4.x 原生支持）
+    - **具体实现模式：**
+      ```typescript
+      // tailwind.config.ts
+      import type { Config } from 'tailwindcss';
+      import theme from './src/styles/theme';
+      
+      const config: Config = {
+        content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: theme.colors,
+            spacing: theme.spacing,
+            typography: theme.typography,
+            boxShadow: theme.shadows,
+            backdropBlur: theme.backdropBlur,
+            borderRadius: theme.borderRadius,
+            backgroundImage: theme.gradients,
+          },
+        },
+      };
+      export default config;
+      ```
+  - **备选方案 1：** 在 theme.ts 中同时导出 TypeScript 类型和 JSON 兼容对象（不推荐，增加复杂性）
   - **备选方案 2：** 使用 `require()` 动态导入（不推荐，失去类型安全）
-  - **验证：** 确保构建过程无错误
+  - **验证：** 确保构建过程无错误，所有 Token 可通过 Tailwind 类名使用
 
 - **Source tree components to touch:**
   - `fenghua-frontend/src/styles/theme.ts`: 新建（设计 Token 定义，包含 TypeScript 类型）
   - `fenghua-frontend/tailwind.config.js` 或 `tailwind.config.ts`: 更新（集成设计 Token，可能需要重命名为 .ts）
   - `fenghua-frontend/src/components/TestTailwind.tsx`: 更新（添加 Token 测试示例）
 
-- **Theme.ts Export Structure:**
+- **Theme.ts Export Structure（关键：必须明确导出格式）：**
   ```typescript
   // src/styles/theme.ts
-  export interface ColorTokens { ... }
-  export interface ThemeTokens { ... }
-  
-  const theme: ThemeTokens = {
-    colors: { ... },
-    spacing: { ... },
+  // 1. 定义类型接口
+  export interface ColorTokens {
+    linear: {
+      dark: string;
+      surface: string;
+      // ...
+    };
+    brand: {
+      primary: string;
+      secondary: string;
+      // ...
+    };
     // ...
+  }
+  
+  export interface SpacingTokens { ... }
+  export interface TypographyTokens { ... }
+  export interface ShadowTokens { ... }
+  export interface BackdropBlurTokens { ... }
+  export interface BorderRadiusTokens { ... }
+  
+  export interface ThemeTokens {
+    colors: ColorTokens;
+    spacing: SpacingTokens;
+    typography: TypographyTokens;
+    shadows: ShadowTokens;
+    backdropBlur: BackdropBlurTokens;
+    borderRadius: BorderRadiusTokens;
+    gradients: { [key: string]: string };
+  }
+  
+  // 2. 实现主题配置对象
+  const theme: ThemeTokens = {
+    colors: {
+      linear: {
+        dark: '#0a0a0a',
+        surface: '#1a1a1a',
+        // ...
+      },
+      brand: {
+        primary: '#2563EB', // 来自 UX 规范
+        secondary: '#7C3AED', // 来自 UX 规范
+        // ...
+      },
+      // ...
+    },
+    spacing: { ... },
+    typography: { ... },
+    shadows: { ... },
+    backdropBlur: { ... },
+    borderRadius: { ... },
+    gradients: { ... },
   };
   
-  export default theme; // Default export for Tailwind config
+  // 3. 导出（default export 用于 Tailwind 配置导入）
+  export default theme;
+  
+  // 4. 可选：named exports 用于类型引用
+  export type { ColorTokens, SpacingTokens, ThemeTokens };
   ```
 
 - **Testing requirements:**

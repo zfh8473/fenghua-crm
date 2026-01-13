@@ -53,7 +53,12 @@ export const CustomerAnalysisTable: React.FC<CustomerAnalysisTableProps> = ({
   const navigate = useNavigate();
 
   const handleRowClick = (row: CustomerAnalysisItem) => {
-    navigate(`/customers/${row.customerId}`);
+    navigate(`/customers?customerId=${row.customerId}`);
+  };
+
+  const handleCustomerNameClick = (row: CustomerAnalysisItem, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click event
+    navigate(`/customers?customerId=${row.customerId}`);
   };
 
   const columns: Column<CustomerAnalysisItem>[] = [
@@ -61,6 +66,14 @@ export const CustomerAnalysisTable: React.FC<CustomerAnalysisTableProps> = ({
       key: 'customerName',
       header: '客户名称',
       sortable: true,
+      render: (value, row) => (
+        <span
+          className="text-primary-blue hover:underline cursor-pointer"
+          onClick={(e) => handleCustomerNameClick(row, e)}
+        >
+          {value}
+        </span>
+      ),
     },
     {
       key: 'customerType',

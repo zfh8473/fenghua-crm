@@ -7,6 +7,7 @@ import { isAdmin } from '../common/constants/roles';
 import { Card, Button } from '../components/ui';
 import { MainLayout } from '../components/layout';
 import { Input } from '../components/ui/Input';
+import { getErrorMessage } from '../utils/error-handling';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
@@ -33,7 +34,7 @@ export const UserManagementPage: React.FC = () => {
       const userList = await getUsers(roleFilter || undefined, searchQuery || undefined);
       setUsers(userList);
     } catch (err: unknown) {
-      setError(err.message || '加载用户列表失败');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ export const UserManagementPage: React.FC = () => {
       setSuccessMessage('用户删除成功');
       await loadUsers();
     } catch (err: unknown) {
-      setError(err.message || '删除用户失败');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -81,7 +82,7 @@ export const UserManagementPage: React.FC = () => {
       setViewMode('list');
       await loadUsers();
     } catch (err: unknown) {
-      setError(err.message || '操作失败');
+      setError(getErrorMessage(err));
       throw err;
     }
   };
@@ -100,7 +101,7 @@ export const UserManagementPage: React.FC = () => {
     return (
       <MainLayout title="用户管理">
         <Card variant="default" className="max-w-7xl mx-auto">
-          <div className="p-monday-4 bg-semantic-error/20 border border-semantic-error rounded-monday-md text-semantic-error text-monday-base" role="alert">
+          <div className="p-linear-4 bg-semantic-error/20 border border-semantic-error rounded-linear-md text-semantic-error text-linear-base" role="alert">
             只有管理员可以访问此页面
           </div>
         </Card>
@@ -108,21 +109,21 @@ export const UserManagementPage: React.FC = () => {
     );
   }
 
-  // Toolbar component - Monday.com style, all in one line, wrapped in card
+  // Toolbar component - Linear style, all in one line, wrapped in card
   const toolbar = viewMode === 'list' ? (
-    <Card variant="default" className="w-full p-monday-4">
-      <div className="flex items-center gap-monday-3 flex-nowrap">
+    <Card variant="default" className="w-full p-linear-4">
+      <div className="flex items-center gap-linear-3 flex-wrap sm:flex-nowrap">
         <Input
           type="text"
           placeholder="搜索用户..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-64 min-w-[200px]"
+          className="w-full sm:w-64 min-w-[200px]"
         />
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-monday-3 py-monday-2 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
+          className="px-linear-3 py-linear-2 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
         >
           <option value="">所有角色</option>
           <option value="ADMIN">管理员</option>
@@ -135,7 +136,7 @@ export const UserManagementPage: React.FC = () => {
           size="md" 
           onClick={handleCreate} 
           leftIcon={<span>✨</span>}
-          className="bg-gradient-to-r from-primary-blue to-primary-blue-hover shadow-monday-md hover:shadow-monday-lg font-semibold"
+          className="bg-gradient-to-r from-primary-blue to-primary-blue-hover shadow-linear-md hover:shadow-linear-lg font-semibold"
         >
           创建新用户
         </Button>
@@ -149,26 +150,26 @@ export const UserManagementPage: React.FC = () => {
       title=""
     >
       {viewMode === 'list' ? (
-        <div className="space-y-monday-4">
+        <div className="space-y-linear-4">
           {/* Toolbar Card */}
           {toolbar}
 
           {/* User List Card */}
           <Card variant="default" className="w-full">
             {successMessage && (
-              <div className="mb-monday-4 p-monday-4 bg-primary-green/20 border border-primary-green rounded-monday-md text-primary-green text-monday-sm" role="alert">
+              <div className="mb-linear-4 p-linear-4 bg-primary-green/20 border border-primary-green rounded-linear-md text-primary-green text-linear-sm" role="alert">
                 {successMessage}
               </div>
             )}
 
             {error && (
-              <div className="mb-monday-4 p-monday-4 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-sm" role="alert">
+              <div className="mb-linear-4 p-linear-4 bg-primary-red/20 border border-primary-red rounded-linear-md text-primary-red text-linear-sm" role="alert">
                 {error}
               </div>
             )}
 
             {loading ? (
-              <div className="text-center p-monday-8 text-monday-text-secondary">加载中...</div>
+              <div className="text-center p-linear-8 text-linear-text-secondary">加载中...</div>
             ) : (
             <UserList
               users={users}
@@ -181,7 +182,7 @@ export const UserManagementPage: React.FC = () => {
         </div>
       ) : (
         <Card variant="default" className="max-w-3xl mx-auto">
-          <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6">
+          <h2 className="text-linear-2xl font-semibold text-linear-text mb-linear-6">
             {viewMode === 'create' ? '创建新用户' : '编辑用户'}
           </h2>
           <UserForm

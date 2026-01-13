@@ -5,8 +5,8 @@
  * All custom code is proprietary and not open source.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { customersService, Customer, CreateCustomerDto, UpdateCustomerDto, CustomerQueryParams } from './customers.service';
 import { CustomerList } from './components/CustomerList';
@@ -25,6 +25,8 @@ type ViewMode = 'list' | 'create' | 'edit';
 export const CustomerManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hasAutoSelectedCustomer = useRef(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -83,6 +85,63 @@ export const CustomerManagementPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-select customer from URL query parameter
+  useEffect(() => {
+    const customerIdFromUrl = searchParams.get('customerId');
+    
+    // Only auto-select if:
+    // 1. There's a customerId in URL
+    // 2. Customers are loaded (or loading is complete)
+    // 3. We haven't already auto-selected (to avoid re-selecting on re-renders)
+    // 4. No customer is currently selected
+    if (
+      customerIdFromUrl &&
+      !loading &&
+      !hasAutoSelectedCustomer.current &&
+      !selectedCustomer
+    ) {
+      // First, try to find the customer in the current list
+      let customerToSelect = customers.find(c => c.id === customerIdFromUrl);
+      
+      // If customer is not in current list, load it separately
+      if (!customerToSelect) {
+        customersService.getCustomer(customerIdFromUrl)
+          .then((customer) => {
+            setSelectedCustomer(customer);
+            setShowDetailPanel(true);
+            hasAutoSelectedCustomer.current = true;
+            
+            // Remove customerId from URL to clean it up
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete('customerId');
+            setSearchParams(newSearchParams, { replace: true });
+          })
+          .catch((err) => {
+            console.error('Failed to load customer:', err);
+            // Remove invalid customerId from URL
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete('customerId');
+            setSearchParams(newSearchParams, { replace: true });
+          });
+      } else {
+        // Customer found in current list, select it
+        setSelectedCustomer(customerToSelect);
+        setShowDetailPanel(true);
+        hasAutoSelectedCustomer.current = true;
+        
+        // Remove customerId from URL to clean it up
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('customerId');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+    
+    // Reset the flag when customerId changes or customers change
+    if (customerIdFromUrl !== searchParams.get('customerId')) {
+      hasAutoSelectedCustomer.current = false;
+    }
+  }, [searchParams, customers, loading, selectedCustomer, setSearchParams]);
 
   // Handle search
   const handleSearch = useCallback((filters: CustomerSearchFilters) => {

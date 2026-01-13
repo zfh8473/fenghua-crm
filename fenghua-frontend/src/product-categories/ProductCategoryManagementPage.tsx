@@ -12,6 +12,7 @@ import { CategoryForm } from './components/CategoryForm';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { MainLayout } from '../components/layout';
+import { getErrorMessage } from '../utils/error-handling';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
@@ -35,7 +36,7 @@ export const ProductCategoryManagementPage: React.FC = () => {
       const cats = await categoriesService.getAll(true); // Include stats
       setCategories(cats as CategoryWithStats[]);
     } catch (err: unknown) {
-      setError(err.message || '加载类别列表失败');
+      setError(getErrorMessage(err, '加载类别列表失败'));
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export const ProductCategoryManagementPage: React.FC = () => {
       setDeleteConfirm({ category: null, show: false });
       await loadCategories();
     } catch (err: unknown) {
-      setError(err.message || '删除类别失败');
+      setError(getErrorMessage(err, '删除类别失败'));
       setDeleteConfirm({ category: null, show: false });
     }
   };
@@ -91,7 +92,7 @@ export const ProductCategoryManagementPage: React.FC = () => {
       setEditingCategory(null);
       await loadCategories();
     } catch (err: unknown) {
-      setError(err.message || '操作失败');
+      setError(getErrorMessage(err, '操作失败'));
       throw err; // Re-throw to let form handle it
     } finally {
       setIsSubmitting(false);

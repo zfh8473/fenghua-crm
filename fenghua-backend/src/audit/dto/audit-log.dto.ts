@@ -14,6 +14,8 @@ export interface AuditLogDto {
   timestamp: Date;
   reason?: string;
   metadata?: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 /**
@@ -28,3 +30,16 @@ export interface RoleChangeAuditLogDto {
   reason?: string;
 }
 
+/**
+ * Data access audit log DTO
+ */
+export interface DataAccessAuditLogDto {
+  resourceType: string; // 'CUSTOMER', 'PRODUCT', 'INTERACTION', etc.
+  resourceId: string;
+  operationResult: 'SUCCESS' | 'FAILED';
+  failureReason?: string;
+  userId: string;
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: Date;
+}

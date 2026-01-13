@@ -5,7 +5,7 @@
  * All custom code is proprietary and not open source.
  */
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { InteractionsController } from './interactions.controller';
 import { InteractionsService } from './interactions.service';
@@ -24,7 +24,7 @@ import { AuditModule } from '../audit/audit.module';
     ProductsModule, // For ProductsService and ProductCustomerAssociationManagementService (exported)
     CompaniesModule, // For CompaniesService to validate customers
     PermissionModule, // For PermissionService to check permissions
-    AuditModule, // For AuditService to log operations
+    forwardRef(() => AuditModule), // For AuditService to log operations - use forwardRef to avoid circular dependency
   ],
   controllers: [InteractionsController],
   providers: [InteractionsService],

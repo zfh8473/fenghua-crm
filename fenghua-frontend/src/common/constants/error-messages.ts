@@ -203,4 +203,3 @@ export const ASSOCIATION_NO_PERMISSION_DELETE = '您没有权限删除此关联'
 export const ASSOCIATION_PRODUCT_NOT_FOUND = '产品不存在';
 
 export const ASSOCIATION_CUSTOMER_NOT_FOUND = '客户不存在';
-

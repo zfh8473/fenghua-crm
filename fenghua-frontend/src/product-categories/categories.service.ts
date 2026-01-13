@@ -99,7 +99,8 @@ export const categoriesService = {
     try {
       return await apiRequest<Category>(`/product-categories/by-hs-code/${hsCode}`);
     } catch (error: unknown) {
-      if (error.message.includes('404') || error.message.includes('不存在')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('404') || errorMessage.includes('不存在')) {
         return null;
       }
       throw error;

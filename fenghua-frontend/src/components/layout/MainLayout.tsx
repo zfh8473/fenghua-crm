@@ -20,7 +20,7 @@ import { getDashboardOverview } from '../../dashboard/services/dashboard.service
 
 interface MainLayoutProps {
   children: ReactNode;
-  title: string;
+  title?: string;
   toolbar?: ReactNode;
   detailPanel?: ReactNode;
   showDetailPanel?: boolean;
@@ -78,6 +78,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     { path: '/dashboard', label: '业务仪表板', icon: '📊', directorOrAdminOnly: true },
     { path: '/dashboard/product-association-analysis', label: '产品关联分析', icon: '🔗', directorOrAdminOnly: true },
     { path: '/dashboard/customer-analysis', label: '客户分析', icon: '👥', directorOrAdminOnly: true },
+    { path: '/dashboard/supplier-analysis', label: '供应商分析', icon: '🏭', directorOrAdminOnly: true },
+          { path: '/dashboard/buyer-analysis', label: '采购商分析', icon: '🛒', directorOrAdminOnly: true },
+          { path: '/dashboard/business-trend-analysis', label: '业务趋势分析', icon: '📈', directorOrAdminOnly: true },
     { path: '/users', label: '用户管理', icon: '👥', adminOnly: true },
     { path: '/products', label: '产品管理', icon: '📦', adminOnly: false }, // Allow all roles to access products
     { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
@@ -110,19 +113,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   // Get user display name (firstName + lastName, or firstName, or lastName, or email username)
-  const getUserDisplayName = (user: typeof user): string => {
-    if (!user) return '用户';
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+  const getUserDisplayName = (userToDisplay: typeof user): string => {
+    if (!userToDisplay) return '用户';
+    if (userToDisplay.firstName && userToDisplay.lastName) {
+      return `${userToDisplay.firstName} ${userToDisplay.lastName}`;
     }
-    if (user.firstName) {
-      return user.firstName;
+    if (userToDisplay.firstName) {
+      return userToDisplay.firstName;
     }
-    if (user.lastName) {
-      return user.lastName;
+    if (userToDisplay.lastName) {
+      return userToDisplay.lastName;
     }
     // Fallback to email username (part before @)
-    return user.email?.split('@')[0] || '用户';
+    return userToDisplay.email?.split('@')[0] || '用户';
   };
 
   return (

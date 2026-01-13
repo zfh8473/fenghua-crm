@@ -26,6 +26,7 @@ import { Button } from '../components/ui/Button';
 import { MainLayout } from '../components/layout';
 import { Input } from '../components/ui/Input';
 import { Link } from 'react-router-dom';
+import { getErrorMessage } from '../utils/error-handling';
 // import './ProductManagementPage.css'; // Removed
 
 type ViewMode = 'list' | 'create' | 'edit';
@@ -74,7 +75,7 @@ export const ProductManagementPage: React.FC = () => {
       setProducts(response.products);
       setTotal(response.total);
     } catch (err: unknown) {
-      setError(err.message || '加载产品列表失败');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -225,7 +226,7 @@ export const ProductManagementPage: React.FC = () => {
       setDeleteConfirm({ product: null, show: false });
       await loadProducts();
     } catch (err: unknown) {
-      setError(err.message || '删除产品失败');
+      setError(getErrorMessage(err));
       setDeleteConfirm({ product: null, show: false });
     }
   };
@@ -252,7 +253,7 @@ export const ProductManagementPage: React.FC = () => {
       setShowDetailPanel(false);
       await loadProducts();
     } catch (err: unknown) {
-      setError(err.message || '操作失败');
+      setError(getErrorMessage(err));
       throw err;
     }
   };
@@ -294,28 +295,28 @@ export const ProductManagementPage: React.FC = () => {
   if (!canAccessProducts) {
     return (
       <MainLayout title="产品管理">
-        <Card variant="default" className="p-monday-8 text-center">
-          <p className="text-semantic-error text-monday-lg">您没有权限访问此页面</p>
+        <Card variant="default" className="p-linear-8 text-center">
+          <p className="text-semantic-error text-linear-lg">您没有权限访问此页面</p>
         </Card>
       </MainLayout>
     );
   }
 
-  // Toolbar component - Monday.com style, all in one line, wrapped in card
+  // Toolbar component - Linear style, all in one line, wrapped in card
   const toolbar = viewMode === 'list' ? (
-    <Card variant="default" className="w-full p-monday-4">
-      <div className="flex items-center gap-monday-3 flex-nowrap">
+    <Card variant="default" className="w-full p-linear-4">
+      <div className="flex items-center gap-linear-3 flex-wrap sm:flex-nowrap">
         <Input
           type="text"
           placeholder="搜索产品名称或HS编码..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-64 min-w-[200px]"
+          className="w-full sm:w-64 min-w-[200px]"
         />
         <select
           value={filters.category || ''}
           onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
-          className="px-monday-3 py-monday-2 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
+          className="px-linear-3 py-linear-2 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
         >
           <option value="">所有类别</option>
           {categories.map((category) => (
@@ -327,7 +328,7 @@ export const ProductManagementPage: React.FC = () => {
         <select
           value={filters.status || ''}
           onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-          className="px-monday-3 py-monday-2 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
+          className="px-linear-3 py-linear-2 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
         >
           <option value="">所有状态</option>
           <option value="active">活跃</option>
@@ -338,9 +339,9 @@ export const ProductManagementPage: React.FC = () => {
           <Button 
             variant="outline" 
             size="md"
-            className="bg-gradient-to-r from-primary-purple/10 to-primary-blue/10 border-primary-purple/30 text-primary-purple hover:from-primary-purple/20 hover:to-primary-blue/20 hover:border-primary-purple/50 hover:text-primary-purple font-medium shadow-monday-sm"
+            className="bg-gradient-to-r from-primary-purple/10 to-primary-blue/10 border-primary-purple/30 text-primary-purple hover:from-primary-purple/20 hover:to-primary-blue/20 hover:border-primary-purple/50 hover:text-primary-purple font-medium shadow-linear-sm"
           >
-            <span className="mr-monday-2">🏷️</span>
+            <span className="mr-linear-2">🏷️</span>
             类别管理
           </Button>
         </Link>
@@ -349,9 +350,9 @@ export const ProductManagementPage: React.FC = () => {
             <Button 
               variant="outline" 
               size="md"
-              className="bg-gradient-to-r from-primary-green/10 to-primary-blue/10 border-primary-green/30 text-primary-green hover:from-primary-green/20 hover:to-primary-blue/20 hover:border-primary-green/50 hover:text-primary-green font-medium shadow-monday-sm whitespace-nowrap"
+              className="bg-gradient-to-r from-primary-green/10 to-primary-blue/10 border-primary-green/30 text-primary-green hover:from-primary-green/20 hover:to-primary-blue/20 hover:border-primary-green/50 hover:text-primary-green font-medium shadow-linear-sm whitespace-nowrap"
             >
-              <span className="mr-monday-2">📥</span>
+              <span className="mr-linear-2">📥</span>
               批量导入
             </Button>
           </Link>
@@ -361,9 +362,9 @@ export const ProductManagementPage: React.FC = () => {
             variant="primary" 
             size="md" 
             onClick={handleCreate}
-            className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-monday-md hover:shadow-monday-lg font-semibold"
+            className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-linear-md hover:shadow-linear-lg font-semibold"
           >
-            <span className="mr-monday-2">✨</span>
+            <span className="mr-linear-2">✨</span>
             创建新产品
           </Button>
         )}
@@ -388,29 +389,29 @@ export const ProductManagementPage: React.FC = () => {
       onCloseDetailPanel={handleCloseDetailPanel}
     >
       {viewMode === 'list' ? (
-        <div className="space-y-monday-4">
+        <div className="space-y-linear-4">
           {/* Toolbar Card */}
           {toolbar}
 
           {/* Product List Card */}
           <Card variant="default" className="w-full">
             {successMessage && (
-              <div className="mb-monday-4 p-monday-4 bg-primary-green/20 border border-primary-green rounded-monday-md text-primary-green text-monday-sm" role="alert">
+              <div className="mb-linear-4 p-linear-4 bg-primary-green/20 border border-primary-green rounded-linear-md text-primary-green text-linear-sm" role="alert">
                 {successMessage}
               </div>
             )}
 
             {error && (
-              <div className="mb-monday-4 p-monday-4 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-sm" role="alert">
+              <div className="mb-linear-4 p-linear-4 bg-primary-red/20 border border-primary-red rounded-linear-md text-primary-red text-linear-sm" role="alert">
                 {error}
               </div>
             )}
 
             {loading ? (
-              <div className="text-center p-monday-8 text-monday-text-secondary">加载中...</div>
+              <div className="text-center p-linear-8 text-linear-text-secondary">加载中...</div>
             ) : (
               <>
-                <h2 className="text-monday-2xl font-bold text-monday-text mb-monday-6 tracking-tight">产品列表</h2>
+                <h2 className="text-linear-2xl font-bold text-linear-text mb-linear-6 tracking-tight">产品列表</h2>
           <ProductList
             products={products}
             onEdit={userIsAdmin ? handleEdit : () => {}}
@@ -420,7 +421,7 @@ export const ProductManagementPage: React.FC = () => {
             searchQuery={filters.search}
           />
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-monday-4 mt-monday-6 pt-monday-4 border-t border-gray-200">
+                  <div className="flex justify-center items-center gap-linear-4 mt-linear-6 pt-linear-4 border-t border-gray-200">
                     <Button
                       variant="outline"
                       size="sm"
@@ -429,7 +430,7 @@ export const ProductManagementPage: React.FC = () => {
                     >
                       上一页
                     </Button>
-                    <span className="text-monday-base text-monday-text">
+                    <span className="text-linear-base text-linear-text">
                       第 {currentPage} 页，共 {totalPages} 页（共 {total} 条）
                     </span>
                     <Button
@@ -448,7 +449,7 @@ export const ProductManagementPage: React.FC = () => {
         </div>
       ) : (
         <Card variant="default" className="max-w-3xl mx-auto">
-          <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6">{viewMode === 'create' ? '创建新产品' : '编辑产品'}</h2>
+          <h2 className="text-linear-2xl font-semibold text-linear-text mb-linear-6">{viewMode === 'create' ? '创建新产品' : '编辑产品'}</h2>
           {viewMode === 'create' ? (
             <ProductCreateForm
               onSubmit={handleSubmit as (data: CreateProductDto) => Promise<void>}
@@ -466,7 +467,7 @@ export const ProductManagementPage: React.FC = () => {
 
       {deleteConfirm.show && deleteConfirm.product && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-monday-4 z-50" 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-linear-4 z-50" 
           onClick={cancelDelete}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
@@ -477,11 +478,11 @@ export const ProductManagementPage: React.FC = () => {
           tabIndex={-1}
         >
           <Card variant="elevated" className="max-w-md w-full" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
-            <h3 id="delete-confirm-title" className="text-monday-xl font-semibold text-monday-text mb-monday-4">确认删除</h3>
-            <p className="text-monday-base text-monday-text mb-monday-6">
+            <h3 id="delete-confirm-title" className="text-linear-xl font-semibold text-linear-text mb-linear-4">确认删除</h3>
+            <p className="text-linear-base text-linear-text mb-linear-6">
               确定要删除产品 <strong>{deleteConfirm.product.name}</strong> 吗？此操作无法撤销。
             </p>
-            <div className="flex justify-end gap-monday-3">
+            <div className="flex justify-end gap-linear-3">
               <Button onClick={cancelDelete} variant="outline">
                 取消
               </Button>

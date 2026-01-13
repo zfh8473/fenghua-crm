@@ -15,6 +15,7 @@ import {
   Body,
   Query,
   UseGuards,
+  UseInterceptors,
   HttpCode,
   HttpStatus,
   ValidationPipe,
@@ -30,9 +31,11 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { CustomerResponseDto } from './dto/customer-response.dto';
 import { CustomerQueryDto } from './dto/customer-query.dto';
 import { Token } from '../common/decorators/token.decorator';
+import { DataAccessAuditInterceptor } from '../audit/interceptors/data-access-audit.interceptor';
 
 @Controller('customers')
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(DataAccessAuditInterceptor)
 export class CompaniesController {
   // Note: This controller handles /customers routes
   // For backward compatibility, /companies/:id is handled by CompaniesCompatController

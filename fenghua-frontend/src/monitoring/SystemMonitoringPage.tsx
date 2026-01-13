@@ -12,6 +12,7 @@ import { HealthStatusPanel } from './components/HealthStatusPanel';
 import { UserRole } from '../common/constants/roles';
 import { Card } from '../components/ui/Card';
 import { MainLayout } from '../components/layout';
+import { getErrorMessage } from '../utils/error-handling';
 // import './SystemMonitoringPage.css'; // Removed
 
 export function SystemMonitoringPage() {
@@ -31,7 +32,7 @@ export function SystemMonitoringPage() {
       const data = await getHealthStatus(token);
       setHealth(data);
     } catch (err: unknown) {
-      setError(err.message || '加载健康状态失败');
+      setError(getErrorMessage(err, '加载健康状态失败'));
     } finally {
       setIsLoading(false);
     }

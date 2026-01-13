@@ -28,6 +28,9 @@ import { ExportPage } from './export/ExportPage'
 import { DashboardPage } from './dashboard/pages/DashboardPage'
 import { ProductAssociationAnalysisPage } from './dashboard/pages/ProductAssociationAnalysisPage'
 import { CustomerAnalysisPage } from './dashboard/pages/CustomerAnalysisPage'
+import { SupplierAnalysisPage } from './dashboard/pages/SupplierAnalysisPage'
+import { BuyerAnalysisPage } from './dashboard/pages/BuyerAnalysisPage'
+import { BusinessTrendAnalysisPage } from './dashboard/pages/BusinessTrendAnalysisPage'
 import { TestTailwind } from './components/TestTailwind'
 import { Card } from './components/ui'
 import './App.css'
@@ -210,6 +213,30 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/dashboard/supplier-analysis"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'DIRECTOR']}>
+            <SupplierAnalysisPage />
+          </ProtectedRoute>
+        }
+      />
+            <Route
+              path="/dashboard/buyer-analysis"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'DIRECTOR']}>
+                  <BuyerAnalysisPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/business-trend-analysis"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'DIRECTOR']}>
+                  <BusinessTrendAnalysisPage />
+                </ProtectedRoute>
+              }
+            />
       <Route
         path="/monitoring"
         element={

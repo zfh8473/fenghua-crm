@@ -21,6 +21,7 @@ import {
 } from '../services/product-association-analysis.service';
 import { ProductAssociationTable } from '../components/ProductAssociationTable';
 import { ConversionRateTrendChart } from '../components/ConversionRateTrendChart';
+import { AnalysisExportDialog } from '../components/AnalysisExportDialog';
 
 /**
  * Skeleton loading component
@@ -46,74 +47,7 @@ const PageSkeleton: React.FC = () => {
 
 export const ProductAssociationAnalysisPage: React.FC = () => {
   const { token, user } = useAuth();
-  const [exportError, setExportError] = useState<string | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
-  
-  const handleExport = async () => {
-    if (!token) {
-      setExportError('未登录，请先登录');
-      return;
-    }
-
-    setIsExporting(true);
-    setExportError(null);
-
-    try {
-      const apiBaseUrl = (import.meta.env?.VITE_API_BASE_URL as string) || 
-                        (import.meta.env?.VITE_BACKEND_URL as string) || 
-                        '/api';
-      
-      const params = new URLSearchParams();
-      if (selectedCategory) {
-        params.append('categoryName', selectedCategory);
-      }
-      if (filters.startDate) {
-        params.append('startDate', filters.startDate);
-      }
-      if (filters.endDate) {
-        params.append('endDate', filters.endDate);
-      }
-      params.append('format', 'csv');
-
-      const url = `${apiBaseUrl}/dashboard/product-association-analysis/export?${params.toString()}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = '导出失败，请稍后重试';
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.message) {
-            errorMessage = errorJson.message;
-          }
-        } catch {
-          // If parsing fails, use default message
-        }
-        throw new Error(errorMessage);
-      }
-
-      // Download file
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `产品关联分析_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
-      console.error('Export failed:', error);
-      setExportError(error instanceof Error ? error.message : '导出失败，请稍后重试');
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [filters, setFilters] = useState<ProductAssociationAnalysisQuery>({
     page: 1,
     limit: 20,
@@ -329,10 +263,12 @@ export const ProductAssociationAnalysisPage: React.FC = () => {
           <h2 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
             订单转化率趋势
           </h2>
-          <ConversionRateTrendChart
-            data={trendData?.trends || []}
-            loading={isLoadingTrend}
-          />
+          <div id="conversion-rate-chart">
+            <ConversionRateTrendChart
+              data={trendData?.trends || []}
+              loading={isLoadingTrend}
+            />
+          </div>
         </Card>
 
         {/* Product Association Table */}
@@ -349,18 +285,13 @@ export const ProductAssociationAnalysisPage: React.FC = () => {
               )}
               <Button
                 variant="primary"
-                onClick={handleExport}
-                disabled={isLoadingAnalysis || !analysisData || isExporting}
+                onClick={() => setIsExportDialogOpen(true)}
+                disabled={isLoadingAnalysis || !analysisData}
               >
-                {isExporting ? '导出中...' : '导出 CSV'}
+                导出
               </Button>
             </div>
           </div>
-          {exportError && (
-            <div className="mb-monday-4 p-monday-3 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-sm" role="alert">
-              {exportError}
-            </div>
-          )}
           <ProductAssociationTable
             data={analysisData?.products || []}
             loading={isLoadingAnalysis}
@@ -392,6 +323,22 @@ export const ProductAssociationAnalysisPage: React.FC = () => {
           )}
         </Card>
       </div>
+
+      {/* Export Dialog */}
+      {token && (
+        <AnalysisExportDialog
+          analysisType="product-association"
+          queryParams={{
+            categoryName: selectedCategory || undefined,
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          }}
+          chartElementIds={['conversion-rate-chart']}
+          isOpen={isExportDialogOpen}
+          onClose={() => setIsExportDialogOpen(false)}
+          token={token}
+        />
+      )}
     </MainLayout>
   );
 };

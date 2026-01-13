@@ -13,6 +13,7 @@ import { Button } from '../../components/ui/Button';
 import { SpecificationsTable } from '../../components/SpecificationsTable';
 import { HsCodeSelect } from '../../components/ui/HsCodeSelect';
 import { ProductStatusSelector } from './ProductStatusSelector';
+import { getErrorMessage } from '../../utils/error-handling';
 // import './ProductEditForm.css'; // Removed
 
 interface ProductEditFormProps {
@@ -231,7 +232,7 @@ export const ProductEditForm: React.FC<ProductEditFormProps> = ({
       };
       await onSubmit(submitData);
     } catch (error: unknown) {
-      setErrors({ submit: error.message || '更新产品失败' });
+      setErrors({ submit: getErrorMessage(error, '更新产品失败') });
     } finally {
       setIsSubmitting(false);
     }

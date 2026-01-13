@@ -31,7 +31,7 @@ import { forwardRef } from '@nestjs/common';
   imports: [
     ConfigModule,
     ScheduleModule.forRoot(), // For scheduled integrity validation
-    AuditModule,
+    forwardRef(() => AuditModule), // Use forwardRef to avoid circular dependency
     AuthModule, // Import to use AuthService and PermissionAuditService in ProductsService
     ProductCategoriesModule, // Import to use ProductCategoriesService in ProductsService
     PermissionModule, // Import to use PermissionService in ProductCustomerAssociationService

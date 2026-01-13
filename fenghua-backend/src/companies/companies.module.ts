@@ -28,7 +28,7 @@ import { forwardRef } from '@nestjs/common';
     ConfigModule,
     AuthModule,
     PermissionModule, // Import to use PermissionService for role-based filtering
-    AuditModule, // Import to use AuditService for audit logging
+    forwardRef(() => AuditModule), // Import to use AuditService for audit logging - use forwardRef to avoid circular dependency
     forwardRef(() => ProductsModule), // Use forwardRef to avoid circular dependency
   ],
   controllers: [

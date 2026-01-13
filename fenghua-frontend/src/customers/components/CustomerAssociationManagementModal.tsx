@@ -56,7 +56,7 @@ const ProductAssociationCard: React.FC<{
   currentUserId?: string;
   onDelete: (productId: string) => void;
   isDeleting: boolean;
-}> = ({ product, customerId, currentUserId, onDelete, isDeleting }) => {
+}> = ({ product, currentUserId, onDelete, isDeleting }) => {
   // 只有当前用户创建的关联才能删除（权限控制）
   // 所有关联都是手动创建的，不存在"仅通过互动记录关联"的情况
   const canDelete = product.createdBy === currentUserId;
@@ -149,7 +149,6 @@ export const CustomerAssociationManagementModal: React.FC<CustomerAssociationMan
 
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
   const triggerButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // Store trigger button reference when modal opens

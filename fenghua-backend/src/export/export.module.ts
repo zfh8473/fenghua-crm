@@ -5,7 +5,7 @@
  * All custom code is proprietary and not open source.
  */
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { ExportController } from './export.controller';
@@ -26,25 +26,34 @@ import { AuditModule } from '../audit/audit.module';
   imports: [
     ConfigModule,
     AuthModule,
-    UsersModule, // For AdminGuard
+    forwardRef(() => UsersModule), // For AdminGuard - use forwardRef to avoid circular dependency
     CompaniesModule, // For CompaniesService
     ProductsModule, // For ProductsService
     InteractionsModule, // For InteractionsService
-    AuditModule, // For AuditService
+    forwardRef(() => AuditModule), // For AuditService - use forwardRef to avoid circular dependency
+    // BullModule configuration - make it optional, use default Redis if REDIS_URL not set
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL');
-        if (!redisUrl) {
-          throw new Error('REDIS_URL is required for BullMQ');
+        const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
+        try {
+          const url = new URL(redisUrl);
+          return {
+            connection: {
+              host: url.hostname,
+              port: parseInt(url.port || '6379', 10),
+              password: url.password || undefined,
+            },
+          };
+        } catch (error) {
+          // If URL parsing fails, use default localhost Redis
+          return {
+            connection: {
+              host: 'localhost',
+              port: 6379,
+            },
+          };
         }
-        return {
-          connection: {
-            host: new URL(redisUrl).hostname,
-            port: parseInt(new URL(redisUrl).port || '6379', 10),
-            password: new URL(redisUrl).password || undefined,
-          },
-        };
       },
       inject: [ConfigService],
     }),
@@ -61,7 +70,11 @@ import { AuditModule } from '../audit/audit.module';
     ExcelExporterService,
     FieldDefinitionService,
   ],
-  exports: [ExportService],
+  exports: [
+    ExportService,
+    ExcelExporterService,
+    CsvExporterService,
+  ],
 })
 export class ExportModule {}
 

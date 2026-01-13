@@ -32,6 +32,8 @@ const ChurnRateTrendChart = lazy(() =>
   }))
 );
 
+import { AnalysisExportDialog } from '../components/AnalysisExportDialog';
+
 /**
  * Skeleton loading component
  */
@@ -56,8 +58,9 @@ const PageSkeleton: React.FC = () => {
 
 export const CustomerAnalysisPage: React.FC = () => {
   const { token, user } = useAuth();
-  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   
   // Constants
   const DEFAULT_PAGE_SIZE = 20;
@@ -339,18 +342,20 @@ export const CustomerAnalysisPage: React.FC = () => {
           <h2 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
             客户流失率趋势
           </h2>
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-[300px]">
-              <div className="animate-pulse">
-                <div className="h-48 bg-gray-200 rounded w-full"></div>
+          <div id="churn-rate-chart">
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-[300px]">
+                <div className="animate-pulse">
+                  <div className="h-48 bg-gray-200 rounded w-full"></div>
+                </div>
               </div>
-            </div>
-          }>
-            <ChurnRateTrendChart
-              data={trendData?.trends || []}
-              loading={isLoadingTrend}
-            />
-          </Suspense>
+            }>
+              <ChurnRateTrendChart
+                data={trendData?.trends || []}
+                loading={isLoadingTrend}
+              />
+            </Suspense>
+          </div>
         </Card>
 
         {/* Customer Analysis Table */}
@@ -367,18 +372,13 @@ export const CustomerAnalysisPage: React.FC = () => {
               )}
               <Button
                 variant="primary"
-                onClick={handleExport}
-                disabled={isLoadingAnalysis || !analysisData || isExporting}
+                onClick={() => setIsExportDialogOpen(true)}
+                disabled={isLoadingAnalysis || !analysisData}
               >
-                {isExporting ? '导出中...' : '导出 CSV'}
+                导出
               </Button>
             </div>
           </div>
-          {exportError && (
-            <div className="mb-monday-4 p-monday-3 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-sm" role="alert">
-              {exportError}
-            </div>
-          )}
           <Suspense fallback={
             <div className="flex items-center justify-center py-monday-12">
               <div className="animate-pulse text-monday-text-secondary">加载中...</div>
@@ -416,6 +416,22 @@ export const CustomerAnalysisPage: React.FC = () => {
           )}
         </Card>
       </div>
+
+      {/* Export Dialog */}
+      {token && (
+        <AnalysisExportDialog
+          analysisType="customer"
+          queryParams={{
+            customerType: selectedCustomerType || undefined,
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          }}
+          chartElementIds={['churn-rate-chart']}
+          isOpen={isExportDialogOpen}
+          onClose={() => setIsExportDialogOpen(false)}
+          token={token}
+        />
+      )}
     </MainLayout>
   );
 };

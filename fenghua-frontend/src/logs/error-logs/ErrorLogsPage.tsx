@@ -13,6 +13,7 @@ import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { MainLayout } from '../../components/layout';
+import { getErrorMessage } from '../../utils/error-handling';
 // import './ErrorLogsPage.css'; // Removed
 
 export function ErrorLogsPage() {
@@ -66,7 +67,7 @@ export function ErrorLogsPage() {
         totalPages: data.totalPages,
       });
     } catch (err: unknown) {
-      setError(err.message || '加载错误日志失败');
+      setError(getErrorMessage(err, '加载错误日志失败'));
     } finally {
       setIsLoading(false);
     }
