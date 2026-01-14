@@ -117,9 +117,7 @@ export const PRODUCT_CREATE_SUCCESS = '产品创建成功';
  * @returns Success message string
  */
 export const PRODUCT_CREATE_WITH_ASSOCIATIONS_SUCCESS = (count: number): string =>
-  `产品创建成功，已关联 ${count} 个客户`;
-
-/**
+  `产品创建成功，已关联 ${count} 个客户`;/**
  * Product creation with partial association failures
  * 
  * @param successCount - Number of successful associations
@@ -130,9 +128,7 @@ export const PRODUCT_CREATE_ASSOCIATIONS_PARTIAL_FAILURE = (
   successCount: number,
   failureCount: number,
 ): string =>
-  `产品已创建，但部分客户关联失败（成功：${successCount}，失败：${failureCount}）`;
-
-export const PRODUCT_CREATE_ASSOCIATIONS_ALL_FAILURE = '产品已创建，但所有客户关联失败';
+  `产品已创建，但部分客户关联失败（成功：${successCount}，失败：${failureCount}）`;export const PRODUCT_CREATE_ASSOCIATIONS_ALL_FAILURE = '产品已创建，但所有客户关联失败';
 
 /**
  * Association creation failed message

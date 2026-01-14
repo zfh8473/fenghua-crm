@@ -28,6 +28,10 @@ describe('SettingsController', () => {
     emailNotificationsEnabled: false,
     notificationRecipients: [],
     logLevel: LogLevel.INFO,
+    customerDataRetentionDays: 2555,
+    productDataRetentionDays: -1,
+    interactionDataRetentionDays: 2555,
+    auditLogRetentionDays: 3650,
   };
 
   beforeEach(async () => {
@@ -85,6 +89,10 @@ describe('SettingsController', () => {
         ...mockSettings,
         dataRetentionDays: 1825,
         backupFrequency: BackupFrequency.WEEKLY,
+        customerDataRetentionDays: 2555,
+        productDataRetentionDays: -1,
+        interactionDataRetentionDays: 2555,
+        auditLogRetentionDays: 3650,
       };
 
       authService.validateToken.mockResolvedValue(mockUser);

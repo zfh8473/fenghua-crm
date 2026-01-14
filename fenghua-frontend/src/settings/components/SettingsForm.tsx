@@ -37,6 +37,10 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
       emailNotificationsEnabled: settings.emailNotificationsEnabled,
       notificationRecipients: settings.notificationRecipients,
       logLevel: settings.logLevel,
+      customerDataRetentionDays: settings.customerDataRetentionDays,
+      productDataRetentionDays: settings.productDataRetentionDays,
+      interactionDataRetentionDays: settings.interactionDataRetentionDays,
+      auditLogRetentionDays: settings.auditLogRetentionDays,
     });
   }, [settings]);
 
@@ -63,19 +67,21 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
         const backendErrors = error.response.data.message;
         if (Array.isArray(backendErrors)) {
           const parsedErrors: Record<string, string> = {};
-          backendErrors.forEach((err: string) => {
+          backendErrors.forEach((err: unknown) => {
+            const errStr = typeof err === 'string' ? err : String(err);
             // Parse validation error messages (e.g., "dataRetentionDays must be a number")
-            if (err.includes('dataRetentionDays')) {
-              parsedErrors.dataRetentionDays = err;
-            } else if (err.includes('backupRetentionDays')) {
-              parsedErrors.backupRetentionDays = err;
-            } else if (err.includes('notificationRecipients')) {
-              parsedErrors.notificationRecipients = err;
+            if (errStr.includes('dataRetentionDays')) {
+              parsedErrors.dataRetentionDays = errStr;
+            } else if (errStr.includes('backupRetentionDays')) {
+              parsedErrors.backupRetentionDays = errStr;
+            } else if (errStr.includes('notificationRecipients')) {
+              parsedErrors.notificationRecipients = errStr;
             }
           });
           setErrors({ ...parsedErrors, submit: errorMessage });
         } else {
-          setErrors({ submit: backendErrors });
+          const backendErrorMsg = typeof backendErrors === 'string' ? backendErrors : String(backendErrors);
+          setErrors({ submit: backendErrorMsg });
         }
       }
     }
@@ -146,6 +152,114 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
             />
             <span className="text-monday-xs text-monday-text-placeholder">
               用于配置业务数据的保留期限，超过保留期的数据将被自动清理
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-monday-6">
+          <div className="flex flex-col gap-monday-2">
+            <label htmlFor="customerDataRetentionDays" className="text-monday-sm font-semibold text-monday-text">
+              客户数据保留天数（默认 2555 天/7年，-1 表示永久保留）
+            </label>
+            <Input
+              id="customerDataRetentionDays"
+              label=""
+              type="number"
+              min="-1"
+              value={(formData.customerDataRetentionDays ?? settings.customerDataRetentionDays)?.toString() || ''}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  customerDataRetentionDays: parseInt(e.target.value, 10) || undefined,
+                })
+              }
+              error={!!errors.customerDataRetentionDays}
+              errorMessage={errors.customerDataRetentionDays}
+              className="font-normal"
+            />
+            <span className="text-monday-xs text-monday-text-placeholder">
+              用于配置客户数据的保留期限，超过保留期的客户数据将被自动清理
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-monday-6">
+          <div className="flex flex-col gap-monday-2">
+            <label htmlFor="productDataRetentionDays" className="text-monday-sm font-semibold text-monday-text">
+              产品数据保留天数（默认 -1 表示永久保留）
+            </label>
+            <Input
+              id="productDataRetentionDays"
+              label=""
+              type="number"
+              min="-1"
+              value={(formData.productDataRetentionDays ?? settings.productDataRetentionDays)?.toString() || ''}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  productDataRetentionDays: parseInt(e.target.value, 10) || undefined,
+                })
+              }
+              error={!!errors.productDataRetentionDays}
+              errorMessage={errors.productDataRetentionDays}
+              className="font-normal"
+            />
+            <span className="text-monday-xs text-monday-text-placeholder">
+              用于配置产品数据的保留期限，-1 表示永久保留，超过保留期的产品数据将被自动清理
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-monday-6">
+          <div className="flex flex-col gap-monday-2">
+            <label htmlFor="interactionDataRetentionDays" className="text-monday-sm font-semibold text-monday-text">
+              互动记录保留天数（默认 2555 天/7年，-1 表示永久保留）
+            </label>
+            <Input
+              id="interactionDataRetentionDays"
+              label=""
+              type="number"
+              min="-1"
+              value={(formData.interactionDataRetentionDays ?? settings.interactionDataRetentionDays)?.toString() || ''}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  interactionDataRetentionDays: parseInt(e.target.value, 10) || undefined,
+                })
+              }
+              error={!!errors.interactionDataRetentionDays}
+              errorMessage={errors.interactionDataRetentionDays}
+              className="font-normal"
+            />
+            <span className="text-monday-xs text-monday-text-placeholder">
+              用于配置互动记录的保留期限，超过保留期的互动记录将被自动清理
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-monday-6">
+          <div className="flex flex-col gap-monday-2">
+            <label htmlFor="auditLogRetentionDays" className="text-monday-sm font-semibold text-monday-text">
+              审计日志保留天数（默认 3650 天/10年，-1 表示永久保留）
+            </label>
+            <Input
+              id="auditLogRetentionDays"
+              label=""
+              type="number"
+              min="-1"
+              value={(formData.auditLogRetentionDays ?? settings.auditLogRetentionDays)?.toString() || ''}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  auditLogRetentionDays: parseInt(e.target.value, 10) || undefined,
+                })
+              }
+              error={!!errors.auditLogRetentionDays}
+              errorMessage={errors.auditLogRetentionDays}
+              className="font-normal"
+            />
+            <span className="text-monday-xs text-monday-text-placeholder">
+              用于配置审计日志的保留期限，超过保留期的审计日志将被自动清理
             </span>
           </div>
         </div>

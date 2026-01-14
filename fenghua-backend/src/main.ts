@@ -1,21 +1,106 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, BadRequestException, ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { AppModule } from './app.module';
+import * as fs from 'fs';
+import * as https from 'https';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Detect deployment platform
+  const deploymentPlatform = process.env.DEPLOYMENT_PLATFORM || 'standalone';
+  const isVercel = deploymentPlatform === 'vercel' || process.env.VERCEL === '1';
+  
+  // HTTPS configuration (only for standalone deployment)
+  let httpsOptions: https.ServerOptions | undefined;
+  
+  if (!isVercel) {
+    // Standalone deployment: configure HTTPS if enabled
+    const httpsEnabled = process.env.HTTPS_ENABLED === 'true';
+    const sslCertPath = process.env.SSL_CERT_PATH;
+    const sslKeyPath = process.env.SSL_KEY_PATH;
+    
+    if (httpsEnabled && sslCertPath && sslKeyPath) {
+      try {
+        // Validate certificate files exist
+        if (!fs.existsSync(sslCertPath)) {
+          throw new Error(`SSL certificate file not found: ${sslCertPath}`);
+        }
+        if (!fs.existsSync(sslKeyPath)) {
+          throw new Error(`SSL key file not found: ${sslKeyPath}`);
+        }
+        
+        // Check certificate file permissions (security best practice)
+        const keyStats = fs.statSync(sslKeyPath);
+        const keyMode = (keyStats.mode & parseInt('777', 8)).toString(8);
+        if (keyMode !== '600' && keyMode !== '400') {
+          console.warn(`⚠️  SSL key file permissions are ${keyMode}, recommended: 600 (read/write for owner only)`);
+        }
+        
+        // Read certificate files
+        const cipherSuite = [
+          'ECDHE-RSA-AES128-GCM-SHA256',
+          'ECDHE-ECDSA-AES128-GCM-SHA256',
+          'ECDHE-RSA-AES256-GCM-SHA384',
+          'ECDHE-ECDSA-AES256-GCM-SHA384',
+          '!aNULL',
+          '!eNULL',
+          '!EXPORT',
+          '!DES',
+          '!RC4',
+          '!MD5',
+          '!PSK',
+          '!SRP',
+          '!CAMELLIA',
+        ].join(':');
+        
+        httpsOptions = {
+          cert: fs.readFileSync(sslCertPath),
+          key: fs.readFileSync(sslKeyPath),
+          minVersion: 'TLSv1.2', // Minimum TLS 1.2
+          ciphers: cipherSuite,
+        };
+        
+        console.log('✅ HTTPS enabled with TLS 1.2+');
+        console.log(`   TLS Configuration: minVersion=TLSv1.2, cipherSuite=${cipherSuite.substring(0, 50)}...`);
+      } catch (error) {
+        console.error('❌ Failed to load SSL certificates:', error instanceof Error ? error.message : String(error));
+        throw error;
+      }
+    } else if (httpsEnabled) {
+      console.warn('⚠️  HTTPS_ENABLED=true but SSL certificate paths not configured. Starting without HTTPS.');
+    }
+  } else {
+    console.log('ℹ️  Vercel deployment detected - HTTPS handled by Vercel');
+  }
+  
+  const app = await NestFactory.create(AppModule, httpsOptions ? { httpsOptions } : {});
+  
+  // Configure trust proxy for reverse proxy deployments (Nginx/Apache)
+  // Get Express instance and set trust proxy
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', true);
   
   // Enable CORS for frontend integration
   // In development, allow all localhost ports for flexibility
+  // In production, only allow HTTPS origins
   const isDevelopment = process.env.NODE_ENV !== 'production';
+  const isProduction = !isDevelopment;
+  
   const allowedOrigins = isDevelopment
     ? [
         'http://localhost:3002',
         'http://localhost:3003',
+        'http://localhost:3005',
         'http://localhost:5173',
         'http://localhost:5174',
       ]
-    : [process.env.FRONTEND_URL || 'http://localhost:3002'];
+    : (() => {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+        // Warn if production FRONTEND_URL is not HTTPS
+        if (isProduction && !frontendUrl.startsWith('https://')) {
+          console.warn(`⚠️  FRONTEND_URL should use HTTPS in production, got: ${frontendUrl}`);
+        }
+        return [frontendUrl];
+      })();
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -23,10 +108,16 @@ async function bootstrap() {
       if (!origin) return callback(null, true);
       
       if (isDevelopment) {
-        // In development, allow any localhost origin
-        if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        // In development, allow any localhost origin (HTTP or HTTPS)
+        if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') ||
+            origin.startsWith('https://localhost:') || origin.startsWith('https://127.0.0.1:')) {
           return callback(null, true);
         }
+      }
+      
+      // In production, only allow HTTPS origins
+      if (isProduction && !origin.startsWith('https://')) {
+        return callback(new Error('Only HTTPS origins are allowed in production'));
       }
       
       // Check if origin is in allowed list
@@ -109,7 +200,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   
-  console.log(`fenghua-backend is running on: http://localhost:${port}`);
+  const protocol = httpsOptions ? 'https' : 'http';
+  console.log(`fenghua-backend is running on: ${protocol}://localhost:${port}`);
 }
 
 bootstrap();

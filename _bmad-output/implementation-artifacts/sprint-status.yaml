@@ -126,18 +126,19 @@ development_status:
   8-6-business-trend-analysis: done
   8-7-analysis-results-export: done
   epic-8-retrospective: optional
-  epic-9: in-progress
+  epic-9: done
   9-1-data-access-audit-log: done
-  9-2-data-modification-audit-log: backlog
-  9-3-sensitive-data-encryption: backlog
-  9-4-secure-transport-protocol: backlog
-  9-5-gdpr-data-export-request: backlog
-  9-6-gdpr-data-deletion-request: backlog
-  9-7-data-retention-policy: backlog
+  9-2-data-modification-audit-log: done
+  9-3-sensitive-data-encryption: done
+  9-4-secure-transport-protocol: done
+  9-5-gdpr-data-export-request: done
+  9-6-gdpr-data-deletion-request: done
+  9-7-data-retention-policy: done
+  9-8-epic-9-regression-testing: done
   epic-9-retrospective: optional
-  epic-10: backlog
-  10-1-interaction-record-comments: backlog
-  10-2-interaction-record-comment-history: backlog
+  epic-10: in-progress
+  10-1-interaction-record-comments: done
+  10-2-interaction-record-comment-history: done
   10-3-comment-edit-and-delete: backlog
   epic-10-retrospective: optional
   epic-11: backlog

@@ -37,10 +37,11 @@ import { Token } from '../common/decorators/token.decorator';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { DataAccessAuditInterceptor } from '../audit/interceptors/data-access-audit.interceptor';
+import { DataModificationAuditInterceptor } from '../audit/interceptors/data-modification-audit.interceptor';
 
 @Controller('interactions')
 @UseGuards(JwtAuthGuard)
-@UseInterceptors(DataAccessAuditInterceptor)
+@UseInterceptors(DataAccessAuditInterceptor, DataModificationAuditInterceptor)
 export class InteractionsController {
   private readonly logger = new Logger(InteractionsController.name);
 

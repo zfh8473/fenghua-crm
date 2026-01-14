@@ -74,6 +74,7 @@ import { AuditModule } from '../audit/audit.module';
     ExportService,
     ExcelExporterService,
     CsvExporterService,
+    JsonExporterService, // Export for GDPR module
   ],
 })
 export class ExportModule {}

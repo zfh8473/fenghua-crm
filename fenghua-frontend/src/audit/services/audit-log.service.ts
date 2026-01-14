@@ -21,6 +21,8 @@ export interface AuditLog {
   ipAddress?: string;
   userAgent?: string;
   metadata?: Record<string, any>;
+  oldValue?: any; // 修改前的值（用于数据修改审计日志）
+  newValue?: any; // 修改后的值（用于数据修改审计日志）
 }
 
 export interface AuditLogQueryParams {

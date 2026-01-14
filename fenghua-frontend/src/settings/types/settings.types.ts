@@ -23,6 +23,10 @@ export interface SettingsResponseDto {
   emailNotificationsEnabled: boolean;
   notificationRecipients: string[];
   logLevel: LogLevel;
+  customerDataRetentionDays: number;
+  productDataRetentionDays: number;
+  interactionDataRetentionDays: number;
+  auditLogRetentionDays: number;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -34,5 +38,9 @@ export interface UpdateSettingsDto {
   emailNotificationsEnabled?: boolean;
   notificationRecipients?: string[];
   logLevel?: LogLevel;
+  customerDataRetentionDays?: number;
+  productDataRetentionDays?: number;
+  interactionDataRetentionDays?: number;
+  auditLogRetentionDays?: number;
 }
 

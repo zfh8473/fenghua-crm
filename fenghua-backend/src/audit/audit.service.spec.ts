@@ -6,7 +6,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { AuditService } from './audit.service';
-import { RoleChangeAuditLogDto } from './dto/audit-log.dto';
+import { RoleChangeAuditLogDto, DataModificationAuditLogDto } from './dto/audit-log.dto';
 import { Pool } from 'pg';
 
 // Mock pg Pool
@@ -200,6 +200,147 @@ describe('AuditService', () => {
         expect.stringContaining('WHERE action = $1'),
         ['ROLE_CHANGE', 100],
       );
+    });
+  });
+
+  describe('logDataModification', () => {
+    it('should log data modification successfully', async () => {
+      mockPgPool.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      const dataModificationLog: DataModificationAuditLogDto = {
+        resourceType: 'PRODUCT',
+        resourceId: 'product-id-123',
+        oldValue: { name: 'Old Product', price: 100 },
+        newValue: { name: 'New Product', price: 150 },
+        changedFields: ['name', 'price'],
+        userId: 'user-id-123',
+        timestamp: new Date(),
+        actionType: 'DATA_MODIFICATION',
+      };
+
+      await service.logDataModification(dataModificationLog);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Verify INSERT query was called
+      expect(mockPgPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO audit_logs'),
+        expect.arrayContaining([
+          'DATA_MODIFICATION',
+          'PRODUCT',
+          'product-id-123',
+          expect.any(String), // oldValue (JSON stringified)
+          expect.any(String), // newValue (JSON stringified)
+          'user-id-123',
+          'user-id-123', // operatorId same as userId
+          expect.any(Date),
+          null, // reason
+          expect.stringContaining('changedFields'), // metadata
+        ]),
+      );
+    });
+
+    it('should log data deletion successfully', async () => {
+      mockPgPool.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      const dataModificationLog: DataModificationAuditLogDto = {
+        resourceType: 'CUSTOMER',
+        resourceId: 'customer-id-123',
+        oldValue: { name: 'Customer Name', email: 'customer@example.com' },
+        newValue: { name: 'Customer Name', email: 'customer@example.com', deletedAt: new Date() },
+        changedFields: ['deletedAt'],
+        userId: 'user-id-123',
+        timestamp: new Date(),
+        actionType: 'DATA_DELETION',
+        reason: 'User requested deletion',
+      };
+
+      await service.logDataModification(dataModificationLog);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Verify INSERT query was called with DATA_DELETION action
+      expect(mockPgPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO audit_logs'),
+        expect.arrayContaining([
+          'DATA_DELETION',
+          'CUSTOMER',
+          'customer-id-123',
+          expect.any(String), // oldValue
+          expect.any(String), // newValue
+          'user-id-123',
+          'user-id-123',
+          expect.any(Date),
+          'User requested deletion', // reason
+          expect.stringContaining('changedFields'), // metadata
+        ]),
+      );
+    });
+
+    it('should handle large objects by storing only changed fields', async () => {
+      mockPgPool.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Create a large object (> 1MB when stringified)
+      const largeOldValue: Record<string, any> = {};
+      const largeNewValue: Record<string, any> = {};
+      for (let i = 0; i < 10000; i++) {
+        largeOldValue[`field${i}`] = `value${i}`.repeat(100);
+        largeNewValue[`field${i}`] = `value${i}`.repeat(100);
+      }
+      // Change only one field
+      largeNewValue.field5000 = 'changed value';
+
+      const dataModificationLog: DataModificationAuditLogDto = {
+        resourceType: 'PRODUCT',
+        resourceId: 'product-id-123',
+        oldValue: largeOldValue,
+        newValue: largeNewValue,
+        changedFields: ['field5000'],
+        userId: 'user-id-123',
+        timestamp: new Date(),
+        actionType: 'DATA_MODIFICATION',
+      };
+
+      await service.logDataModification(dataModificationLog);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Verify that optimization was applied (only changed fields stored)
+      const insertCall = mockPgPool.query.mock.calls.find(call => 
+        call[0].includes('INSERT INTO audit_logs')
+      );
+      expect(insertCall).toBeDefined();
+      
+      const oldValueArg = insertCall[1][3]; // oldValue is 4th parameter (index 3)
+      const newValueArg = insertCall[1][4]; // newValue is 5th parameter (index 4)
+      
+      const parsedOldValue = JSON.parse(oldValueArg);
+      const parsedNewValue = JSON.parse(newValueArg);
+      
+      // Should only contain changed field and key fields (id, name, etc.)
+      expect(Object.keys(parsedOldValue).length).toBeLessThan(10000);
+      expect(Object.keys(parsedNewValue).length).toBeLessThan(10000);
+      expect(parsedNewValue.field5000).toBe('changed value');
+    });
+
+    it('should not throw error if database pool is not initialized', async () => {
+      (service as any).pgPool = null;
+
+      const dataModificationLog: DataModificationAuditLogDto = {
+        resourceType: 'PRODUCT',
+        resourceId: 'product-id-123',
+        oldValue: { name: 'Old Product' },
+        newValue: { name: 'New Product' },
+        changedFields: ['name'],
+        userId: 'user-id-123',
+        timestamp: new Date(),
+      };
+
+      // Should not throw
+      await expect(service.logDataModification(dataModificationLog)).resolves.not.toThrow();
     });
   });
 });

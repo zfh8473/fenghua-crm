@@ -71,6 +71,10 @@ export class SettingsService {
       emailNotificationsEnabled: this.getSettingValue('emailNotificationsEnabled', DEFAULT_SETTINGS.emailNotificationsEnabled),
       notificationRecipients: this.getSettingValue('notificationRecipients', DEFAULT_SETTINGS.notificationRecipients),
       logLevel: this.getSettingValue('logLevel', DEFAULT_SETTINGS.logLevel),
+      customerDataRetentionDays: this.getSettingValue('customerDataRetentionDays', DEFAULT_SETTINGS.customerDataRetentionDays),
+      productDataRetentionDays: this.getSettingValue('productDataRetentionDays', DEFAULT_SETTINGS.productDataRetentionDays),
+      interactionDataRetentionDays: this.getSettingValue('interactionDataRetentionDays', DEFAULT_SETTINGS.interactionDataRetentionDays),
+      auditLogRetentionDays: this.getSettingValue('auditLogRetentionDays', DEFAULT_SETTINGS.auditLogRetentionDays),
       updatedAt: this.getLatestUpdateTime(),
       updatedBy: this.getLatestUpdater(),
     };
@@ -142,6 +146,72 @@ export class SettingsService {
       const oldValue = oldSettings.logLevel;
       this.setSetting('logLevel', updateDto.logLevel, operatorId);
       updates.push({ key: 'logLevel', oldValue, newValue: updateDto.logLevel });
+    }
+
+    if (updateDto.customerDataRetentionDays !== undefined) {
+      const oldValue = oldSettings.customerDataRetentionDays;
+      if (updateDto.customerDataRetentionDays < -1) {
+        throw new Error('客户数据保留天数必须 >= -1（-1 表示永久保留）');
+      }
+      this.setSetting('customerDataRetentionDays', updateDto.customerDataRetentionDays, operatorId);
+      updates.push({ key: 'customerDataRetentionDays', oldValue, newValue: updateDto.customerDataRetentionDays });
+    }
+
+    if (updateDto.productDataRetentionDays !== undefined) {
+      const oldValue = oldSettings.productDataRetentionDays;
+      if (updateDto.productDataRetentionDays < -1) {
+        throw new Error('产品数据保留天数必须 >= -1（-1 表示永久保留）');
+      }
+      this.setSetting('productDataRetentionDays', updateDto.productDataRetentionDays, operatorId);
+      updates.push({ key: 'productDataRetentionDays', oldValue, newValue: updateDto.productDataRetentionDays });
+    }
+
+    if (updateDto.interactionDataRetentionDays !== undefined) {
+      const oldValue = oldSettings.interactionDataRetentionDays;
+      if (updateDto.interactionDataRetentionDays < -1) {
+        throw new Error('互动记录保留天数必须 >= -1（-1 表示永久保留）');
+      }
+      this.setSetting('interactionDataRetentionDays', updateDto.interactionDataRetentionDays, operatorId);
+      updates.push({ key: 'interactionDataRetentionDays', oldValue, newValue: updateDto.interactionDataRetentionDays });
+    }
+
+    if (updateDto.auditLogRetentionDays !== undefined) {
+      const oldValue = oldSettings.auditLogRetentionDays;
+      if (updateDto.auditLogRetentionDays < -1) {
+        throw new Error('审计日志保留天数必须 >= -1（-1 表示永久保留）');
+      }
+      this.setSetting('auditLogRetentionDays', updateDto.auditLogRetentionDays, operatorId);
+      updates.push({ key: 'auditLogRetentionDays', oldValue, newValue: updateDto.auditLogRetentionDays });
+    }
+
+    // Log audit for retention policy changes (for Task 6.2)
+    const retentionPolicyUpdates = updates.filter(
+      (u) =>
+        u.key === 'customerDataRetentionDays' ||
+        u.key === 'productDataRetentionDays' ||
+        u.key === 'interactionDataRetentionDays' ||
+        u.key === 'auditLogRetentionDays',
+    );
+    if (retentionPolicyUpdates.length > 0) {
+      for (const update of retentionPolicyUpdates) {
+        try {
+          await this.auditService.log({
+            action: 'DATA_RETENTION_POLICY_UPDATED',
+            entityType: 'SYSTEM_SETTINGS',
+            entityId: update.key,
+            oldValue: update.oldValue,
+            newValue: update.newValue,
+            userId: operatorId,
+            operatorId: operatorId,
+            timestamp: new Date(),
+            metadata: {
+              actionType: 'DATA_RETENTION_POLICY_UPDATED',
+            },
+          });
+        } catch (error) {
+          this.logger.error(`Failed to log audit for retention policy ${update.key}`, error);
+        }
+      }
     }
 
     // Log audit for each setting change (non-blocking)

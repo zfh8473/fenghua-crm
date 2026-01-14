@@ -33,10 +33,11 @@ import { Token } from '../common/decorators/token.decorator';
 import { Request } from 'express';
 import { BadRequestException } from '@nestjs/common';
 import { DataAccessAuditInterceptor } from '../audit/interceptors/data-access-audit.interceptor';
+import { DataModificationAuditInterceptor } from '../audit/interceptors/data-modification-audit.interceptor';
 
 @Controller('products')
 @UseGuards(JwtAuthGuard, AdminGuard)
-@UseInterceptors(DataAccessAuditInterceptor)
+@UseInterceptors(DataAccessAuditInterceptor, DataModificationAuditInterceptor)
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 

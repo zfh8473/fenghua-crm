@@ -8,7 +8,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, QueryResult } from 'pg';
-import { AuditLogDto, RoleChangeAuditLogDto, DataAccessAuditLogDto } from './dto/audit-log.dto';
+import { AuditLogDto, RoleChangeAuditLogDto, DataAccessAuditLogDto, DataModificationAuditLogDto } from './dto/audit-log.dto';
 
 @Injectable()
 export class AuditService implements OnModuleDestroy {
@@ -127,6 +127,7 @@ export class AuditService implements OnModuleDestroy {
         reason: dataAccessLog.failureReason,
         metadata: {
           operationResult: dataAccessLog.operationResult,
+          ...dataAccessLog.metadata, // Include any additional metadata (e.g., sensitiveFields)
         },
         ipAddress: dataAccessLog.ipAddress,
         userAgent: dataAccessLog.userAgent,
@@ -144,6 +145,126 @@ export class AuditService implements OnModuleDestroy {
       });
     } catch (error) {
       this.logger.error(`Failed to prepare data access audit log: ${error instanceof Error ? error.message : String(error)}`, error);
+      // Don't throw - audit logging failure should not affect main request
+    }
+  }
+
+  /**
+   * Log a data modification event
+   * This method is specifically for logging data modification operations (who modified what data, with old and new values)
+   * It uses async processing to avoid impacting main request performance
+   */
+  async logDataModification(dataModificationLog: DataModificationAuditLogDto): Promise<void> {
+    if (!this.pgPool) {
+      this.logger.warn('Database pool not initialized, skipping data modification audit log');
+      return;
+    }
+
+    try {
+      // Determine action type (default to DATA_MODIFICATION)
+      const actionType = dataModificationLog.actionType || 'DATA_MODIFICATION';
+
+      // Optimize storage: for large objects, only store changed fields if the object is too large
+      let oldValue = dataModificationLog.oldValue;
+      let newValue = dataModificationLog.newValue;
+
+      // Safe JSON stringify that handles circular references
+      const safeStringify = (value: any): string => {
+        try {
+          return JSON.stringify(value);
+        } catch (error) {
+          if (error instanceof TypeError && error.message.includes('circular')) {
+            // Handle circular references using a replacer function
+            const seen = new WeakSet();
+            return JSON.stringify(value, (key, val) => {
+              if (val != null && typeof val === 'object') {
+                if (seen.has(val)) {
+                  return '[Circular]';
+                }
+                seen.add(val);
+              }
+              return val;
+            });
+          }
+          // For other errors, return a placeholder
+          this.logger.warn(`Failed to stringify value for size check: ${error instanceof Error ? error.message : String(error)}`);
+          return '{}';
+        }
+      };
+
+      // Check if values are too large (rough estimate: > 1MB when stringified)
+      const oldValueSize = oldValue ? safeStringify(oldValue).length : 0;
+      const newValueSize = newValue ? safeStringify(newValue).length : 0;
+      const maxSize = 1024 * 1024; // 1MB
+
+      // If values are too large, only store changed fields
+      if (oldValueSize > maxSize || newValueSize > maxSize) {
+        this.logger.debug(`Large object detected (old: ${oldValueSize}, new: ${newValueSize}), storing only changed fields`);
+        const optimizedOldValue: Record<string, any> = {};
+        const optimizedNewValue: Record<string, any> = {};
+
+        // Only store changed fields
+        for (const field of dataModificationLog.changedFields) {
+          if (oldValue && typeof oldValue === 'object' && field in oldValue) {
+            optimizedOldValue[field] = (oldValue as Record<string, any>)[field];
+          }
+          if (newValue && typeof newValue === 'object' && field in newValue) {
+            optimizedNewValue[field] = (newValue as Record<string, any>)[field];
+          }
+        }
+
+        // Also store key identifying fields (id, name, etc.) for reference
+        if (oldValue && typeof oldValue === 'object') {
+          const keyFields = ['id', 'name', 'customerCode', 'productCode'];
+          for (const keyField of keyFields) {
+            if (keyField in oldValue && !(keyField in optimizedOldValue)) {
+              optimizedOldValue[keyField] = (oldValue as Record<string, any>)[keyField];
+            }
+          }
+        }
+        if (newValue && typeof newValue === 'object') {
+          const keyFields = ['id', 'name', 'customerCode', 'productCode'];
+          for (const keyField of keyFields) {
+            if (keyField in newValue && !(keyField in optimizedNewValue)) {
+              optimizedNewValue[keyField] = (newValue as Record<string, any>)[keyField];
+            }
+          }
+        }
+
+        oldValue = Object.keys(optimizedOldValue).length > 0 ? optimizedOldValue : oldValue;
+        newValue = Object.keys(optimizedNewValue).length > 0 ? optimizedNewValue : newValue;
+      }
+
+      // Map DataModificationAuditLogDto to AuditLogDto format
+      const auditLog: AuditLogDto = {
+        action: actionType,
+        entityType: dataModificationLog.resourceType,
+        entityId: dataModificationLog.resourceId,
+        oldValue: oldValue,
+        newValue: newValue,
+        userId: dataModificationLog.userId,
+        operatorId: dataModificationLog.userId, // For data modification, operator is the same as user
+        timestamp: dataModificationLog.timestamp,
+        reason: dataModificationLog.reason,
+        metadata: {
+          changedFields: dataModificationLog.changedFields,
+        },
+        ipAddress: dataModificationLog.ipAddress,
+        userAgent: dataModificationLog.userAgent,
+      };
+
+      // Use setImmediate to defer database write (async processing)
+      setImmediate(async () => {
+        try {
+          await this.saveToDatabase(auditLog);
+          this.logger.debug(`Data modification audit log: ${actionType} on ${dataModificationLog.resourceType} ${dataModificationLog.resourceId} by ${dataModificationLog.userId} (${dataModificationLog.changedFields.length} fields changed)`);
+        } catch (error) {
+          this.logger.error(`Failed to log data modification event: ${error instanceof Error ? error.message : String(error)}`, error);
+          // Don't throw - audit logging failure should not affect main request
+        }
+      });
+    } catch (error) {
+      this.logger.error(`Failed to prepare data modification audit log: ${error instanceof Error ? error.message : String(error)}`, error);
       // Don't throw - audit logging failure should not affect main request
     }
   }

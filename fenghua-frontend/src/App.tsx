@@ -21,10 +21,13 @@ import { CustomerProductInteractionHistoryPage } from './customers/CustomerProdu
 import { InteractionsPage } from './interactions/pages/InteractionsPage'
 import { InteractionCreatePage } from './interactions/pages/InteractionCreatePage'
 import { InteractionEditPage } from './interactions/pages/InteractionEditPage'
+import { InteractionDetailPage } from './interactions/pages/InteractionDetailPage'
 import { CustomerImportPage } from './import/CustomerImportPage'
 import { ProductImportPage } from './import/ProductImportPage'
 import { InteractionImportPage } from './import/InteractionImportPage'
 import { ExportPage } from './export/ExportPage'
+import { GdprExportPage } from './gdpr/GdprExportPage'
+import { GdprDeletionPage } from './gdpr/GdprDeletionPage'
 import { DashboardPage } from './dashboard/pages/DashboardPage'
 import { ProductAssociationAnalysisPage } from './dashboard/pages/ProductAssociationAnalysisPage'
 import { CustomerAnalysisPage } from './dashboard/pages/CustomerAnalysisPage'
@@ -65,6 +68,8 @@ function HomePage() {
     { path: '/products/import', label: '产品批量导入', icon: '📥', adminOnly: true },
     { path: '/interactions/import', label: '互动记录批量导入', icon: '📥', adminOnly: true },
     { path: '/export', label: '数据导出', icon: '📤', adminOnly: true },
+    { path: '/gdpr/export', label: 'GDPR 数据导出', icon: '📋', adminOnly: false },
+    { path: '/gdpr/deletion', label: 'GDPR 数据删除', icon: '🗑️', adminOnly: false },
     { path: '/settings', label: '系统设置', icon: '⚙️', adminOnly: true },
     { path: '/monitoring', label: '系统监控', icon: '📊', adminOnly: true },
     { path: '/logs', label: '系统日志', icon: '📝', adminOnly: true },
@@ -374,6 +379,22 @@ function App() {
         }
       />
       <Route
+        path="/gdpr/export"
+        element={
+          <ProtectedRoute>
+            <GdprExportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/gdpr/deletion"
+        element={
+          <ProtectedRoute>
+            <GdprDeletionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/people"
         element={
           <ProtectedRoute>
@@ -398,6 +419,14 @@ function App() {
         element={
           <ProtectedRoute>
             <InteractionCreatePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interactions/:id"
+        element={
+          <ProtectedRoute>
+            <InteractionDetailPage />
           </ProtectedRoute>
         }
       />

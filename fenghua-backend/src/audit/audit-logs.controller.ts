@@ -211,18 +211,31 @@ export class AuditLogsController {
     }));
 
     // Prepare data for export
-    const exportData = enrichedData.map(log => ({
-      '操作类型': log.action,
-      '用户ID': log.operatorId,
-      '用户邮箱': log.operatorEmail || '',
-      '资源类型': log.entityType,
-      '资源ID': log.entityId,
-      '操作时间': log.timestamp.toISOString(),
-      '操作结果': log.metadata?.operationResult || (log.action === 'DATA_ACCESS' ? 'SUCCESS' : ''),
-      '失败原因': log.reason || '',
-      'IP地址': log.ipAddress || '',
-      '用户代理': log.userAgent || '',
-    }));
+    const exportData = enrichedData.map(log => {
+      const baseData: Record<string, any> = {
+        '操作类型': log.action,
+        '用户ID': log.operatorId,
+        '用户邮箱': log.operatorEmail || '',
+        '资源类型': log.entityType,
+        '资源ID': log.entityId,
+        '操作时间': log.timestamp.toISOString(),
+        '操作结果': log.metadata?.operationResult || (log.action === 'DATA_ACCESS' ? 'SUCCESS' : ''),
+        '失败原因': log.reason || '',
+        'IP地址': log.ipAddress || '',
+        '用户代理': log.userAgent || '',
+      };
+
+      // Add modification-specific fields for DATA_MODIFICATION and DATA_DELETION
+      if (log.action === 'DATA_MODIFICATION' || log.action === 'DATA_DELETION') {
+        baseData['修改字段'] = Array.isArray(log.metadata?.changedFields) 
+          ? log.metadata.changedFields.join(', ') 
+          : '';
+        baseData['修改前值'] = log.oldValue ? JSON.stringify(log.oldValue) : '';
+        baseData['修改后值'] = log.newValue ? JSON.stringify(log.newValue) : '';
+      }
+
+      return baseData;
+    });
 
     const fileName = `audit-logs-${new Date().toISOString().split('T')[0]}`;
     const tempDir = require('os').tmpdir();

@@ -14,6 +14,7 @@ import { ProductsModule } from '../products/products.module';
 import { CompaniesModule } from '../companies/companies.module';
 import { PermissionModule } from '../permission/permission.module';
 import { AuditModule } from '../audit/audit.module';
+import { CommentsModule } from './comments/comments.module';
 // Note: ProductCustomerAssociationManagementService is now exported from ProductsModule
 // Import ProductsModule instead of ProductCustomerAssociationManagementModule
 
@@ -25,6 +26,7 @@ import { AuditModule } from '../audit/audit.module';
     CompaniesModule, // For CompaniesService to validate customers
     PermissionModule, // For PermissionService to check permissions
     forwardRef(() => AuditModule), // For AuditService to log operations - use forwardRef to avoid circular dependency
+    CommentsModule, // For interaction record comments
   ],
   controllers: [InteractionsController],
   providers: [InteractionsService],

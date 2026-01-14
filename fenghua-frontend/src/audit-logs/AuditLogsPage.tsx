@@ -15,6 +15,7 @@ import { Button } from '../components/ui/Button';
 import { MainLayout } from '../components/layout';
 import { AuditLogDetailDialog } from '../audit/components/AuditLogDetailDialog';
 import { getErrorMessage } from '../utils/error-handling';
+import { getChangedFields } from '../audit/utils/value-comparison';
 // import './AuditLogsPage.css'; // Removed
 
 export function AuditLogsPage() {
@@ -155,17 +156,23 @@ export function AuditLogsPage() {
                 <span>⚡</span>
                 <span>操作类型</span>
               </label>
-              <Input
+              <select
                 id="filter-action"
-                type="text"
-                value={filters.action}
+                value={filters.action || ''}
                 onChange={(e) => {
-                  setFilters({ ...filters, action: e.target.value });
+                  setFilters({ ...filters, action: e.target.value || undefined });
                   setPagination({ ...pagination, page: 1 });
                 }}
-                placeholder="如: CREATE, UPDATE, DELETE"
-                className="flex-1 min-w-0 font-normal py-linear-2 text-linear-sm"
-              />
+                className="flex-1 min-w-0 py-linear-2 px-linear-3 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue font-normal hover:border-gray-300"
+              >
+                <option value="">全部</option>
+                <option value="DATA_ACCESS">数据访问</option>
+                <option value="DATA_MODIFICATION">数据修改</option>
+                <option value="DATA_DELETION">数据删除</option>
+                <option value="ROLE_CHANGE">角色变更</option>
+                <option value="PERMISSION_VIOLATION">权限违规</option>
+                <option value="PERMISSION_VERIFICATION">权限验证</option>
+              </select>
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1 min-w-[200px]">
@@ -333,6 +340,15 @@ export function AuditLogsPage() {
                             <div>
                               <span className="text-linear-text-secondary">IP地址:</span>{' '}
                               <span className="font-mono">{log.ipAddress}</span>
+                            </div>
+                          )}
+                          {/* 显示修改字段（仅用于数据修改和删除操作） */}
+                          {(log.action === 'DATA_MODIFICATION' || log.action === 'DATA_DELETION') && getChangedFields(log.metadata).length > 0 && (
+                            <div>
+                              <span className="text-linear-text-secondary">修改字段:</span>{' '}
+                              <span className="text-primary-blue font-semibold">
+                                {getChangedFields(log.metadata).join(', ')}
+                              </span>
                             </div>
                           )}
                         </div>

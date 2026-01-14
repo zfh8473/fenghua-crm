@@ -21,6 +21,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PermissionModule } from '../permission/permission.module';
 import { AuditModule } from '../audit/audit.module';
 import { ProductsModule } from '../products/products.module';
+import { EncryptionModule } from '../encryption/encryption.module';
 import { forwardRef } from '@nestjs/common';
 
 @Module({
@@ -30,6 +31,7 @@ import { forwardRef } from '@nestjs/common';
     PermissionModule, // Import to use PermissionService for role-based filtering
     forwardRef(() => AuditModule), // Import to use AuditService for audit logging - use forwardRef to avoid circular dependency
     forwardRef(() => ProductsModule), // Use forwardRef to avoid circular dependency
+    EncryptionModule, // Import to use encryption interceptors and services
   ],
   controllers: [
     CompaniesController, // Handles /customers routes

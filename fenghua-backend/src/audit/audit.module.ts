@@ -11,6 +11,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditService } from './audit.service';
 import { AuditLogsController } from './audit-logs.controller';
 import { DataAccessAuditInterceptor } from './interceptors/data-access-audit.interceptor';
+import { DataModificationAuditInterceptor } from './interceptors/data-modification-audit.interceptor';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { ExportModule } from '../export/export.module';
@@ -26,13 +27,14 @@ import { ExportModule } from '../export/export.module';
   providers: [
     AuditService,
     DataAccessAuditInterceptor,
+    DataModificationAuditInterceptor,
     // Register interceptor globally (optional - can also be applied per controller)
     // {
     //   provide: APP_INTERCEPTOR,
     //   useClass: DataAccessAuditInterceptor,
     // },
   ],
-  exports: [AuditService, DataAccessAuditInterceptor],
+  exports: [AuditService, DataAccessAuditInterceptor, DataModificationAuditInterceptor],
 })
 export class AuditModule {}
 

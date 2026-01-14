@@ -8,6 +8,8 @@ import React from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { AuditLog } from '../services/audit-log.service';
+import { ValueComparison } from './ValueComparison';
+import { getChangedFields } from '../utils/value-comparison';
 
 interface AuditLogDetailDialogProps {
   log: AuditLog | null;
@@ -39,6 +41,8 @@ export const AuditLogDetailDialog: React.FC<AuditLogDetailDialogProps> = ({
   const getActionLabel = (action: string): string => {
     const actionMap: Record<string, string> = {
       DATA_ACCESS: '数据访问',
+      DATA_MODIFICATION: '数据修改',
+      DATA_DELETION: '数据删除',
       ROLE_CHANGE: '角色变更',
       PERMISSION_VIOLATION: '权限违规',
       PERMISSION_VERIFICATION: '权限验证',
@@ -183,26 +187,48 @@ export const AuditLogDetailDialog: React.FC<AuditLogDetailDialogProps> = ({
               </div>
             )}
 
-            {/* 变更前值 */}
-            {log.metadata && (log.metadata as any).oldValue && (
+            {/* 修改前后值对比 (仅用于数据修改和删除操作) */}
+            {(log.action === 'DATA_MODIFICATION' || log.action === 'DATA_DELETION') && (log.oldValue || log.newValue) && (
+              <div>
+                <label className="text-linear-sm font-semibold text-linear-text-secondary mb-linear-2 block">
+                  修改前后值对比
+                </label>
+                <ValueComparison
+                  oldValue={log.oldValue}
+                  newValue={log.newValue}
+                  changedFields={getChangedFields(log.metadata)}
+                  metadata={log.metadata}
+                />
+              </div>
+            )}
+
+            {/* 修改字段列表 */}
+            {(log.action === 'DATA_MODIFICATION' || log.action === 'DATA_DELETION') && log.metadata && getChangedFields(log.metadata).length > 0 && (
               <div>
                 <label className="text-linear-sm font-semibold text-linear-text-secondary mb-linear-1 block">
-                  变更前值
+                  修改字段列表
                 </label>
-                <div className="text-linear-xs text-linear-text-secondary bg-linear-surface p-linear-3 rounded-linear-md border border-gray-200 font-mono whitespace-pre-wrap break-all overflow-x-auto">
-                  {JSON.stringify((log.metadata as any).oldValue, null, 2)}
+                <div className="flex flex-wrap gap-linear-2">
+                  {getChangedFields(log.metadata).map((field, index) => (
+                    <span
+                      key={index}
+                      className="px-linear-2 py-linear-1 bg-primary-blue/10 text-primary-blue rounded-linear-md text-linear-xs font-semibold"
+                    >
+                      {field}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* 变更后值 */}
-            {log.metadata && (log.metadata as any).newValue && (
+            {/* 修改原因 */}
+            {log.reason && (log.action === 'DATA_MODIFICATION' || log.action === 'DATA_DELETION') && (
               <div>
                 <label className="text-linear-sm font-semibold text-linear-text-secondary mb-linear-1 block">
-                  变更后值
+                  修改原因
                 </label>
-                <div className="text-linear-xs text-linear-text-secondary bg-linear-surface p-linear-3 rounded-linear-md border border-gray-200 font-mono whitespace-pre-wrap break-all overflow-x-auto">
-                  {JSON.stringify((log.metadata as any).newValue, null, 2)}
+                <div className="text-linear-base text-linear-text bg-linear-surface p-linear-3 rounded-linear-md border border-gray-200">
+                  {log.reason}
                 </div>
               </div>
             )}

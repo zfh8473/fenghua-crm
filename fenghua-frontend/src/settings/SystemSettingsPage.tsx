@@ -11,6 +11,7 @@ import { useAuth } from '../auth/AuthContext';
 import { getSettings, updateSettings } from './settings.service';
 import { SettingsResponseDto, UpdateSettingsDto } from './types/settings.types';
 import { SettingsForm } from './components/SettingsForm';
+import { DataRetentionStatistics } from './components/DataRetentionStatistics';
 import { UserRole } from '../common/constants/roles';
 import { Card } from '../components/ui/Card';
 import { MainLayout } from '../components/layout';
@@ -23,7 +24,7 @@ export function SystemSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'data-retention'>('overview');
 
   // Check if user is admin
   const isAdmin = currentUser?.role === UserRole.ADMIN;
@@ -117,6 +118,16 @@ export function SystemSettingsPage() {
               >
                 系统配置
               </button>
+              <button
+                onClick={() => setActiveTab('data-retention')}
+                className={`px-monday-4 py-monday-2 text-monday-sm font-semibold rounded-monday-md transition-all ${
+                  activeTab === 'data-retention'
+                    ? 'bg-primary-blue text-white shadow-monday-sm'
+                    : 'bg-monday-bg text-monday-text-secondary hover:bg-gray-200'
+                }`}
+              >
+                数据保留策略
+              </button>
             </div>
           </div>
         </Card>
@@ -183,6 +194,16 @@ export function SystemSettingsPage() {
                 无法加载系统设置
               </div>
             )}
+          </Card>
+        )}
+
+        {/* Data Retention Tab - Statistics and History */}
+        {activeTab === 'data-retention' && (
+          <Card variant="default" className="w-full">
+            <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6 tracking-tight">
+              数据保留策略
+            </h2>
+            <DataRetentionStatistics />
           </Card>
         )}
       </div>

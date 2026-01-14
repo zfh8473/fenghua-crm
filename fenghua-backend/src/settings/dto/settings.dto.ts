@@ -69,6 +69,26 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsEnum(LogLevel, { message: '日志级别必须是 error、warn、info 或 debug' })
   logLevel?: LogLevel;
+
+  @IsOptional()
+  @IsNumber({}, { message: '客户数据保留天数必须是数字' })
+  @Min(-1, { message: '客户数据保留天数必须 >= -1（-1 表示永久保留）' })
+  customerDataRetentionDays?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: '产品数据保留天数必须是数字' })
+  @Min(-1, { message: '产品数据保留天数必须 >= -1（-1 表示永久保留）' })
+  productDataRetentionDays?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: '互动记录保留天数必须是数字' })
+  @Min(-1, { message: '互动记录保留天数必须 >= -1（-1 表示永久保留）' })
+  interactionDataRetentionDays?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: '审计日志保留天数必须是数字' })
+  @Min(-1, { message: '审计日志保留天数必须 >= -1（-1 表示永久保留）' })
+  auditLogRetentionDays?: number;
 }
 
 /**
@@ -81,6 +101,10 @@ export class SettingsResponseDto {
   emailNotificationsEnabled: boolean;
   notificationRecipients: string[];
   logLevel: LogLevel;
+  customerDataRetentionDays: number;
+  productDataRetentionDays: number;
+  interactionDataRetentionDays: number;
+  auditLogRetentionDays: number;
   updatedAt?: Date;
   updatedBy?: string;
 }
@@ -95,5 +119,9 @@ export const DEFAULT_SETTINGS = {
   emailNotificationsEnabled: false,
   notificationRecipients: [],
   logLevel: LogLevel.INFO,
+  customerDataRetentionDays: 2555, // 7 years
+  productDataRetentionDays: -1, // Permanent retention
+  interactionDataRetentionDays: 2555, // 7 years
+  auditLogRetentionDays: 3650, // 10 years
 } as const;
 

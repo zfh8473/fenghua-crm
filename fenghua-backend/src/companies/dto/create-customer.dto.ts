@@ -4,6 +4,7 @@
  */
 
 import { IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, Matches, IsEnum, IsInt, Min, Max, IsEmail } from 'class-validator';
+import { Encrypted } from '../../encryption/decorators/encrypted.decorator';
 
 /**
  * Customer type enum
@@ -93,5 +94,17 @@ export class CreateCustomerDto {
   @IsEmail({}, { message: '邮箱格式不正确' })
   @MaxLength(255, { message: '邮箱长度不能超过255个字符' })
   email?: string;
+
+  @IsString({ message: '银行账号必须是字符串' })
+  @IsOptional()
+  @MaxLength(255, { message: '银行账号长度不能超过255个字符' })
+  @Encrypted()
+  bankAccount?: string;
+
+  @IsString({ message: '身份证号必须是字符串' })
+  @IsOptional()
+  @MaxLength(50, { message: '身份证号长度不能超过50个字符' })
+  @Encrypted()
+  idNumber?: string;
 }
 
