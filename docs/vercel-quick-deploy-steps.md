@@ -139,10 +139,11 @@ https://你的后端域名/health
 
 ### 构建报错：`Cannot read properties of undefined (reading 'fsPath')`
 
-- 多由 `vercel.json` 中的 `builds`、`routes` 或 `functions` 引起。请确认：
-  - **后端**项目的 **Root Directory** 已设为 **fenghua-backend**（不要用仓库根）
-  - **fenghua-backend** 下**不要**有 `vercel.json`，项目根目录也**不要**有含 `builds`/`routes`/`functions` 的 `vercel.json`
-- 若仍报错：**Settings → General** 开启 **Force no build cache** 后重新部署；或 **Build & Development Settings** 中把 **Build Command** 设为 `npm run build` 再试
+- 常见原因与处理：
+  1. **仓库根缺少 `package.json`**：已在根目录添加最小 `package.json`，以满足 Vercel 在 monorepo 下对 repo 根的检查。
+  2. **`vercel.json`**：**fenghua-backend** 内不要放 `vercel.json`；根目录不要有含 `builds`/`routes`/`functions` 的配置。
+  3. **Root Directory**：后端项目的 **Root Directory** 必须为 **fenghua-backend**。
+- 若仍报错：**Settings → General** 开启 **Force no build cache** 后重新部署；**Build & Development Settings** 中将 **Build Command** 设为 `npm run build` 再试。
 
 ### 构建失败：`Cannot find module` 等
 

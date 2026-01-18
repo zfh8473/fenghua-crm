@@ -1,0 +1,5 @@
+{
+  "name": "fenghua-crm",
+  "private": true,
+  "description": "Monorepo root. Backend: fenghua-backend/, Frontend: fenghua-frontend/. Set Root Directory in Vercel to the app folder."
+}

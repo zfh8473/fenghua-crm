@@ -286,9 +286,9 @@ redis://default:password@host:port
 ### Q1: 构建报错 - "Cannot read properties of undefined (reading 'fsPath')"
 
 **解决方案：**
-- 确认**后端** **Root Directory** 为 **fenghua-backend**，勿用仓库根
-- **fenghua-backend** 与项目根目录均**不要**有 `vercel.json`（`builds`/`routes`/`functions` 均可能触发）
-- **Settings → General** 开启 **Force no build cache** 后重新部署
+- 仓库根须有 `package.json`（已加最小根 `package.json`，供 Vercel 在 monorepo 下做 repo 根检查）
+- **后端** **Root Directory** 须为 **fenghua-backend**；**fenghua-backend** 与根目录勿放含 `builds`/`routes`/`functions` 的 `vercel.json`
+- **Settings → General** 开启 **Force no build cache** 后重部署
 - 若仍失败：**Build & Development Settings** 将 **Build Command** 设为 `npm run build` 再试
 
 ### Q2: 构建失败 - "Cannot find module"
