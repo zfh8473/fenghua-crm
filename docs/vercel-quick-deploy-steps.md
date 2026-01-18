@@ -183,7 +183,7 @@
   1. 在**后端**（而不是前端）Vercel 项目的 **Settings → Environment Variables** 中，添加或修改 **`FRONTEND_URL`**，值为前端完整地址，如：`https://fenghua-crm-frontend.vercel.app`（尾斜杠可有可无，后端会忽略）。  
   2. 保存后，在 **Deployments** 对最新一次部署点 **Redeploy**，等部署完成后再试登录。  
   3. 可用本页「步骤 5」中的 `curl -sI -X OPTIONS ...` 检查响应头是否含 `Access-Control-Allow-Origin`，以确认是否生效。  
-- **404**：确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠。
+- **404**：1）若在前端报 404，确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠；2）若直接访问 `https://你的后端域名/health` 或 `/auth/login` 为 404（`x-vercel-error: NOT_FOUND`），说明请求未进入 Nest：确认仓库含 **`fenghua-backend/api/index.js`** 与 **`fenghua-backend/vercel.json`**（仅 `rewrites`），并重新部署后端。
 
 ### 后端 502 / 函数超时
 

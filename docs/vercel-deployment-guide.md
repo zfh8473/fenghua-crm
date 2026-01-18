@@ -211,17 +211,18 @@ redis://default:password@host:port
 
 ## 🔧 后端部署步骤
 
-### 步骤 1: 零配置 NestJS（勿加 vercel.json）
+### 步骤 1: 后端路由与入口
 
-- 后端**不要**在 `fenghua-backend` 或项目根目录添加任何 `vercel.json`（含 `builds`、`routes`、`functions` 均可能触发 `Cannot read properties of undefined (reading 'fsPath')`）。
-- 必须将 **Root Directory** 设为 **fenghua-backend**，由 Vercel 自动识别 NestJS 并完成构建。
-- 超时等可在 **Settings → Functions → Max Duration** 中设置。
+- **Root Directory** 必须为 **fenghua-backend**。
+- 项目内已包含：
+  - **`api/index.js`**：Vercel Serverless 入口，将请求转发到 `dist/src/main` 的 Nest handler；
+  - **`vercel.json`**：仅含 `rewrites`，把 `/(.*)` 转到 `/api`，使 `/health`、`/auth/login` 等能到达 Nest。
+- **勿在 vercel.json 中使用 `builds`、`routes`**，以免触发 `fsPath` 等错误。超时在 **Settings → Functions → Max Duration** 中设置。
 
-### 步骤 2: 验证后端入口文件
+### 步骤 2: 入口与 Vercel 检测
 
-`fenghua-backend/src/main.ts` 已支持 Vercel Serverless：
-- 自动检测 `DEPLOYMENT_PLATFORM=vercel` 或 `VERCEL=1`
-- 导出 `handler` 供 Vercel 调用，无需改代码
+- `fenghua-backend/src/main.ts` 在 `DEPLOYMENT_PLATFORM=vercel` 或 `VERCEL=1` 时导出 `handler`，供 `api/index.js` 调用；
+- `npm run build` 产出 `dist/src/main.js`，由 `api/index.js` 通过 `require('../dist/src/main')` 引用。
 
 ### 步骤 3: 在 Vercel 中创建后端项目
 
