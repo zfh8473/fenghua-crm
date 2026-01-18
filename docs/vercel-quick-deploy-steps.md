@@ -185,6 +185,16 @@
   3. 可用本页「步骤 5」中的 `curl -sI -X OPTIONS ...` 检查响应头是否含 `Access-Control-Allow-Origin`，以确认是否生效。  
 - **404**：1）若在前端报 404，确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠；2）若直接访问 `https://你的后端域名/health` 或 `/auth/login` 为 404（`x-vercel-error: NOT_FOUND`），说明请求未进入 Nest：确认仓库含 **`fenghua-backend/api/index.js`** 与 **`fenghua-backend/vercel.json`**（仅 `rewrites`），并重新部署后端。
 
+### 后端 500 / "This Serverless Function has crashed" / FUNCTION_INVOCATION_FAILED
+
+- 到 **Vercel 项目 → Logs**（或 **Deployments → 某次部署 → Functions → 对应函数 Logs**）查看具体报错。
+- **常见原因**：  
+  1. **`DATABASE_URL`** 未填、填错或 Neon 不可达（需含 `?sslmode=require`）；  
+  2. **`REDIS_URL`** 未填或格式错误（需 Redis 协议 URL，参见 [Upstash 配置](./upstash-redis-config.md)）；  
+  3. **`dist/` 未进入部署**：确认 `npm run build` 在构建里成功、且仓库有 **`api/index.js`** 与 **`vercel.json`**（仅 rewrites）；  
+  4. **Bootstrap 或模块初始化抛错**：日志中会有 `[api/index] handler/bootstrap error:` 或 Nest 的报错，按提示修（如缺 env、连不上 DB/Redis）。
+- 若响应 JSON 中有 `LOAD_FAILED`，多为 `require(dist/src/main)` 失败，请查看 Logs 中的 `[api/index] require(...) failed`。
+
 ### 后端 502 / 函数超时
 
 - 到 **Functions** → **Logs** 看具体报错

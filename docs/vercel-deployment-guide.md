@@ -324,6 +324,13 @@ redis://default:password@host:port
 - 在**后端** Vercel 项目的 **Environment Variables** 中设置 **`FRONTEND_URL`** = 前端完整地址，如 `https://fenghua-crm-frontend.vercel.app`（与前端访问地址一致），保存后**重新部署后端**
 - 多个前端地址可用英文逗号分隔
 
+### Q5b: 后端 500 / "This Serverless Function has crashed" / FUNCTION_INVOCATION_FAILED
+
+**解决方案：**
+1. 在 Vercel 项目 **Logs**（或 Deployments → 某次部署 → **Functions → Logs**）中查看具体报错。
+2. 常见原因：**DATABASE_URL** 缺失或 Neon 不可达（需 `?sslmode=require`）；**REDIS_URL** 缺失或格式不对（需 Redis 协议 URL）；Bootstrap/模块初始化抛错。按日志修 env 或连库。
+3. 若响应 JSON 出现 `LOAD_FAILED`，多为 `require(dist/src/main)` 失败，查 Logs 中 `[api/index] require(...) failed`。
+
 ### Q6: 函数超时
 
 **解决方案：**
