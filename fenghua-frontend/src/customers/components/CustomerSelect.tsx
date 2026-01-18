@@ -224,7 +224,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
         type="text"
         value={displayValue}
         onChange={handleInputChange}
-        onFocus={handleInputFocus}
+        onFocus={selectedCustomer ? undefined : handleInputFocus}
         onKeyDown={handleKeyDown}
         placeholder={selectedCustomer ? selectedCustomer.name : placeholder}
         error={error}
@@ -274,7 +274,6 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label="选择客户"
-        onFocus={selectedCustomer ? undefined : handleInputFocus}
       />
 
       {/* Selected customer display */}
