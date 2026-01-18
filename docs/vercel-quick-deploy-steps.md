@@ -192,7 +192,8 @@
   1. **`DATABASE_URL`** 未填、填错或 Neon 不可达（需含 `?sslmode=require`）；  
   2. **`REDIS_URL`** 未填或格式错误（需 Redis 协议 URL，参见 [Upstash 配置](./upstash-redis-config.md)）；  
   3. **`dist/` 未进入部署**：确认 `npm run build` 在构建里成功、且仓库有 **`api/index.js`** 与 **`vercel.json`**（仅 rewrites）；  
-  4. **Bootstrap 或模块初始化抛错**：日志中会有 `[api/index] handler/bootstrap error:` 或 Nest 的报错，按提示修（如缺 env、连不上 DB/Redis）。
+  4. **Bootstrap 或模块初始化抛错**：日志中会有 `[api/index] handler/bootstrap error:` 或 Nest 的报错，按提示修（如缺 env、连不上 DB/Redis）；  
+  5. **`ENOENT: no such file or directory, mkdir './uploads'`**：已在 `LocalStorageService` 中修复，Vercel 下自动改用 `/tmp/uploads`（仅当次请求有效，持久化需用 R2/S3）。若仍报错，请拉取最新代码并重新部署。
 - 若响应 JSON 中有 `LOAD_FAILED`，多为 `require(dist/src/main)` 失败，请查看 Logs 中的 `[api/index] require(...) failed`。
 
 ### 后端 502 / 函数超时

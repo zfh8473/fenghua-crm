@@ -18,13 +18,23 @@ export class LocalStorageService implements StorageProvider {
   private readonly uploadDir: string;
 
   constructor(private readonly configService: ConfigService) {
-    // Use local uploads directory for development
-    this.uploadDir = this.configService.get<string>('UPLOAD_DIR', './uploads');
-    
-    // Ensure upload directory exists
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-      this.logger.log(`Created upload directory: ${this.uploadDir}`);
+    const isVercel = process.env.VERCEL === '1' || process.env.DEPLOYMENT_PLATFORM === 'vercel';
+    // Vercel 等 serverless 仅 /tmp 可写，./uploads 会 ENOENT；/tmp 仅当次请求有效，生产建议 S3/R2
+    this.uploadDir = isVercel
+      ? '/tmp/uploads'
+      : this.configService.get<string>('UPLOAD_DIR', './uploads');
+
+    try {
+      if (!fs.existsSync(this.uploadDir)) {
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+        this.logger.log(`Created upload directory: ${this.uploadDir}`);
+      }
+    } catch (e) {
+      if (isVercel) {
+        this.logger.warn(`Could not create upload dir ${this.uploadDir}, uploads may fail: ${(e as Error)?.message}`);
+      } else {
+        throw e;
+      }
     }
   }
 
