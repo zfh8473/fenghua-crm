@@ -210,11 +210,11 @@ redis://default:password@host:port
 
 ## 🔧 后端部署步骤
 
-### 步骤 1: 使用项目自带配置（零配置 NestJS）
+### 步骤 1: 零配置 NestJS（勿加 vercel.json）
 
-- 仓库内 **`fenghua-backend/vercel.json`** 已配置（仅 `functions` 的 `maxDuration`，无 `builds`/`routes`）。
-- 请**不要**在项目根目录添加含 `builds` 或 `routes` 的 `vercel.json`，否则易触发 `Cannot read properties of undefined (reading 'fsPath')` 等构建错误。
-- 后端需通过 **Root Directory = fenghua-backend** 部署，由 Vercel 对 NestJS 做零配置检测。
+- 后端**不要**在 `fenghua-backend` 或项目根目录添加任何 `vercel.json`（含 `builds`、`routes`、`functions` 均可能触发 `Cannot read properties of undefined (reading 'fsPath')`）。
+- 必须将 **Root Directory** 设为 **fenghua-backend**，由 Vercel 自动识别 NestJS 并完成构建。
+- 超时等可在 **Settings → Functions → Max Duration** 中设置。
 
 ### 步骤 2: 验证后端入口文件
 
@@ -241,7 +241,7 @@ redis://default:password@host:port
 ### 步骤 5: 配置函数设置
 
 在项目设置 → **Functions** 中：
-- **Max Duration**: `60s`（或根据需求调整；`fenghua-backend/vercel.json` 已预设 60）
+- **Max Duration**: `60s`（在 **Settings → Functions** 中设置；零配置下无 vercel.json）
 - **Memory**: `1024 MB`（推荐）
 
 ### 步骤 6: 部署
@@ -286,9 +286,10 @@ redis://default:password@host:port
 ### Q1: 构建报错 - "Cannot read properties of undefined (reading 'fsPath')"
 
 **解决方案：**
-- 确认**后端**项目 **Root Directory** 为 **fenghua-backend**，勿用仓库根
-- 勿在根目录添加含 `builds` 或 `routes` 的 `vercel.json`；仅使用 `fenghua-backend/vercel.json`
-- 可尝试 **Settings → General** 中 **Force no build cache** 后重新部署
+- 确认**后端** **Root Directory** 为 **fenghua-backend**，勿用仓库根
+- **fenghua-backend** 与项目根目录均**不要**有 `vercel.json`（`builds`/`routes`/`functions` 均可能触发）
+- **Settings → General** 开启 **Force no build cache** 后重新部署
+- 若仍失败：**Build & Development Settings** 将 **Build Command** 设为 `npm run build` 再试
 
 ### Q2: 构建失败 - "Cannot find module"
 
