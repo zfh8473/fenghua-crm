@@ -5,7 +5,9 @@
  * All custom code is proprietary and not open source.
  */
 
-const API_URL = (import.meta.env?.VITE_BACKEND_URL as string) || 'http://localhost:3001';
+import { getApiBaseUrl, parseJsonResponse } from '../utils/apiClient';
+
+const API_URL = getApiBaseUrl();
 
 export interface Category {
   id: string;
@@ -65,15 +67,11 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: '请求失败' }));
-    throw new Error(error.message || `HTTP ${response.status}: ${response.statusText}`);
+    const errBody = await parseJsonResponse<{ message?: string }>(response);
+    throw new Error(errBody?.message || `HTTP ${response.status}: ${response.statusText}`);
   }
 
-  if (response.status === 204) {
-    return undefined as T; // No content
-  }
-
-  return response.json();
+  return parseJsonResponse<T>(response);
 }
 
 export const categoriesService = {

@@ -3,12 +3,9 @@
  * Handles user management API calls
  */
 
-/** 与 auth、其他业务一致：VITE_API_BASE_URL || VITE_BACKEND_URL；VITE_BACKEND_API_URL 为兼容保留 */
-const API_BASE_URL =
-  (import.meta.env?.VITE_API_BASE_URL as string) ||
-  (import.meta.env?.VITE_BACKEND_URL as string) ||
-  (import.meta.env?.VITE_BACKEND_API_URL as string) ||
-  'http://localhost:3001';
+import { getApiBaseUrl, parseJsonResponse } from '../utils/apiClient';
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface User {
   id: string;
@@ -80,11 +77,11 @@ export async function getUsers(roleFilter?: string, search?: string): Promise<Us
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || '获取用户列表失败');
+    const errorData = await parseJsonResponse<{ message?: string }>(response);
+    throw new Error(errorData?.message || '获取用户列表失败');
   }
 
-  return response.json();
+  return parseJsonResponse<User[]>(response);
 }
 
 /**
@@ -105,11 +102,11 @@ export async function getUserById(id: string): Promise<User> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || '获取用户信息失败');
+    const errorData = await parseJsonResponse<{ message?: string }>(response);
+    throw new Error(errorData?.message || '获取用户信息失败');
   }
 
-  return response.json();
+  return parseJsonResponse<User>(response);
 }
 
 /**
@@ -131,11 +128,11 @@ export async function createUser(data: CreateUserData): Promise<User> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || '创建用户失败');
+    const errorData = await parseJsonResponse<{ message?: string }>(response);
+    throw new Error(errorData?.message || '创建用户失败');
   }
 
-  return response.json();
+  return parseJsonResponse<User>(response);
 }
 
 /**
@@ -182,8 +179,8 @@ export async function deleteUser(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || '删除用户失败');
+    const errorData = await parseJsonResponse<{ message?: string }>(response);
+    throw new Error(errorData?.message || '删除用户失败');
   }
 }
 

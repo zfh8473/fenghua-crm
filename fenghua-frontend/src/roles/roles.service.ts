@@ -5,13 +5,10 @@
  * All custom code is proprietary and not open source.
  */
 
-/** 与 auth、其他业务一致：VITE_API_BASE_URL || VITE_BACKEND_URL；VITE_BACKEND_API_URL 为兼容保留 */
-const API_BASE_URL =
-  (import.meta.env?.VITE_API_BASE_URL as string) ||
-  (import.meta.env?.VITE_BACKEND_URL as string) ||
-  (import.meta.env?.VITE_BACKEND_API_URL as string) ||
-  'http://localhost:3001';
+import { getApiBaseUrl, parseJsonResponse } from '../utils/apiClient';
 import { UserRole } from './role-descriptions';
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface Role {
   id: string;
@@ -82,11 +79,11 @@ export async function getUserRole(userId: string): Promise<RoleResponse> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || '获取用户角色失败');
+    const errorData = await parseJsonResponse<{ message?: string }>(response);
+    throw new Error(errorData?.message || '获取用户角色失败');
   }
 
-  return response.json();
+  return parseJsonResponse<RoleResponse>(response);
 }
 
 /**
@@ -133,11 +130,10 @@ export async function removeRole(userId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || '移除角色失败');
+    const errorData = await parseJsonResponse<{ message?: string }>(response);
+    throw new Error(errorData?.message || '移除角色失败');
   }
 
-  // Response is { message: string }, but we don't need to return it
-  await response.json();
+  await parseJsonResponse<{ message?: string }>(response);
 }
 

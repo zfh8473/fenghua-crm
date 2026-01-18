@@ -186,6 +186,9 @@
 - **登录后某模块（如用户管理）报 "Failed to fetch"，控制台显示请求到 `http://localhost:3001/...` 且 CORS**  
   原因：前端构建时 **`VITE_BACKEND_URL` 未设置**，所有 API 请求 fallback 到 localhost，在 Vercel 上必然连不上并触发 CORS。  
   处理：在**前端** Vercel 项目的 **Settings → Environment Variables** 中添加 **`VITE_BACKEND_URL`**，值为 `https://fenghua-crm-backend.vercel.app`（须含 `https://`，替换为你的后端域名）。保存后到 **Deployments** 对最新部署点 **Redeploy**（`VITE_*` 在构建时打入，必须重新构建才生效）。用户管理、角色、产品、客户等模块均使用该变量，配置后即可恢复。  
+- **报 "Unexpected token '<', doctype is not valid JSON" 或 "接口返回了 HTML 而非 JSON"**  
+  原因：请求到了前端页面（如 SPA 的 index.html）或后端返回了 HTML 错误页，多为 **`VITE_BACKEND_URL` 未配置或未含 `https://`**。  
+  处理：同上，配置 **`VITE_BACKEND_URL`** 为后端完整地址并 **Redeploy** 前端。若已配置仍报错，在 Network 里查看该请求的 URL 与 Response，确认是否指向后端及是否仍为 HTML。  
 - **404**：1）若在前端报 404，确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠；2）若直接访问 `https://你的后端域名/health` 为 404，确认是在**后端**项目（如 fenghua-crm-**backend**.vercel.app）的 Logs 中查看，**前端**项目收到 /health 会 404 属正常（应请求后端域名）；3）若后端 /health 仍 404，确认仓库含 **`api/index.js`**、**`vercel.json`**（rewrites `/:path*` → `/api?__path=:path*`），并重新部署**后端**。
 
 ### 后端 500 / "This Serverless Function has crashed" / FUNCTION_INVOCATION_FAILED
