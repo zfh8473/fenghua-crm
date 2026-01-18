@@ -27,20 +27,29 @@ export class ErrorReportGeneratorService {
   private readonly reportsDir: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.reportsDir = this.configService.get<string>(
-      'IMPORT_ERROR_REPORTS_DIR',
-      path.join(process.cwd(), 'tmp', 'import-reports'),
-    );
-    this.ensureReportsDirExists();
+    const isVercel = process.env.VERCEL === '1' || process.env.DEPLOYMENT_PLATFORM === 'vercel';
+    this.reportsDir = isVercel
+      ? '/tmp/import-reports'
+      : this.configService.get<string>('IMPORT_ERROR_REPORTS_DIR', path.join(process.cwd(), 'tmp', 'import-reports'));
+    this.ensureReportsDirExists(isVercel);
   }
 
   /**
    * Ensure reports directory exists
+   * @param isVercel - on Vercel, do not throw on mkdir failure (only /tmp is writable)
    */
-  private ensureReportsDirExists(): void {
-    if (!fs.existsSync(this.reportsDir)) {
-      fs.mkdirSync(this.reportsDir, { recursive: true });
-      this.logger.log(`Created error reports directory: ${this.reportsDir}`);
+  private ensureReportsDirExists(isVercel = false): void {
+    try {
+      if (!fs.existsSync(this.reportsDir)) {
+        fs.mkdirSync(this.reportsDir, { recursive: true });
+        this.logger.log(`Created error reports directory: ${this.reportsDir}`);
+      }
+    } catch (e) {
+      if (isVercel) {
+        this.logger.warn(`Could not create reports dir ${this.reportsDir}, error reports may fail: ${(e as Error)?.message}`);
+      } else {
+        throw e;
+      }
     }
   }
 

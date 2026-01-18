@@ -34,40 +34,43 @@ export class BackupService {
     private readonly settingsService: SettingsService,
     // private readonly logsService: LogsService, // TODO: LogsModule not implemented yet
   ) {
-    // Initialize backup storage path
-    this.backupStoragePath = this.configService.get<string>('BACKUP_STORAGE_PATH', './backups');
+    const isVercel = process.env.VERCEL === '1' || process.env.DEPLOYMENT_PLATFORM === 'vercel';
+    this.backupStoragePath = isVercel
+      ? '/tmp/backups'
+      : this.configService.get<string>('BACKUP_STORAGE_PATH', './backups');
     this.metadataPath = path.join(this.backupStoragePath, 'metadata', 'backups.json');
 
     // Ensure backup directories exist
-    this.initializeBackupDirectories();
+    this.initializeBackupDirectories(isVercel);
   }
 
   /**
    * Initialize backup directories
+   * @param isVercel - on Vercel, do not throw on failure (/tmp only, backup may not persist)
    */
-  private initializeBackupDirectories(): void {
+  private initializeBackupDirectories(isVercel = false): void {
     try {
-      // Create backup storage directory
       if (!fs.existsSync(this.backupStoragePath)) {
         fs.mkdirSync(this.backupStoragePath, { recursive: true });
         this.logger.log(`Created backup storage directory: ${this.backupStoragePath}`);
       }
 
-      // Create metadata directory
       const metadataDir = path.dirname(this.metadataPath);
       if (!fs.existsSync(metadataDir)) {
         fs.mkdirSync(metadataDir, { recursive: true });
         this.logger.log(`Created metadata directory: ${metadataDir}`);
       }
 
-      // Initialize metadata file if it doesn't exist
       if (!fs.existsSync(this.metadataPath)) {
         fs.writeFileSync(this.metadataPath, JSON.stringify([], null, 2));
         this.logger.log(`Initialized metadata file: ${this.metadataPath}`);
       }
     } catch (error) {
       this.logger.error('Failed to initialize backup directories', error);
-      throw new BadRequestException('Failed to initialize backup storage');
+      if (!isVercel) {
+        throw new BadRequestException('Failed to initialize backup storage');
+      }
+      this.logger.warn('Backup storage init failed on Vercel (only /tmp writable), scheduled backup may not work');
     }
   }
 

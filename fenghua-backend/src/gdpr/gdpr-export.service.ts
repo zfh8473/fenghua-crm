@@ -59,8 +59,11 @@ export class GdprExportService implements OnModuleDestroy {
     @InjectQueue('gdpr-export-queue') private readonly gdprExportQueue: Queue<GdprExportJobData, GdprExportJobResult>,
   ) {
     this.initializeDatabaseConnection();
-    this.exportDir = this.configService.get<string>('GDPR_EXPORT_STORAGE_PATH', './exports/gdpr');
-    this.ensureExportDirExists();
+    const isVercel = process.env.VERCEL === '1' || process.env.DEPLOYMENT_PLATFORM === 'vercel';
+    this.exportDir = isVercel
+      ? '/tmp/exports/gdpr'
+      : this.configService.get<string>('GDPR_EXPORT_STORAGE_PATH', './exports/gdpr');
+    this.ensureExportDirExists(isVercel);
   }
 
   /**
@@ -89,11 +92,20 @@ export class GdprExportService implements OnModuleDestroy {
 
   /**
    * Ensure export directory exists
+   * @param isVercel - on Vercel, do not throw on mkdir failure
    */
-  private ensureExportDirExists(): void {
-    if (!fs.existsSync(this.exportDir)) {
-      fs.mkdirSync(this.exportDir, { recursive: true });
-      this.logger.log(`Created GDPR export directory: ${this.exportDir}`);
+  private ensureExportDirExists(isVercel = false): void {
+    try {
+      if (!fs.existsSync(this.exportDir)) {
+        fs.mkdirSync(this.exportDir, { recursive: true });
+        this.logger.log(`Created GDPR export directory: ${this.exportDir}`);
+      }
+    } catch (e) {
+      if (isVercel) {
+        this.logger.warn(`Could not create GDPR export dir ${this.exportDir}: ${(e as Error)?.message}`);
+      } else {
+        throw e;
+      }
     }
   }
 
