@@ -95,7 +95,10 @@ async function bootstrap() {
       ]
     : (() => {
         const raw = process.env.FRONTEND_URL || 'http://localhost:3002';
-        const list = raw.split(',').map((s) => s.trim()).filter(Boolean);
+        const list = raw
+          .split(',')
+          .map((s) => s.trim().replace(/\/$/, ''))
+          .filter(Boolean);
         if (isProduction && list.some((u) => !u.startsWith('https://'))) {
           console.warn(`⚠️  FRONTEND_URL should use HTTPS in production, got: ${raw}`);
         }

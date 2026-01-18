@@ -68,13 +68,18 @@
 
 ### 步骤 5：验证后端
 
-在浏览器或 `curl` 访问：
+1. **健康检查**：在浏览器或 `curl` 访问  
+   `https://你的后端域名/health`  
+   若返回 JSON（含 `status` 等），说明后端与数据库、Redis 连接正常。
 
-```
-https://你的后端域名/health
-```
-
-若返回 JSON（含 `status` 等），说明后端与数据库、Redis 连接正常。
+2. **CORS 预检（可选）**：若前端登录报 CORS blocked，可在本机执行：
+   ```bash
+   curl -sI -X OPTIONS "https://你的后端域名/auth/login" \
+     -H "Origin: https://fenghua-crm-frontend.vercel.app" \
+     -H "Access-Control-Request-Method: POST" \
+     -H "Access-Control-Request-Headers: Content-Type"
+   ```
+   若响应头中出现 `Access-Control-Allow-Origin: https://fenghua-crm-frontend.vercel.app`，说明 **`FRONTEND_URL`** 已生效；若没有，请检查后端 **Environment Variables** 中 **`FRONTEND_URL`** 是否为 `https://fenghua-crm-frontend.vercel.app`（可含尾斜杠，后端会自动去掉），并**重新部署后端**。
 
 ### 步骤 6：配置函数超时（可选）
 
@@ -174,7 +179,10 @@ https://你的后端域名/health
 
 ### 前端访问 API 报 CORS 或 404
 
-- **CORS（Access to fetch ... blocked by CORS policy）**：在**后端**的 **Environment Variables** 中设置 **`FRONTEND_URL`** = 前端完整地址（如 `https://fenghua-crm-frontend.vercel.app`），保存后**重新部署后端**。
+- **CORS（Access to fetch ... blocked by CORS policy / No 'Access-Control-Allow-Origin' header）**  
+  1. 在**后端**（而不是前端）Vercel 项目的 **Settings → Environment Variables** 中，添加或修改 **`FRONTEND_URL`**，值为前端完整地址，如：`https://fenghua-crm-frontend.vercel.app`（尾斜杠可有可无，后端会忽略）。  
+  2. 保存后，在 **Deployments** 对最新一次部署点 **Redeploy**，等部署完成后再试登录。  
+  3. 可用本页「步骤 5」中的 `curl -sI -X OPTIONS ...` 检查响应头是否含 `Access-Control-Allow-Origin`，以确认是否生效。  
 - **404**：确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠。
 
 ### 后端 502 / 函数超时
