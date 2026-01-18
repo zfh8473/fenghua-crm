@@ -229,7 +229,7 @@ redis://default:password@host:port
 3. 选择 GitHub 仓库：`fenghua-crm`
 4. 配置项目：
    - **Framework Preset**: `Other`
-   - **Root Directory**: `fenghua-backend`（必填，否则易出现 `fsPath` 等错误）
+   - **Root Directory**: `fenghua-backend`（必填；留空会报 `No entrypoint found`，根目录无 `src/main.ts`）
    - **Build Command**: 留空（由 Vercel 零配置检测）；若失败可试 `npm run build`
    - **Output Directory**: 留空
    - **Install Command**: `npm install`
@@ -285,11 +285,11 @@ redis://default:password@host:port
 
 ### Q1: 构建报错 - "Cannot read properties of undefined (reading 'fsPath')"
 
-**解决方案：**
-- 仓库根须有 `package.json`（已加最小根 `package.json`，供 Vercel 在 monorepo 下做 repo 根检查）
-- **后端** **Root Directory** 须为 **fenghua-backend**；**fenghua-backend** 与根目录勿放含 `builds`/`routes`/`functions` 的 `vercel.json`
-- **Settings → General** 开启 **Force no build cache** 后重部署
-- 若仍失败：**Build & Development Settings** 将 **Build Command** 设为 `npm run build` 再试
+**解决方案：** 后端 **Root Directory** 须为 **fenghua-backend**；勿在 backend/根 放含 `builds`/`routes`/`functions` 的 `vercel.json`；可开 **Force no build cache** 或把 **Build Command** 设为 `npm run build` 再试。
+
+### Q1b: 构建报错 - "No entrypoint found. Searched for: src/main.*, ..."
+
+**解决方案：** 表示在错误目录下找入口。**必须**在 **Settings → General → Root Directory** 中填写 **`fenghua-backend`**（不能留空或填根目录），保存后重新部署。
 
 ### Q2: 构建失败 - "Cannot find module"
 

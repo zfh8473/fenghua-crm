@@ -36,10 +36,12 @@
 |--------|------|
 | **Project Name** | `fenghua-backend`（或 `fenghua-crm-api`，自定） |
 | **Framework Preset** | **Other** |
-| **Root Directory** | 点击 **Edit**，选择 **fenghua-backend**（必填，否则易出现 `fsPath` 等构建错误） |
+| **Root Directory** | 点击 **Edit**，选择 **fenghua-backend**（必填；留空会报 `No entrypoint found` 或 `fsPath`，根目录没有 `src/main.ts`） |
 | **Build Command** | 留空，由 Vercel 对 NestJS 的零配置自动检测；若构建失败可改为 `npm run build` |
 | **Output Directory** | 留空 |
 | **Install Command** | `npm install`（默认即可） |
+
+> **若项目已创建**：到 **Settings → General → Root Directory** 点击 **Edit**，填 **`fenghua-backend`**，保存后重新部署；否则会报 `No entrypoint found`。
 
 ### 步骤 3：添加后端环境变量
 
@@ -139,11 +141,15 @@ https://你的后端域名/health
 
 ### 构建报错：`Cannot read properties of undefined (reading 'fsPath')`
 
-- 常见原因与处理：
-  1. **仓库根缺少 `package.json`**：已在根目录添加最小 `package.json`，以满足 Vercel 在 monorepo 下对 repo 根的检查。
-  2. **`vercel.json`**：**fenghua-backend** 内不要放 `vercel.json`；根目录不要有含 `builds`/`routes`/`functions` 的配置。
-  3. **Root Directory**：后端项目的 **Root Directory** 必须为 **fenghua-backend**。
-- 若仍报错：**Settings → General** 开启 **Force no build cache** 后重新部署；**Build & Development Settings** 中将 **Build Command** 设为 `npm run build` 再试。
+- **fenghua-backend** 内不要放 `vercel.json`；根目录不要有含 `builds`/`routes`/`functions` 的配置。
+- 后端 **Root Directory** 必须为 **fenghua-backend**。
+- 若仍报错：**Settings → General** 开启 **Force no build cache**；**Build & Development Settings** 将 **Build Command** 设为 `npm run build` 再试。
+
+### 构建报错：`No entrypoint found. Searched for: src/main.*, ...`
+
+- 表示 Vercel 在**错误目录**下找入口（例如在仓库根而非 `fenghua-backend`）。
+- **必须**将后端项目的 **Root Directory** 设为 **`fenghua-backend`**（Settings → General）。根目录没有 `src/main.ts`，留空或填错都会报此错。
+- 确认保存后重新部署。
 
 ### 构建失败：`Cannot find module` 等
 
