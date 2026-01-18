@@ -194,6 +194,7 @@
   3. **`dist/` 未进入部署**：确认 `npm run build` 在构建里成功、且仓库有 **`api/index.js`** 与 **`vercel.json`**（仅 rewrites）；  
   4. **Bootstrap 或模块初始化抛错**：日志中会有 `[api/index] handler/bootstrap error:` 或 Nest 的报错，按提示修（如缺 env、连不上 DB/Redis）；  
   5. **`ENOENT: no such file or directory, mkdir '...'`**（如 `./uploads`、`/var/task/tmp/import-reports`、`./exports/gdpr`、`./backups`）：已在 `LocalStorageService`、`ErrorReportGeneratorService`、`GdprExportService`、`BackupService` 中修复，Vercel 下自动改用 `/tmp` 下路径（仅当次请求有效，持久化需 R2/S3）。若仍报错，请拉取最新代码并重新部署。
+  6. **`Cannot GET /health` 且 Logs 中 Search Params 为 `_path` 或 `path`**：`api/index.js` 已兼容 `__path`、`_path`、`path`。若 404 已解决，可删除 `api/index.js` 中两行 `[api] before/after rewrite` 的临时 `console.log`。
 - 若响应 JSON 中有 `LOAD_FAILED`，多为 `require(dist/src/main)` 失败，请查看 Logs 中的 `[api/index] require(...) failed`。
 
 ### 后端 502 / 函数超时
