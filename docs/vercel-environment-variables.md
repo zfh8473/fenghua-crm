@@ -41,11 +41,14 @@
 
 **注意：** 必须填**完整 URL**（如 `https://fenghua-crm-backend.vercel.app`），不要填 `fenghua-crm-backend.vercel.app`；不要加末尾 `/` 或 `/api`。修改后需**重新部署前端**才生效。
 
+**若未配置：** 登录、用户管理、产品、客户等**所有**模块的请求会 fallback 到 `http://localhost:3001`，在 Vercel 上会 CORS / Failed to fetch。控制台可见 `Access to fetch at 'http://localhost:3001/...' from origin 'https://xxx.vercel.app' has been blocked by CORS policy`。解决：在前端项目设置 `VITE_BACKEND_URL` 后 **Redeploy**。
+
 #### 🟡 可选变量
 
 | 变量名 | 说明 | 默认值 | 何时需要 |
 |--------|------|--------|----------|
-| `VITE_API_BASE_URL` | API 基础地址（备用，同样须含 `https://`） | 同 `VITE_BACKEND_URL` | 需要不同 API 地址时 |
+| `VITE_API_BASE_URL` | API 基础地址（备用，同样须含 `https://`；与 `VITE_BACKEND_URL` 二选一即可） | 同 `VITE_BACKEND_URL` | 需要不同 API 地址时 |
+| `VITE_BACKEND_API_URL` | 已废弃，仅作兼容；请使用 `VITE_BACKEND_URL` 或 `VITE_API_BASE_URL` | — | 无需配置 |
 
 ---
 
@@ -139,10 +142,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 - [ ] `JWT_SECRET` - JWT 密钥（至少32字符）
 - [ ] `DEPLOYMENT_PLATFORM` - 设置为 `vercel`
 - [ ] `VERCEL` - 设置为 `1`
+- [ ] `FRONTEND_URL` - 前端完整地址（如 `https://fenghua-crm-frontend.vercel.app`），用于 CORS
 
 ### 前端环境变量
 
-- [ ] `VITE_BACKEND_URL` - 后端 API 地址
+- [ ] `VITE_BACKEND_URL` - 后端 API 地址（如 `https://fenghua-crm-backend.vercel.app`）；漏配会导致用户管理等模块请求 localhost 进而 Failed to fetch / CORS
 
 ---
 

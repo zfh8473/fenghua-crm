@@ -115,7 +115,7 @@
 |------|-------|------|
 | `VITE_BACKEND_URL` | 后端完整地址，如 `https://fenghua-crm-backend.vercel.app`（**必须含 `https://`**，只填主机名会导致登录 405） | Production, Preview |
 
-**注意：** 不要加末尾斜杠；不要带 `/api`，前端会自动拼接到具体接口路径。
+**注意：** 不要加末尾斜杠；不要带 `/api`，前端会自动拼接到具体接口路径。若漏配，用户管理、产品、客户等**所有**模块的请求会 fallback 到 `http://localhost:3001`，在 Vercel 上会出现 Failed to fetch / CORS；配好之后需 **Redeploy** 前端才生效。
 
 ### 步骤 4：部署前端
 
@@ -183,6 +183,9 @@
   1. 在**后端**（而不是前端）Vercel 项目的 **Settings → Environment Variables** 中，添加或修改 **`FRONTEND_URL`**，值为前端完整地址，如：`https://fenghua-crm-frontend.vercel.app`（尾斜杠可有可无，后端会忽略）。  
   2. 保存后，在 **Deployments** 对最新一次部署点 **Redeploy**，等部署完成后再试登录。  
   3. 可用本页「步骤 5」中的 `curl -sI -X OPTIONS ...` 检查响应头是否含 `Access-Control-Allow-Origin`，以确认是否生效。  
+- **登录后某模块（如用户管理）报 "Failed to fetch"，控制台显示请求到 `http://localhost:3001/...` 且 CORS**  
+  原因：前端构建时 **`VITE_BACKEND_URL` 未设置**，所有 API 请求 fallback 到 localhost，在 Vercel 上必然连不上并触发 CORS。  
+  处理：在**前端** Vercel 项目的 **Settings → Environment Variables** 中添加 **`VITE_BACKEND_URL`**，值为 `https://fenghua-crm-backend.vercel.app`（须含 `https://`，替换为你的后端域名）。保存后到 **Deployments** 对最新部署点 **Redeploy**（`VITE_*` 在构建时打入，必须重新构建才生效）。用户管理、角色、产品、客户等模块均使用该变量，配置后即可恢复。  
 - **404**：1）若在前端报 404，确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠；2）若直接访问 `https://你的后端域名/health` 为 404，确认是在**后端**项目（如 fenghua-crm-**backend**.vercel.app）的 Logs 中查看，**前端**项目收到 /health 会 404 属正常（应请求后端域名）；3）若后端 /health 仍 404，确认仓库含 **`api/index.js`**、**`vercel.json`**（rewrites `/:path*` → `/api?__path=:path*`），并重新部署**后端**。
 
 ### 后端 500 / "This Serverless Function has crashed" / FUNCTION_INVOCATION_FAILED

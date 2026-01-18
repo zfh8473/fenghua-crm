@@ -3,7 +3,12 @@
  * Handles user management API calls
  */
 
-const API_BASE_URL = (import.meta.env?.VITE_BACKEND_API_URL as string) || 'http://localhost:3001';
+/** 与 auth、其他业务一致：VITE_API_BASE_URL || VITE_BACKEND_URL；VITE_BACKEND_API_URL 为兼容保留 */
+const API_BASE_URL =
+  (import.meta.env?.VITE_API_BASE_URL as string) ||
+  (import.meta.env?.VITE_BACKEND_URL as string) ||
+  (import.meta.env?.VITE_BACKEND_API_URL as string) ||
+  'http://localhost:3001';
 
 export interface User {
   id: string;

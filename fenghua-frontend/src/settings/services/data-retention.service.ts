@@ -5,7 +5,10 @@
  * All custom code is proprietary and not open source.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL =
+  (import.meta.env?.VITE_API_BASE_URL as string) ||
+  (import.meta.env?.VITE_BACKEND_URL as string) ||
+  'http://localhost:3001';
 
 export interface DataRetentionPolicy {
   customerDataRetentionDays: number;

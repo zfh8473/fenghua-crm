@@ -5,7 +5,12 @@
  * All custom code is proprietary and not open source.
  */
 
-const API_BASE_URL = (import.meta.env?.VITE_BACKEND_API_URL as string) || 'http://localhost:3001';
+/** 与 auth、其他业务一致：VITE_API_BASE_URL || VITE_BACKEND_URL；VITE_BACKEND_API_URL 为兼容保留 */
+const API_BASE_URL =
+  (import.meta.env?.VITE_API_BASE_URL as string) ||
+  (import.meta.env?.VITE_BACKEND_URL as string) ||
+  (import.meta.env?.VITE_BACKEND_API_URL as string) ||
+  'http://localhost:3001';
 import { UserRole } from './role-descriptions';
 
 export interface Role {
