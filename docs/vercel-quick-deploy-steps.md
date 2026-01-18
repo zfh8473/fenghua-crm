@@ -183,7 +183,7 @@
   1. 在**后端**（而不是前端）Vercel 项目的 **Settings → Environment Variables** 中，添加或修改 **`FRONTEND_URL`**，值为前端完整地址，如：`https://fenghua-crm-frontend.vercel.app`（尾斜杠可有可无，后端会忽略）。  
   2. 保存后，在 **Deployments** 对最新一次部署点 **Redeploy**，等部署完成后再试登录。  
   3. 可用本页「步骤 5」中的 `curl -sI -X OPTIONS ...` 检查响应头是否含 `Access-Control-Allow-Origin`，以确认是否生效。  
-- **404**：1）若在前端报 404，确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠；2）若直接访问 `https://你的后端域名/health` 或 `/auth/login` 为 404（`x-vercel-error: NOT_FOUND`），说明请求未进入 Nest：确认仓库含 **`fenghua-backend/api/index.js`** 与 **`fenghua-backend/vercel.json`**（仅 `rewrites`），并重新部署后端。
+- **404**：1）若在前端报 404，确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠；2）若直接访问 `https://你的后端域名/health` 为 404，确认是在**后端**项目（如 fenghua-crm-**backend**.vercel.app）的 Logs 中查看，**前端**项目收到 /health 会 404 属正常（应请求后端域名）；3）若后端 /health 仍 404，确认仓库含 **`api/index.js`**、**`vercel.json`**（rewrites `/:path*` → `/api?__path=:path*`），并重新部署**后端**。
 
 ### 后端 500 / "This Serverless Function has crashed" / FUNCTION_INVOCATION_FAILED
 
@@ -200,6 +200,11 @@
 
 - 到 **Functions** → **Logs** 看具体报错
 - 冷启动或复杂查询可能导致超时：可尝试提高 **Max Duration**（需 Pro），或优化接口与 SQL
+
+### 日志中的 ECONNRESET、DEP0169
+
+- **ECONNRESET**：多为连接被对端关闭（Neon、Upstash、客户端超时等），可查 DB/Redis 连通性与超时设置；冷启动或并发时更易出现，一般重试即可。
+- **DEP0169 `url.parse()`**：已在 `api/index.js` 中改用 WHATWG `URL`，拉取最新代码并重新部署即可消除。
 
 ---
 
