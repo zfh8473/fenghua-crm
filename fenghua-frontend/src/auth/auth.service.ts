@@ -5,7 +5,13 @@
  * All custom code is proprietary and not open source.
  */
 
-const API_URL = (import.meta.env?.VITE_BACKEND_URL as string) || 'http://localhost:3001';
+/** 确保为完整 URL（含协议），否则会当相对路径发到前端域名导致 405 */
+function normalizeBackendUrl(url: string | undefined): string {
+  const u = (url || 'http://localhost:3001').trim();
+  if (!u.startsWith('http://') && !u.startsWith('https://')) return `https://${u}`;
+  return u;
+}
+const API_URL = normalizeBackendUrl(import.meta.env?.VITE_BACKEND_URL as string | undefined);
 
 export interface LoginCredentials {
   email: string;

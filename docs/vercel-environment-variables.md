@@ -36,13 +36,15 @@
 
 | 变量名 | 说明 | 示例值 | 获取方式 |
 |--------|------|--------|----------|
-| `VITE_BACKEND_URL` | 后端 API 地址 | `https://fenghua-backend.vercel.app` | 后端部署后获取 |
+| `VITE_BACKEND_URL` | 后端 API 地址（**必须含 `https://`**，不能只有主机名，否则会当相对路径请求到前端域名导致登录 405） | `https://fenghua-crm-backend.vercel.app` | 后端部署后获取 |
+
+**注意：** 必须填**完整 URL**（如 `https://fenghua-crm-backend.vercel.app`），不要填 `fenghua-crm-backend.vercel.app`；不要加末尾 `/` 或 `/api`。修改后需**重新部署前端**才生效。
 
 #### 🟡 可选变量
 
 | 变量名 | 说明 | 默认值 | 何时需要 |
 |--------|------|--------|----------|
-| `VITE_API_BASE_URL` | API 基础地址（备用） | 同 `VITE_BACKEND_URL` | 需要不同 API 地址时 |
+| `VITE_API_BASE_URL` | API 基础地址（备用，同样须含 `https://`） | 同 `VITE_BACKEND_URL` | 需要不同 API 地址时 |
 
 ---
 

@@ -107,7 +107,7 @@ https://你的后端域名/health
 
 | Name | Value | 环境 |
 |------|-------|------|
-| `VITE_BACKEND_URL` | 你在「二」中保存的后端域名，如 `https://fenghua-backend-xxx.vercel.app` | Production, Preview |
+| `VITE_BACKEND_URL` | 后端完整地址，如 `https://fenghua-crm-backend.vercel.app`（**必须含 `https://`**，只填主机名会导致登录 405） | Production, Preview |
 
 **注意：** 不要加末尾斜杠；不要带 `/api`，前端会自动拼接到具体接口路径。
 
