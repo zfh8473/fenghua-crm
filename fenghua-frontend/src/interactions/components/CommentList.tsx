@@ -116,6 +116,26 @@ export const CommentList: React.FC<CommentListProps> = ({
   }, []);
 
   /**
+   * Handle comment update - refresh comments list
+   * M3 Fix: Use useCallback to optimize callback function
+   */
+  const handleCommentUpdated = useCallback(() => {
+    // Refresh comments list after update
+    loadComments(page);
+  }, [loadComments, page]);
+
+  /**
+   * Handle comment delete - refresh comments list and update total
+   * M3 Fix: Use useCallback to optimize callback function
+   */
+  const handleCommentDeleted = useCallback(() => {
+    // Refresh comments list after delete
+    loadComments(page);
+    // Update total count
+    setTotal((prev) => Math.max(0, prev - 1));
+  }, [loadComments, page]);
+
+  /**
    * Enable polling only when on first page and comments are loaded
    */
   const pollingEnabled = page === 1 && comments.length > 0 && !isLoading;
@@ -213,6 +233,8 @@ export const CommentList: React.FC<CommentListProps> = ({
           key={comment.id}
           comment={comment}
           currentUserId={currentUserId}
+          onCommentUpdated={handleCommentUpdated}
+          onCommentDeleted={handleCommentDeleted}
         />
       ))}
 

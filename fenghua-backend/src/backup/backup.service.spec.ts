@@ -6,7 +6,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { BackupService } from './backup.service';
-import { TwentyClientService } from '../services/twenty-client/twenty-client.service';
 import { SettingsService } from '../settings/settings.service';
 // import { LogsService } from '../logs/logs.service'; // TODO: LogsModule not implemented yet
 import { BadRequestException } from '@nestjs/common';
@@ -32,12 +31,12 @@ jest.mock('child_process', () => ({
 describe('BackupService', () => {
   let service: BackupService;
   let configService: jest.Mocked<ConfigService>;
-  let twentyClient: jest.Mocked<TwentyClientService>;
   let settingsService: jest.Mocked<SettingsService>;
   // let logsService: jest.Mocked<LogsService>; // TODO: LogsModule not implemented yet
 
   const mockWorkspaceId = 'workspace-123';
-  const mockToken = 'test-token';
+  // Create a mock JWT token with workspaceId in payload
+  const mockToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${Buffer.from(JSON.stringify({ workspaceId: mockWorkspaceId })).toString('base64')}.signature`;
   const mockDatabaseUrl = 'postgresql://user:pass@localhost:5432/testdb';
   const mockBackupStoragePath = './test-backups';
 
@@ -46,19 +45,8 @@ describe('BackupService', () => {
       get: jest.fn((key: string, defaultValue?: string) => {
         if (key === 'BACKUP_STORAGE_PATH') return mockBackupStoragePath;
         if (key === 'DATABASE_URL') return mockDatabaseUrl;
+        if (key === 'DEFAULT_WORKSPACE_ID') return undefined; // No default for tests
         return defaultValue;
-      }),
-    };
-
-    const mockTwentyClient = {
-      executeQueryWithToken: jest.fn().mockResolvedValue({
-        currentUser: {
-          workspaceMember: {
-            workspace: {
-              id: mockWorkspaceId,
-            },
-          },
-        },
       }),
     };
 
@@ -84,10 +72,6 @@ describe('BackupService', () => {
           useValue: mockConfigService,
         },
         {
-          provide: TwentyClientService,
-          useValue: mockTwentyClient,
-        },
-        {
           provide: SettingsService,
           useValue: mockSettingsService,
         },
@@ -101,7 +85,6 @@ describe('BackupService', () => {
 
     service = module.get<BackupService>(BackupService);
     configService = module.get(ConfigService);
-    twentyClient = module.get(TwentyClientService);
     settingsService = module.get(SettingsService);
     // logsService = module.get(LogsService); // TODO: LogsModule not implemented yet
 
@@ -117,15 +100,30 @@ describe('BackupService', () => {
   });
 
   describe('getWorkspaceId', () => {
-    it('should get workspace ID from token', async () => {
+    it('should get workspace ID from JWT token', async () => {
       const workspaceId = await service.getWorkspaceId(mockToken);
       expect(workspaceId).toBe(mockWorkspaceId);
-      expect(twentyClient.executeQueryWithToken).toHaveBeenCalled();
+    });
+
+    it('should use default workspace ID if token does not contain workspaceId', async () => {
+      const tokenWithoutWorkspaceId = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${Buffer.from(JSON.stringify({ userId: 'user-123' })).toString('base64')}.signature`;
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'DEFAULT_WORKSPACE_ID') return 'default-workspace-id';
+        return undefined;
+      });
+      
+      const workspaceId = await service.getWorkspaceId(tokenWithoutWorkspaceId);
+      expect(workspaceId).toBe('default-workspace-id');
     });
 
     it('should throw error if workspace ID cannot be retrieved', async () => {
-      twentyClient.executeQueryWithToken.mockRejectedValueOnce(new Error('Failed'));
-      await expect(service.getWorkspaceId(mockToken)).rejects.toThrow(BadRequestException);
+      const invalidToken = 'invalid-token';
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'DEFAULT_WORKSPACE_ID') return undefined;
+        return undefined;
+      });
+      
+      await expect(service.getWorkspaceId(invalidToken)).rejects.toThrow(BadRequestException);
     });
   });
 

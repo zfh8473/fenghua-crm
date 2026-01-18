@@ -1026,8 +1026,13 @@ export class InteractionsService implements OnModuleDestroy {
 
       const interaction = interactionCheck.rows[0];
 
-      // 3. Validate current user is the creator
-      if (interaction.created_by !== user.id) {
+      // 3. Validate current user is the creator OR is admin/director
+      const userRole = user.role?.toUpperCase();
+      const isAdmin = userRole === 'ADMIN';
+      const isDirector = userRole === 'DIRECTOR';
+      const isOwner = interaction.created_by === user.id;
+      
+      if (!isOwner && !isAdmin && !isDirector) {
         await client.query('ROLLBACK');
         throw new ForbiddenException('您只能编辑自己创建的互动记录');
       }
@@ -1196,8 +1201,13 @@ export class InteractionsService implements OnModuleDestroy {
 
       const interaction = interactionCheck.rows[0];
 
-      // 3. Validate current user is the creator
-      if (interaction.created_by !== user.id) {
+      // 3. Validate current user is the creator OR is admin/director
+      const userRole = user.role?.toUpperCase();
+      const isAdmin = userRole === 'ADMIN';
+      const isDirector = userRole === 'DIRECTOR';
+      const isOwner = interaction.created_by === user.id;
+      
+      if (!isOwner && !isAdmin && !isDirector) {
         await client.query('ROLLBACK');
         throw new ForbiddenException('您只能删除自己创建的互动记录');
       }

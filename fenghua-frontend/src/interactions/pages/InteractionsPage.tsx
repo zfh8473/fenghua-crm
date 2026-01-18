@@ -123,9 +123,9 @@ export const InteractionsPage: React.FC = () => {
     setInteractionPage(1); // Reset to first page on new search
   }, [searchParams, setSearchParams]);
 
-  // Handle interaction click
+  // Handle interaction click - navigate to detail page (not edit page)
   const handleInteractionClick = useCallback((interaction: any) => {
-    navigate(`/interactions/${interaction.id}/edit`);
+    navigate(`/interactions/${interaction.id}`);
   }, [navigate]);
 
   return (

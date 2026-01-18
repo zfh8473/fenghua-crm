@@ -14,7 +14,6 @@ import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { TwentyClientService } from '../services/twenty-client/twenty-client.service';
 import { SettingsService } from '../settings/settings.service';
 // import { LogsService } from '../logs/logs.service'; // TODO: LogsModule not implemented yet
 // import { LogLevel, ErrorType } from '../logs/dto/log-query.dto'; // TODO: LogsModule not implemented yet
@@ -32,7 +31,6 @@ export class BackupService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly twentyClient: TwentyClientService,
     private readonly settingsService: SettingsService,
     // private readonly logsService: LogsService, // TODO: LogsModule not implemented yet
   ) {
@@ -74,35 +72,62 @@ export class BackupService {
   }
 
   /**
+   * Extract workspace ID from JWT token payload
+   * Reuses logic from AttachmentsService
+   */
+  private extractWorkspaceIdFromToken(token: string): string | null {
+    try {
+      // Decode JWT payload (base64url decode)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid JWT format');
+      }
+
+      // Decode payload (base64url)
+      const payload = JSON.parse(
+        Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString(),
+      );
+
+      // Extract workspace ID from payload
+      const workspaceId = payload.workspaceId || payload.workspace_id;
+      
+      if (!workspaceId) {
+        this.logger.warn('Workspace ID not found in JWT payload', { payloadKeys: Object.keys(payload) });
+        return null;
+      }
+
+      return workspaceId;
+    } catch (error) {
+      this.logger.error('Failed to extract workspace ID from token', error);
+      return null;
+    }
+  }
+
+  /**
    * Get workspace ID from token
    */
   async getWorkspaceId(token: string): Promise<string> {
     try {
-      const query = `
-        query {
-          currentUser {
-            workspaceMember {
-              workspace {
-                id
-              }
-            }
-          }
-        }
-      `;
-      const result = await this.twentyClient.executeQueryWithToken<{
-        currentUser: {
-          workspaceMember: {
-            workspace: {
-              id: string;
-            };
-          };
-        };
-      }>(query, token);
+      // Extract workspace ID from JWT payload
+      const workspaceId = this.extractWorkspaceIdFromToken(token);
+      if (workspaceId) {
+        return workspaceId;
+      }
 
-      return result.currentUser.workspaceMember.workspace.id;
+      // Fallback: Use default workspace (for development/testing only)
+      const defaultWorkspaceId = this.configService.get<string>('DEFAULT_WORKSPACE_ID');
+      if (defaultWorkspaceId) {
+        this.logger.warn('Using default workspace ID from config');
+        return defaultWorkspaceId;
+      }
+
+      throw new BadRequestException('无法从 token 中获取工作空间ID');
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       this.logger.error('Failed to get workspace ID', error);
-      throw new BadRequestException('Failed to get workspace ID');
+      throw new BadRequestException('获取工作空间ID失败');
     }
   }
 
@@ -450,12 +475,12 @@ export class BackupService {
       // Get backup frequency from settings
       const settings = await this.settingsService.getAllSettings();
       
-      // For MVP, we use a simple token from environment variable
+      // Use service account token from configuration
       // In production, this should use a service account token
-      const serviceToken = process.env.TWENTY_SERVICE_TOKEN || process.env.TWENTY_API_TOKEN;
+      const serviceToken = this.configService.get<string>('BACKUP_SERVICE_TOKEN');
       
       if (!serviceToken) {
-        this.logger.warn('No service token configured for scheduled backup');
+        this.logger.warn('No service token configured for scheduled backup. Set BACKUP_SERVICE_TOKEN environment variable.');
         return;
       }
 

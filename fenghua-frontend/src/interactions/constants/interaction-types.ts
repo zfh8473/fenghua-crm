@@ -13,10 +13,11 @@ export const INTERACTION_TYPE_LABELS: Record<string, string> = {
   // 采购商互动类型
   initial_contact: '初步接触',
   product_inquiry: '产品询价',
-  quotation: '报价',
+  quotation: '客户报价',
   quotation_accepted: '接受报价',
   quotation_rejected: '拒绝报价',
   order_signed: '签署订单',
+  order_follow_up: '进度跟进',
   order_completed: '完成订单',
   // 供应商互动类型
   product_inquiry_supplier: '询价产品',

@@ -43,10 +43,11 @@ interface InteractionCreateFormProps {
 const INTERACTION_TYPE_OPTIONS_FRONTEND = [
   { value: FrontendInteractionType.INITIAL_CONTACT, label: '初步接触' },
   { value: FrontendInteractionType.PRODUCT_INQUIRY, label: '产品询价' },
-  { value: FrontendInteractionType.QUOTATION, label: '报价' },
+  { value: FrontendInteractionType.QUOTATION, label: '客户报价' },
   { value: FrontendInteractionType.QUOTATION_ACCEPTED, label: '接受报价' },
   { value: FrontendInteractionType.QUOTATION_REJECTED, label: '拒绝报价' },
   { value: FrontendInteractionType.ORDER_SIGNED, label: '签署订单' },
+  { value: FrontendInteractionType.ORDER_FOLLOW_UP, label: '进度跟进' },
   { value: FrontendInteractionType.ORDER_COMPLETED, label: '完成订单' },
 ];
 
@@ -525,27 +526,75 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
         </div>
       </div>
 
-      {/* Interaction Type */}
+      {/* Interaction Type - Radio buttons */}
       <div>
         <label className="block text-monday-sm font-semibold text-monday-text mb-monday-2">
           互动类型 <span className="text-red-500">*</span>
         </label>
-        <select
-          {...register('interactionType', { required: '互动类型不能为空' })}
-          className={`w-full px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 min-h-[48px] ${
-            errors.interactionType
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-monday-border focus:ring-primary-blue focus:border-primary-blue'
-          }`}
-        >
-          {interactionTypeOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          {interactionTypeOptions.map((option) => {
+            const isSelected = watch('interactionType') === option.value;
+            
+            // 为每个互动类型分配不同的颜色 - 从冷到暖的渐变
+            const getColorClasses = (value: string): string => {
+              const colorMap: Record<string, string> = {
+                // 采购商类型 - 从冷到暖（蓝色 → 绿色 → 黄色）
+                [FrontendInteractionType.INITIAL_CONTACT]: 'bg-blue-600 text-white border-blue-600',        // 最冷 - 深蓝
+                [FrontendInteractionType.PRODUCT_INQUIRY]: 'bg-blue-500 text-white border-blue-500',      // 蓝色
+                [FrontendInteractionType.QUOTATION]: 'bg-cyan-500 text-white border-cyan-500',             // 青色
+                [FrontendInteractionType.QUOTATION_ACCEPTED]: 'bg-teal-500 text-white border-teal-500',  // 青绿色
+                [FrontendInteractionType.QUOTATION_REJECTED]: 'bg-red-500 text-white border-red-500',     // 红色（拒绝用红色）
+                [FrontendInteractionType.ORDER_SIGNED]: 'bg-green-500 text-white border-green-500',      // 绿色
+                [FrontendInteractionType.ORDER_FOLLOW_UP]: 'bg-lime-500 text-white border-lime-500',    // 黄绿色（进度跟进）
+                [FrontendInteractionType.ORDER_COMPLETED]: 'bg-emerald-500 text-white border-emerald-500', // 翠绿
+                // 供应商类型 - 继续从暖到更暖（黄色 → 橙色 → 红色）
+                [BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER]: 'bg-yellow-500 text-gray-800 border-yellow-500', // 黄色（文字用深色）
+                [BackendInteractionType.QUOTATION_RECEIVED]: 'bg-amber-500 text-white border-amber-500',  // 琥珀
+                [BackendInteractionType.SPECIFICATION_CONFIRMED]: 'bg-orange-500 text-white border-orange-500', // 橙色
+                [BackendInteractionType.PRODUCTION_PROGRESS]: 'bg-orange-600 text-white border-orange-600', // 深橙
+                [BackendInteractionType.PRE_SHIPMENT_INSPECTION]: 'bg-red-500 text-white border-red-500', // 红色
+                [BackendInteractionType.SHIPPED]: 'bg-red-600 text-white border-red-600',                 // 最暖 - 深红
+              };
+              return colorMap[value] || 'bg-gray-500 text-white border-gray-500';
+            };
+            
+            const colorClasses = getColorClasses(option.value);
+            const bgColor = colorClasses.split(' ')[0];
+            
+            return (
+              <label
+                key={option.value}
+                className={`
+                  relative flex items-center gap-2 px-3 py-2 rounded-md border-2 cursor-pointer transition-all whitespace-nowrap
+                  ${isSelected ? `${colorClasses} shadow-md scale-[1.02]` : 'bg-monday-surface border-gray-200 hover:border-gray-300 hover:bg-monday-bg'}
+                  ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                <input
+                  type="radio"
+                  {...register('interactionType', { required: '互动类型不能为空' })}
+                  value={option.value}
+                  checked={isSelected}
+                  disabled={isSubmitting}
+                  className="sr-only"
+                />
+                <div className={`
+                  w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
+                  ${isSelected ? 'border-white bg-white' : 'border-gray-300 bg-white'}
+                `}>
+                  {isSelected && (
+                    <div className={`w-2.5 h-2.5 rounded-full ${bgColor}`} />
+                  )}
+                </div>
+                <span className={`text-sm ${isSelected ? 'text-white' : 'text-monday-text'}`}>
+                  {option.label}
+                </span>
+              </label>
+            );
+          })}
+        </div>
         {errors.interactionType && (
-          <p className="mt-monday-1 text-monday-xs text-red-500 flex items-center gap-monday-1">
+          <p className="mt-monday-2 text-monday-sm text-primary-red flex items-center gap-monday-1" role="alert">
             <span>❌</span>
             {errors.interactionType.message}
           </p>

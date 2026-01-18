@@ -11,7 +11,7 @@ import { UserRole } from '../../users/dto/create-user.dto';
 export class RoleResponseDto {
   userId: string;
   role: UserRole;
-  roleId?: string; // Twenty CRM role ID
+  roleId?: string; // Role ID (optional, for future use)
   assignedAt?: string;
   assignedBy?: string;
 }

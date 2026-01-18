@@ -23,6 +23,7 @@ import { CompaniesService } from '../../companies/companies.service';
 import { PermissionService } from '../../permission/permission.service';
 import { AuditService } from '../../audit/audit.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CommentResponseDto, CommentListResponseDto } from './dto/comment-response.dto';
 
 @Injectable()
@@ -301,19 +302,26 @@ export class CommentsService implements OnModuleDestroy {
         this.pgPool.query(countQuery, countParams),
       ]);
 
-      const comments = commentsResult.rows.map((row) => ({
-        id: row.id,
-        interactionId: row.interaction_id,
-        userId: row.user_id,
-        content: row.content,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        createdBy: row.created_by,
-        updatedBy: row.updated_by,
-        userEmail: row.user_email || undefined,
-        userFirstName: row.user_first_name || undefined,
-        userLastName: row.user_last_name || undefined,
-      }));
+      const comments = commentsResult.rows.map((row) => {
+        const createdAt = new Date(row.created_at);
+        const updatedAt = new Date(row.updated_at);
+        const isEdited = updatedAt.getTime() !== createdAt.getTime();
+        
+        return {
+          id: row.id,
+          interactionId: row.interaction_id,
+          userId: row.user_id,
+          content: row.content,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          createdBy: row.created_by,
+          updatedBy: row.updated_by,
+          isEdited,
+          userEmail: row.user_email || undefined,
+          userFirstName: row.user_first_name || undefined,
+          userLastName: row.user_last_name || undefined,
+        };
+      });
 
       return {
         data: comments,
@@ -330,8 +338,259 @@ export class CommentsService implements OnModuleDestroy {
       ) {
         throw error;
       }
-      this.logger.error('Failed to get comments', error);
-      throw new InternalServerErrorException('获取评论列表失败');
+      // Log detailed error information for debugging
+      this.logger.error('Failed to get comments', {
+        interactionId,
+        page,
+        limit,
+        since,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw new InternalServerErrorException(
+        `获取评论列表失败: ${error instanceof Error ? error.message : '未知错误'}`
+      );
+    }
+  }
+
+  /**
+   * Update an existing comment
+   * 
+   * @param commentId - Comment ID
+   * @param updateDto - Comment update DTO
+   * @param token - JWT token for authentication
+   * @returns Updated comment
+   */
+  async updateComment(
+    commentId: string,
+    updateDto: UpdateCommentDto,
+    token: string,
+  ): Promise<CommentResponseDto> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    try {
+      // 1. Validate token and get user
+      const user = await this.authService.validateToken(token);
+      if (!user || !user.id) {
+        throw new UnauthorizedException('无效的用户 token');
+      }
+
+      // 2. Get existing comment (exclude soft-deleted)
+      const commentResult = await this.pgPool.query(
+        `SELECT 
+          ic.id, 
+          ic.interaction_id, 
+          ic.user_id, 
+          ic.content, 
+          ic.created_at, 
+          ic.updated_at, 
+          ic.created_by, 
+          ic.updated_by,
+          u.email as user_email,
+          u.first_name as user_first_name,
+          u.last_name as user_last_name
+        FROM interaction_comments ic
+        LEFT JOIN users u ON ic.user_id = u.id
+        WHERE ic.id = $1 AND ic.deleted_at IS NULL`,
+        [commentId],
+      );
+
+      if (commentResult.rows.length === 0) {
+        throw new NotFoundException('评论不存在');
+      }
+
+      const comment = commentResult.rows[0];
+
+      // 3. Verify comment owner
+      const commentOwnerId = comment.user_id || comment.created_by;
+      if (commentOwnerId !== user.id) {
+        throw new ForbiddenException('您只能编辑自己创建的评论');
+      }
+
+      // 4. Validate updated content
+      const sanitizedContent = this.sanitizeContent(updateDto.content.trim());
+      if (!sanitizedContent || sanitizedContent.length === 0) {
+        throw new BadRequestException('评论内容不能为空');
+      }
+
+      // 5. Store old content for audit log
+      const oldContent = comment.content;
+
+      // 6. Update comment
+      const updateResult = await this.pgPool.query(
+        `UPDATE interaction_comments
+         SET content = $1,
+             updated_at = CURRENT_TIMESTAMP,
+             updated_by = $2
+         WHERE id = $3 AND deleted_at IS NULL
+         RETURNING 
+           id, 
+           interaction_id, 
+           user_id, 
+           content, 
+           created_at, 
+           updated_at, 
+           created_by, 
+           updated_by`,
+        [sanitizedContent, user.id, commentId],
+      );
+
+      if (updateResult.rows.length === 0) {
+        throw new NotFoundException('评论更新失败');
+      }
+
+      const updatedComment = updateResult.rows[0];
+
+      // 7. Reuse user information from initial query (M2 Fix: avoid duplicate query)
+      // User information was already fetched in the initial query (line 371-388)
+      // No need to query again - reuse the data from the first query
+
+      // 8. Record audit log
+      try {
+        await this.auditService.log({
+          action: 'COMMENT_UPDATED',
+          entityType: 'INTERACTION_COMMENT',
+          entityId: commentId,
+          oldValue: oldContent,
+          newValue: sanitizedContent,
+          userId: user.id,
+          operatorId: user.id,
+          timestamp: new Date(),
+          metadata: {
+            interactionId: comment.interaction_id,
+            commentId: commentId,
+          },
+        });
+      } catch (auditError) {
+        // Log audit error but don't fail the request
+        this.logger.error('Failed to log comment update audit', auditError);
+      }
+
+      const createdAt = new Date(updatedComment.created_at);
+      const updatedAt = new Date(updatedComment.updated_at);
+      const isEdited = updatedAt.getTime() !== createdAt.getTime();
+
+      return {
+        id: updatedComment.id,
+        interactionId: updatedComment.interaction_id,
+        userId: updatedComment.user_id,
+        content: updatedComment.content,
+        createdAt: updatedComment.created_at,
+        updatedAt: updatedComment.updated_at,
+        createdBy: updatedComment.created_by,
+        updatedBy: updatedComment.updated_by,
+        isEdited,
+        userEmail: comment.user_email || undefined,
+        userFirstName: comment.user_first_name || undefined,
+        userLastName: comment.user_last_name || undefined,
+      };
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      this.logger.error('Failed to update comment', error);
+      throw new InternalServerErrorException('更新评论失败');
+    }
+  }
+
+  /**
+   * Delete a comment (soft delete)
+   * 
+   * @param commentId - Comment ID
+   * @param token - JWT token for authentication
+   * @returns Success message
+   */
+  async deleteComment(commentId: string, token: string): Promise<{ message: string }> {
+    if (!this.pgPool) {
+      throw new BadRequestException('数据库连接未初始化');
+    }
+
+    try {
+      // 1. Validate token and get user
+      const user = await this.authService.validateToken(token);
+      if (!user || !user.id) {
+        throw new UnauthorizedException('无效的用户 token');
+      }
+
+      // 2. Get existing comment (exclude soft-deleted)
+      const commentResult = await this.pgPool.query(
+        `SELECT 
+          id, 
+          interaction_id, 
+          user_id, 
+          created_by,
+          content
+        FROM interaction_comments
+        WHERE id = $1 AND deleted_at IS NULL`,
+        [commentId],
+      );
+
+      if (commentResult.rows.length === 0) {
+        throw new NotFoundException('评论不存在');
+      }
+
+      const comment = commentResult.rows[0];
+
+      // 3. Verify comment owner
+      const commentOwnerId = comment.user_id || comment.created_by;
+      if (commentOwnerId !== user.id) {
+        throw new ForbiddenException('您只能删除自己创建的评论');
+      }
+
+      // 4. Perform soft delete
+      const deleteResult = await this.pgPool.query(
+        `UPDATE interaction_comments
+         SET deleted_at = CURRENT_TIMESTAMP
+         WHERE id = $1 AND deleted_at IS NULL
+         RETURNING id`,
+        [commentId],
+      );
+
+      if (deleteResult.rows.length === 0) {
+        throw new NotFoundException('评论删除失败');
+      }
+
+      // 5. Record audit log
+      try {
+        await this.auditService.log({
+          action: 'COMMENT_DELETED',
+          entityType: 'INTERACTION_COMMENT',
+          entityId: commentId,
+          oldValue: comment.content,
+          newValue: null,
+          userId: user.id,
+          operatorId: user.id,
+          timestamp: new Date(),
+          metadata: {
+            interactionId: comment.interaction_id,
+            commentId: commentId,
+            deletedAt: new Date().toISOString(),
+          },
+        });
+      } catch (auditError) {
+        // Log audit error but don't fail the request
+        this.logger.error('Failed to log comment deletion audit', auditError);
+      }
+
+      return { message: '评论已删除' };
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      this.logger.error('Failed to delete comment', error);
+      throw new InternalServerErrorException('删除评论失败');
     }
   }
 
@@ -406,6 +665,10 @@ export class CommentsService implements OnModuleDestroy {
         throw new NotFoundException('互动记录不存在或您没有权限查看');
       }
 
+      const createdAt = new Date(comment.created_at);
+      const updatedAt = new Date(comment.updated_at);
+      const isEdited = updatedAt.getTime() !== createdAt.getTime();
+
       return {
         id: comment.id,
         interactionId: comment.interaction_id,
@@ -415,6 +678,7 @@ export class CommentsService implements OnModuleDestroy {
         updatedAt: comment.updated_at,
         createdBy: comment.created_by,
         updatedBy: comment.updated_by,
+        isEdited,
         userEmail: comment.user_email || undefined,
         userFirstName: comment.user_first_name || undefined,
         userLastName: comment.user_last_name || undefined,

@@ -18,6 +18,7 @@ export interface Comment {
   updatedAt: Date;
   createdBy?: string;
   updatedBy?: string;
+  isEdited?: boolean;
   userEmail?: string;
   userFirstName?: string;
   userLastName?: string;
@@ -148,6 +149,32 @@ class CommentService {
     return this.request<Comment>(
       `/interactions/${interactionId}/comments/${commentId}`
     );
+  }
+
+  /**
+   * Update an existing comment
+   */
+  async updateComment(
+    interactionId: string,
+    commentId: string,
+    content: string
+  ): Promise<Comment> {
+    return this.request<Comment>(`/interactions/${interactionId}/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  /**
+   * Delete a comment (soft delete)
+   */
+  async deleteComment(
+    interactionId: string,
+    commentId: string
+  ): Promise<void> {
+    return this.request<void>(`/interactions/${interactionId}/comments/${commentId}`, {
+      method: 'DELETE',
+    });
   }
 }
 

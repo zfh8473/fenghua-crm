@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TwentyClientModule } from './services/twenty-client/twenty-client.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
@@ -38,7 +37,6 @@ import { DataRetentionModule } from './data-retention/data-retention.module';
       ignoreEnvFile: false,
     }),
     ScheduleModule.forRoot(), // For scheduled tasks (key rotation, backups, etc.)
-    TwentyClientModule,
     AuthModule,
     UsersModule,
     RolesModule,

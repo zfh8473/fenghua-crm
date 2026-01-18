@@ -16,6 +16,7 @@ export enum FrontendInteractionType {
   QUOTATION_ACCEPTED = 'quotation_accepted', // 接受报价
   QUOTATION_REJECTED = 'quotation_rejected', // 拒绝报价
   ORDER_SIGNED = 'order_signed', // 签署订单
+  ORDER_FOLLOW_UP = 'order_follow_up', // 进度跟进
   ORDER_COMPLETED = 'order_completed', // 完成订单
 }
 

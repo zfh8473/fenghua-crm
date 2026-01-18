@@ -198,11 +198,34 @@ async function bootstrap() {
   app.useGlobalFilters(globalExceptionFilter);
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
   
-  const protocol = httpsOptions ? 'https' : 'http';
-  console.log(`fenghua-backend is running on: ${protocol}://localhost:${port}`);
+  // For Vercel Serverless Functions, don't call app.listen()
+  if (isVercel) {
+    // Export the handler for Vercel
+    // The app will be initialized on first request
+    console.log('fenghua-backend configured for Vercel Serverless Functions');
+    return app;
+  } else {
+    // Standalone deployment: start the server
+    await app.listen(port);
+    const protocol = httpsOptions ? 'https' : 'http';
+    console.log(`fenghua-backend is running on: ${protocol}://localhost:${port}`);
+  }
 }
 
-bootstrap();
+// For Vercel Serverless Functions
+let appInstance: any = null;
+
+export default async function handler(req: any, res: any) {
+  if (!appInstance) {
+    appInstance = await bootstrap();
+  }
+  const adapter = appInstance.getHttpAdapter();
+  return adapter.getInstance()(req, res);
+}
+
+// For standalone deployment
+if (process.env.DEPLOYMENT_PLATFORM !== 'vercel' && process.env.VERCEL !== '1') {
+  bootstrap();
+}
 

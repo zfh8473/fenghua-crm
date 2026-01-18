@@ -69,12 +69,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Base classes (Monday.com style: 8px rounded)
     const baseClasses = 'inline-flex items-center justify-center font-medium rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:ring-offset-2 focus:ring-offset-monday-bg disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap';
     
-    // Variant classes
+    // Variant classes - all buttons have borders for consistency
     const variantClasses = {
-      primary: 'bg-primary-blue text-white hover:bg-primary-blue-hover shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
+      primary: 'bg-primary-blue text-white hover:bg-primary-blue-hover border border-primary-blue shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
       secondary: 'border border-primary-blue text-primary-blue bg-transparent hover:bg-primary-blue/10 px-monday-6 py-monday-3',
       outline: 'border border-gray-300 text-monday-text bg-transparent hover:bg-monday-bg px-monday-6 py-monday-3',
-      ghost: 'text-monday-text bg-transparent hover:bg-monday-bg px-monday-4 py-monday-2',
+      ghost: 'border border-transparent text-monday-text bg-transparent hover:bg-monday-bg hover:border-gray-200 px-monday-4 py-monday-2',
     };
     
     // Special variant for navigation (transparent with hover)

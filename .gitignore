@@ -30,6 +30,10 @@ dist/
 .DS_Store
 Thumbs.db
 
+# BMAD 工作流文档（仅本地使用，不提交到 GitHub）
+_bmad/
+_bmad-output/
+
 # Twenty CRM (reference only, not modified)
 twenty/
 twenty-fenghua/

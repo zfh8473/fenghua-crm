@@ -126,7 +126,6 @@ export class ProductsService implements OnModuleDestroy {
     }
 
     // Validate userId is a valid UUID, if not, use null (for audit purposes)
-    // TODO: Fix token exchange to get proper user UUID from Twenty CRM
     let validUserId: string | null = userId;
     if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
       this.logger.warn(`Invalid userId format (not UUID): ${userId}, using null for created_by`);
@@ -648,7 +647,6 @@ export class ProductsService implements OnModuleDestroy {
       }
 
       // Validate userId is a valid UUID, if not, use null (for audit purposes)
-      // TODO: Fix token exchange to get proper user UUID from Twenty CRM
       let validUserId: string | null = userId;
       if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
         this.logger.warn(`Invalid userId format (not UUID): ${userId}, using null for updated_by`);

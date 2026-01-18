@@ -15,6 +15,7 @@ export class CommentResponseDto {
   updatedAt: Date;
   createdBy?: string;
   updatedBy?: string;
+  isEdited?: boolean; // Indicates if the comment has been edited (updatedAt !== createdAt)
   userEmail?: string;
   userFirstName?: string;
   userLastName?: string;
