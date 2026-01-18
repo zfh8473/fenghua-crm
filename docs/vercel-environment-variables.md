@@ -18,6 +18,7 @@
 | `JWT_SECRET` | JWT 密钥（至少32字符） | `your-super-secret-jwt-key-min-32-chars-long` | 自行生成 |
 | `DEPLOYMENT_PLATFORM` | 部署平台标识 | `vercel` | 固定值 |
 | `VERCEL` | Vercel 环境标识 | `1` | 固定值 |
+| `FRONTEND_URL` | 前端地址，用于 CORS（**必填**，否则登录等跨域请求会被 CORS 拦截） | `https://fenghua-crm-frontend.vercel.app` | 前端部署后的完整 URL；多个用英文逗号分隔 |
 
 #### 🟡 可选变量
 

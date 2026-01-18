@@ -54,6 +54,7 @@
 | `JWT_SECRET` | 你生成的至少 32 位密钥 | Production, Preview |
 | `DEPLOYMENT_PLATFORM` | `vercel` | Production, Preview |
 | `VERCEL` | `1` | Production, Preview |
+| `FRONTEND_URL` | 前端完整地址，用于 CORS（**必填**，否则登录会报 CORS  blocked），如 `https://fenghua-crm-frontend.vercel.app` | Production, Preview |
 
 每一行添加后点 **Add**；全部加完后可继续下一步。
 
@@ -173,8 +174,8 @@ https://你的后端域名/health
 
 ### 前端访问 API 报 CORS 或 404
 
-- 确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠
-- 确认后端 `Settings` → **Domains** 中已包含该前端域名（如 Vercel 自动分配的 `*.vercel.app` 一般已放行）
+- **CORS（Access to fetch ... blocked by CORS policy）**：在**后端**的 **Environment Variables** 中设置 **`FRONTEND_URL`** = 前端完整地址（如 `https://fenghua-crm-frontend.vercel.app`），保存后**重新部署后端**。
+- **404**：确认 `VITE_BACKEND_URL` 为后端根域名（如 `https://xxx.vercel.app`），且未多加 `/api` 或尾斜杠。
 
 ### 后端 502 / 函数超时
 

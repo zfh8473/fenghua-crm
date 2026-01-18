@@ -94,12 +94,12 @@ async function bootstrap() {
         'http://localhost:5174',
       ]
     : (() => {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
-        // Warn if production FRONTEND_URL is not HTTPS
-        if (isProduction && !frontendUrl.startsWith('https://')) {
-          console.warn(`⚠️  FRONTEND_URL should use HTTPS in production, got: ${frontendUrl}`);
+        const raw = process.env.FRONTEND_URL || 'http://localhost:3002';
+        const list = raw.split(',').map((s) => s.trim()).filter(Boolean);
+        if (isProduction && list.some((u) => !u.startsWith('https://'))) {
+          console.warn(`⚠️  FRONTEND_URL should use HTTPS in production, got: ${raw}`);
         }
-        return [frontendUrl];
+        return list.length ? list : ['http://localhost:3002'];
       })();
 
   app.enableCors({

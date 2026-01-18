@@ -135,6 +135,7 @@ redis://default:password@host:port
 | `JWT_SECRET` | JWT 密钥（用于认证） | `your-super-secret-jwt-key-min-32-chars` |
 | `DEPLOYMENT_PLATFORM` | 部署平台标识 | `vercel` |
 | `VERCEL` | Vercel 环境标识 | `1` |
+| `FRONTEND_URL` | 前端完整地址，用于 CORS（不设则登录等跨域请求被拦截） | `https://fenghua-crm-frontend.vercel.app` |
 
 #### 可选变量
 
@@ -316,11 +317,11 @@ redis://default:password@host:port
 - 确认 Redis 服务允许外部连接
 - 检查防火墙设置
 
-### Q5: CORS 错误
+### Q5: CORS 错误（如：Access to fetch ... has been blocked by CORS policy）
 
 **解决方案：**
-- 在 Vercel 项目设置中添加前端域名到 CORS 允许列表
-- 检查后端 CORS 配置
+- 在**后端** Vercel 项目的 **Environment Variables** 中设置 **`FRONTEND_URL`** = 前端完整地址，如 `https://fenghua-crm-frontend.vercel.app`（与前端访问地址一致），保存后**重新部署后端**
+- 多个前端地址可用英文逗号分隔
 
 ### Q6: 函数超时
 
