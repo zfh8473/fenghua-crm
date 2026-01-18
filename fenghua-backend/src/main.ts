@@ -204,8 +204,8 @@ async function bootstrap() {
   
   // For Vercel Serverless Functions, don't call app.listen()
   if (isVercel) {
-    // Export the handler for Vercel
-    // The app will be initialized on first request
+    // 必须在处理请求前 await app.init()，否则路由与 onModuleInit/onApplicationBootstrap 未就绪，导致 404
+    await app.init();
     console.log('fenghua-backend configured for Vercel Serverless Functions');
     return app;
   } else {
@@ -223,8 +223,6 @@ export default async function handler(req: any, res: any) {
   if (!appInstance) {
     appInstance = await bootstrap();
   }
-  // 临时：确认 api 传入的 req.url 在进 Express 前是否为 /health（排查 404 后可删）
-  console.log('[main] req.url=%s', req?.url);
   const adapter = appInstance.getHttpAdapter();
   return adapter.getInstance()(req, res);
 }
