@@ -16,24 +16,32 @@ try {
 }
 
 /**
- * 从 /api?__path=health 或 /api?__path=auth/login 等还原出 /health、/auth/login，
- * 并把其余 query 保留，写回 req.url 供 Express 路由。
- * （Vercel rewrite 后 req.url 为 /api?__path=...，Nest 需原始路径才能匹配）
+ * 从 /api?__path=health 或 req.query.__path 还原出 /health、/auth/login，
+ * 写回 req.url 供 Express 路由。Vercel 可能把 query 放在 req.query，故两处都读。
  * 使用 WHATWG URL 解析，避免 url.parse 的 DEP0169 弃用告警。
  */
 function rewriteReqUrlFromPath(req) {
-  const u = req.url || '/';
   let p = null;
   const rest = {};
-  try {
-    const url = new URL(u.startsWith('/') ? `http://_${u}` : u);
-    p = url.searchParams.get('__path');
-    url.searchParams.delete('__path');
-    url.searchParams.forEach((v, k) => { rest[k] = v; });
-  } catch (_) {
-    return;
+
+  if (req.query && req.query.__path != null) {
+    p = req.query.__path;
+    const q = { ...req.query };
+    delete q.__path;
+    Object.assign(rest, q);
+    delete req.query.__path; // 避免 __path 泄漏到 Nest
   }
-  if (p != null && p !== '') {
+  if (p == null) {
+    const u = req.url || '/';
+    try {
+      const url = new URL(u.startsWith('/') || u.startsWith('?') ? `http://_${u}` : u);
+      p = url.searchParams.get('__path');
+      url.searchParams.delete('__path');
+      url.searchParams.forEach((v, k) => { rest[k] = v; });
+    } catch (_) {}
+  }
+
+  if (p != null && String(p) !== '') {
     const qs = Object.keys(rest).length ? '?' + new URLSearchParams(rest).toString() : '';
     req.url = (String(p).startsWith('/') ? p : '/' + p) + qs;
   }
