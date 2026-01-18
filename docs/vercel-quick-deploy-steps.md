@@ -151,6 +151,11 @@ https://你的后端域名/health
 - **必须**将后端项目的 **Root Directory** 设为 **`fenghua-backend`**（Settings → General）。根目录没有 `src/main.ts`，留空或填错都会报此错。
 - 确认保存后重新部署。
 
+### 构建报错：`No Output Directory named "public" found after the Build completed`
+
+- Vercel 会查找 `public` 目录；已在 `fenghua-backend/public/` 下加入占位（如 `robots.txt`），构建应能通过。
+- 若仍报错：在 **Settings → Build & Development Settings → Output Directory** 中将其**清空**（纯 Nest 后端无需 Output Directory，输出为 serverless 函数）。
+
 ### 构建失败：`Cannot find module` 等
 
 - 确认 **Root Directory** 正确：后端 `fenghua-backend`，前端 `fenghua-frontend`

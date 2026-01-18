@@ -291,6 +291,10 @@ redis://default:password@host:port
 
 **解决方案：** 表示在错误目录下找入口。**必须**在 **Settings → General → Root Directory** 中填写 **`fenghua-backend`**（不能留空或填根目录），保存后重新部署。
 
+### Q1c: 构建报错 - "No Output Directory named 'public' found"
+
+**解决方案：** 项目内已提供 `fenghua-backend/public/`（含 `robots.txt`）。若仍报错，到 **Settings → Build & Development Settings → Output Directory** 将该项**清空**（Nest 后端以 serverless 函数为输出，无需静态 Output Directory）。
+
 ### Q2: 构建失败 - "Cannot find module"
 
 **解决方案：**
