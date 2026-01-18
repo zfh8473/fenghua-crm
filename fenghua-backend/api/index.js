@@ -38,9 +38,9 @@ function rewriteReqUrlFromPath(req) {
     }
     if (usedKey) {
       const q = { ...req.query };
-      delete q[usedKey];
+      PATH_KEYS.forEach(k => { delete q[k]; });
       Object.assign(rest, q);
-      delete req.query[usedKey];
+      PATH_KEYS.forEach(k => { delete req.query[k]; });
     }
   }
   if (p == null) {
@@ -53,14 +53,19 @@ function rewriteReqUrlFromPath(req) {
       }
       if (p != null) {
         PATH_KEYS.forEach(k => url.searchParams.delete(k));
-        url.searchParams.forEach((v, k) => { rest[k] = v; });
+        url.searchParams.forEach((v, k) => {
+          if (!PATH_KEYS.includes(k)) rest[k] = v;
+        });
+        if (req.query) PATH_KEYS.forEach(k => { delete req.query[k]; });
       }
     } catch (_) {}
   }
 
   if (p != null && String(p) !== '') {
     const qs = Object.keys(rest).length ? '?' + new URLSearchParams(rest).toString() : '';
-    req.url = (String(p).startsWith('/') ? p : '/' + p) + qs;
+    const newUrl = (String(p).startsWith('/') ? p : '/' + p) + qs;
+    req.url = newUrl;
+    req.originalUrl = newUrl;
   }
 }
 

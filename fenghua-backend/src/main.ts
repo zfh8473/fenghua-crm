@@ -223,6 +223,8 @@ export default async function handler(req: any, res: any) {
   if (!appInstance) {
     appInstance = await bootstrap();
   }
+  // 临时：确认 api 传入的 req.url 在进 Express 前是否为 /health（排查 404 后可删）
+  console.log('[main] req.url=%s', req?.url);
   const adapter = appInstance.getHttpAdapter();
   return adapter.getInstance()(req, res);
 }
