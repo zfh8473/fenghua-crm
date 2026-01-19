@@ -5,7 +5,7 @@
  * - rediss://（TLS，Upstash 等托管 Redis 必需）
  * - redis://（本地或非 TLS）
  * - username（Upstash 常用 default）
- * - 有限重试与退避，减少 ECONNRESET 时的日志刷屏
+ * - maxRetriesPerRequest: null（BullMQ 要求）、retryStrategy 退避
  *
  * @see docs/upstash-redis-config.md
  */
@@ -17,7 +17,7 @@ export interface BullMQConnectionOptions {
   username?: string;
   /** 使用 rediss:// 时必须启用，否则 Upstash 等会 ECONNRESET */
   tls?: object;
-  /** 限制重试次数，避免持续 ECONNRESET 时刷屏（默认 20） */
+  /** BullMQ 要求为 null（阻塞连接需要无限重试），设为其他值会被覆盖并打 WARNING */
   maxRetriesPerRequest?: number | null;
   /** 重试间隔（ms），退避以减轻对 Redis 的压力 */
   retryStrategy?: (times: number) => number;
@@ -49,12 +49,12 @@ export function parseRedisUrlForBull(
     if (required) {
       throw new Error('REDIS_URL is required for BullMQ');
     }
-    // 使用本地默认，便于开发
+    // 使用本地默认，便于开发；maxRetriesPerRequest 须为 null 以满足 BullMQ
     return {
       connection: {
         host: 'localhost',
         port: 6379,
-        maxRetriesPerRequest: 5,
+        maxRetriesPerRequest: null,
         retryStrategy: (times) => Math.min(times * 100, 3000),
       },
     };
@@ -70,7 +70,7 @@ export function parseRedisUrlForBull(
       port,
       password: parsed.password || undefined,
       username: parsed.username || undefined,
-      maxRetriesPerRequest: 5,
+      maxRetriesPerRequest: null, // BullMQ 要求 null，否则会覆盖并打 WARNING
       retryStrategy: (times) => Math.min(times * 100, 3000),
     };
 
@@ -87,7 +87,7 @@ export function parseRedisUrlForBull(
       connection: {
         host: 'localhost',
         port: 6379,
-        maxRetriesPerRequest: 5,
+        maxRetriesPerRequest: null,
         retryStrategy: (times) => Math.min(times * 100, 3000),
       },
     };

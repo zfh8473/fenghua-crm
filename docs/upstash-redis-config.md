@@ -95,9 +95,19 @@ BullMQ 使用 ioredis。**Upstash 仅支持 TLS**，若 `REDIS_URL` 使用 `redi
 
 - 当协议为 `rediss://` 时，自动在 ioredis 连接中加入 `tls: {}`
 - 支持 `username`（如 Upstash 的 `default`）
-- 限制重试次数与退避，减少连接异常时的日志刷屏
+- `maxRetriesPerRequest: null`（BullMQ 要求，否则会打 WARNING）、`retryStrategy` 退避
 
 因此只要 `REDIS_URL` 使用 `rediss://...`，BullMQ、导入队列、导出、GDPR 等即可正确连上 Upstash。
+
+---
+
+## Eviction 策略（noeviction）与 BullMQ
+
+启动时若看到多条 **`IMPORTANT! Eviction policy is optimistic-volatile. It should be "noeviction"`**：
+
+- **含义**：BullMQ 建议 Redis 使用 `maxmemory-policy=noeviction`，否则在内存不足时 Redis 可能淘汰键，导致队列任务被 evict 而丢失。
+- **Upstash**：部分计划或区域可能默认为 `optimistic-volatile` 等，且不一定在控制台暴露 `maxmemory-policy`。若 Upstash 你的实例**支持**修改该配置，可改为 `noeviction`；若不支持，该告警可暂时接受，需注意在流量或数据量增大时监控 Redis 内存与任务完整性。
+- 若使用自建或其他托管 Redis，请在 Redis 配置中设置 `maxmemory-policy noeviction`。
 
 ---
 

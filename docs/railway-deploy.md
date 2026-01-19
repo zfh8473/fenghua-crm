@@ -182,6 +182,14 @@ curl -s -o /dev/null -w "%{http_code}" https://<railway-backend>/health
 - 确认 **Build Command** 已设为 `npm run build` 且构建成功；未设置或未执行时 `dist/` 不会生成，启动必报 `MODULE_NOT_FOUND`。在 **Deployments** 的 **Build Logs** 中确认有 `nest build` / `npm run build` 及 `dist/` 产出。
 - 若 monorepo，确认 **Root Directory** 为 `fenghua-backend`，否则 `npm run build` 可能跑在仓库根目录。
 
+### 5. 日志中的常见告警（可忽略或按需处理）
+
+| 告警 | 说明与建议 |
+|------|------------|
+| **`BullMQ: WARNING! Your redis options maxRetriesPerRequest must be null...`** | 已在本项目修复：`parseRedisUrlForBull` 现已传 `maxRetriesPerRequest: null`。部署最新代码后应消失。 |
+| **`SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'...`** | 来自 `pg` / `pg-connection-string`。若 `DATABASE_URL`（如 Neon）中含 `sslmode=require` 等，会在 pg v9 / pg-connection-string v3 前出现此提示。**可选**：在 `DATABASE_URL` 中把 `sslmode=require` 改为 `sslmode=verify-full`，保持当前行为并减少告警；或加 `uselibpqcompat=true&sslmode=require` 提前采用新语义。不影响当前运行。 |
+| **`IMPORTANT! Eviction policy is optimistic-volatile. It should be "noeviction"`** | BullMQ 建议 Redis 使用 `noeviction`。Upstash 若未提供该配置可暂接受；详见 `docs/upstash-redis-config.md` 的「Eviction 策略」一节。 |
+
 ---
 
 ## 九、前端也部署到 Railway
