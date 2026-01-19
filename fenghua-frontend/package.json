@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "serve -s dist -l ${PORT:-3000}",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -30,7 +31,8 @@
     "react-router-dom": "^7.11.0",
     "react-swipeable": "^7.0.2",
     "react-toastify": "^11.0.5",
-    "recharts": "^2.15.4"
+    "recharts": "^2.15.4",
+    "serve": "^14.2.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
