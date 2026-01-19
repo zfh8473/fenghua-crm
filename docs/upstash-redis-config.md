@@ -87,6 +87,20 @@ REDIS_URL=rediss://default:你的Redis密码@pretty-shark-35200.upstash.io:6379
 
 ---
 
+## BullMQ 与 TLS（rediss://）
+
+BullMQ 使用 ioredis。**Upstash 仅支持 TLS**，若 `REDIS_URL` 使用 `rediss://` 而连接未启用 TLS，会出现 `ECONNRESET` 和 `MaxRetriesPerRequestError`。
+
+项目已通过 `src/common/redis/bullmq-connection.util.ts` 统一解析 `REDIS_URL`：
+
+- 当协议为 `rediss://` 时，自动在 ioredis 连接中加入 `tls: {}`
+- 支持 `username`（如 Upstash 的 `default`）
+- 限制重试次数与退避，减少连接异常时的日志刷屏
+
+因此只要 `REDIS_URL` 使用 `rediss://...`，BullMQ、导入队列、导出、GDPR 等即可正确连上 Upstash。
+
+---
+
 ## 配置后如何验证
 
 配置好 `REDIS_URL` 并启动后端后，可检查：

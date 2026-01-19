@@ -1,8 +1,10 @@
 # 迁移到 Railway 的步骤
 
 **项目：** fenghua-crm  
-**目的：** 将后端从 Vercel 迁至 Railway，以常驻进程运行；Cron、Worker、文件持久化与本地一致。  
+**目的：** 将后端从 Vercel 迁至 Railway，以常驻进程运行；Cron、Worker、文件持久化与本地一致。前后端也可一并部署到 Railway。  
 **对应：** Epic 18（迁移到 Railway）
+
+> **从零部署：** 若只要一份可勾选的检查清单，直接看 [十、从零在 Railway 建前后端：检查清单](#十从零在-railway-建前后端检查清单)。
 
 ---
 
@@ -14,13 +16,15 @@
 
 ---
 
-## 二、创建 Railway 项目
+## 二、创建 Railway 项目（后端）
 
 1. 打开 [Railway](https://railway.app)，登录。
 2. **New Project** → 选 **Deploy from GitHub repo**（或 **Empty** 后用 CLI 关联）。
 3. 选择本仓库（若 monorepo，先选仓库，再在下一步设置 Root Directory）。
-4. 在项目内添加 **Service**，来源选该仓库。
-5. 在 Service 的 **Settings** 中设置 **Root Directory**：`fenghua-backend`（若 monorepo；否则留空）。
+4. 在项目内添加 **Service**，来源选该仓库，作为**后端**。
+5. 在该 Service 的 **Settings** 中设置 **Root Directory**：`fenghua-backend`（若 monorepo；否则留空）。
+
+若前后端都上 Railway，同一项目内再**添加一个 Service**，同样从本仓库，Root Directory 设为 `fenghua-frontend`；详见 [九、前端也部署到 Railway](#九前端也部署到-railway)。
 
 ---
 
@@ -122,14 +126,12 @@
 
 ## 六、前端与 CORS
 
-1. **前端**（若在 Vercel 或其它）  
-   - 设置 `VITE_BACKEND_URL`（或 `VITE_API_BASE_URL`）为 Railway 后端完整地址，例如：  
-     `https://fenghua-backend-production.railway.app`  
-   - **必须含 `https://`**；否则会请求到前端同源，返回 HTML 导致 JSON 解析错误。
-   - 修改后**重新构建并部署**前端，使环境变量生效。
+1. **前端**  
+   - **若前端在 Vercel 或其它**：在该平台设置 `VITE_BACKEND_URL`（或 `VITE_API_BASE_URL`）为 Railway 后端完整地址，如 `https://xxx.railway.app`，**必须含 `https://`**；修改后重新构建并部署。  
+   - **若前端也在 Railway**：在前端 Service 的 **Variables** 中设置 `VITE_BACKEND_URL` 为后端 Railway 地址（见 [九、前端也部署到 Railway](#九前端也部署到-railway)）。Vite 在**构建时**注入该变量，故需在部署前配置好。
 
 2. **后端 CORS**  
-   - 在 Railway 的 Variables 中设置 `FRONTEND_URL` 为前端完整地址；多域名用逗号分隔、去除末尾斜杠，与 `main.ts` 的 CORS 逻辑一致。
+   - 在后端 Service 的 **Variables** 中设置 `FRONTEND_URL` 为前端完整地址（如 `https://fenghua-crm-frontend.vercel.app` 或前端 Railway 的 `https://xxx.railway.app`）；多域名用逗号分隔、去除末尾斜杠，与 `main.ts` 的 CORS 逻辑一致。
 
 ---
 
@@ -163,11 +165,153 @@ curl -s -o /dev/null -w "%{http_code}" https://<railway-backend>/health
 - **Upstash**：必须为 **Redis 协议** `rediss://...`，不能为 REST；见 `docs/upstash-redis-config.md`。
 - **Railway 内建**：确认变量已自动注入，无多余空格、换行。
 
+### 3.1 `ECONNRESET`、`MaxRetriesPerRequestError`（BullMQ / Redis）
+
+日志中大量 `Error: read ECONNRESET` 或 `MaxRetriesPerRequestError: Reached the max retries per request limit (which is 20)`，通常表示 **ioredis 连 Upstash 时未走 TLS**：
+
+- **原因**：`REDIS_URL` 用了 REST 地址、或用了 `redis://` 而非 `rediss://`；此前 BullMQ 的 connection 未根据 `rediss` 启用 TLS。
+- **处理**：
+  1. 在 Upstash 控制台复制 **Redis 协议** 的 `REDIS_URL`，格式为 `rediss://default:<密码>@<endpoint>:6379`（注意是 `rediss`）。
+  2. 确认后端已使用包含 TLS 支持的 Bull 连接逻辑（`src/common/redis/bullmq-connection.util.ts`），`rediss://` 会自动加 `tls: {}`。
+  3. 更新 `REDIS_URL` 后重新部署后端；若曾用 `redis://`，务必改为 `rediss://`。
+- 详见 `docs/upstash-redis-config.md`。
+
 ### 4. `Cannot find module '/app/dist/main'` 或 `dist/...` 不存在
 
 - **本项目 Nest 产出在 `dist/src/main.js`**，Start 必须为 `node dist/src/main`（不能是 `node dist/main`）。`package.json` 的 `start:prod` 已按此修正。
 - 确认 **Build Command** 已设为 `npm run build` 且构建成功；未设置或未执行时 `dist/` 不会生成，启动必报 `MODULE_NOT_FOUND`。在 **Deployments** 的 **Build Logs** 中确认有 `nest build` / `npm run build` 及 `dist/` 产出。
 - 若 monorepo，确认 **Root Directory** 为 `fenghua-backend`，否则 `npm run build` 可能跑在仓库根目录。
+
+---
+
+## 九、前端也部署到 Railway
+
+前端用 Vite + React，构建产物为 `dist/`，需用静态服务器（如 `serve`）托管。仓库中已提供 `fenghua-frontend/railway.json` 和 `package.json` 的 `start` 脚本。
+
+### 9.1 新建前端 Service
+
+1. 在**同一 Railway 项目**中，**New** → **GitHub Repo**，选择本仓库。
+2. 新 Service 的 **Settings** → **Source** / **Build**：**Root Directory** 设为 `fenghua-frontend`。
+3. **Build / Start**：`fenghua-frontend/railway.json` 已配置 `buildCommand: npm run build`、`startCommand: npx serve -s dist -l $PORT`。若仍报 `Missing script: "start"`，在 **Settings → Deploy** 的 **Start Command** 中显式填：`npx serve -s dist -l $PORT`（绕过 `package.json` 的 `start`）。
+
+   | 配置项 | 值 |
+   |--------|-----|
+   | **Build Command** | `npm run build` |
+   | **Start Command** | `npx serve -s dist -l $PORT` |
+
+### 9.2 前端 Variables（必填）
+
+在**前端 Service** 的 **Variables** 中设置：
+
+| 变量 | 说明 |
+|------|------|
+| `VITE_BACKEND_URL` | 后端 Railway 完整地址，如 `https://fenghua-backend-production.railway.app`，**必须含 `https://`**。Vite 在**构建时**写入，部署后改此变量需**重新部署**前端才生效。 |
+
+### 9.3 后端 FRONTEND_URL
+
+前端 Railway 部署成功后，在 **Settings** → **Networking** 或 **Deployments** 中拿到前端的公网地址（如 `https://fenghua-frontend-production.railway.app`）。  
+在**后端 Service** 的 **Variables** 中，将 `FRONTEND_URL` 设为该地址（若原为 Vercel 可改为只填 Railway 前端，或多域名逗号分隔）；保存后触发后端重新部署，CORS 方会放行新前端。
+
+### 9.4 部署顺序建议
+
+1. 部署**后端**，获取后端 `https://xxx.railway.app`。
+2. 创建**前端** Service，在 Variables 中设 `VITE_BACKEND_URL` = 后端地址，部署前端，获取前端 `https://yyy.railway.app`。
+3. 更新**后端**的 `FRONTEND_URL` = 前端地址，触发后端重新部署。
+
+### 9.5 前端排错
+
+- **白屏、接口 404 或 HTML**：多为 `VITE_BACKEND_URL` 未设、写错或未含 `https://`；修正后必须**重新部署**前端（Vite 构建时注入）。
+- **CORS**：后端 `FRONTEND_URL` 需包含前端 Railway 的 Origin（与浏览器地址栏一致，无尾斜杠）。
+- **`Missing script: "start"`**：运行阶段未读到 `fenghua-frontend/package.json`。在 **Settings → Deploy** 的 **Start Command** 中填 `npx serve -s dist -l $PORT`，不再走 `npm run start`。
+- **`serve` 相关错误**：`package.json` 已加入 `serve` 依赖，`npm run build` 会先 `npm install`，正常应有 `serve`；若缺失，检查 Root Directory 是否为 `fenghua-frontend`。
+
+---
+
+## 十、从零在 Railway 建前后端：检查清单
+
+按顺序勾选，便于从零部署前后端到同一 Railway 项目。详细说明见上文各节。
+
+### 前置
+
+- [ ] 后端已移除 Vercel 特化：无 `fenghua-backend/api/index.js`、`fenghua-backend/vercel.json`，`main.ts` 仅 `app.listen(port)` 启动
+- [ ] 已准备 **Neon** 连接串（或 Railway Postgres）和 **Upstash** Redis 协议 URL（或 Railway Redis），见 `docs/upstash-redis-config.md`
+- [ ] 本仓库已连接 Railway（GitHub 授权）
+
+---
+
+### 第一步：后端 Service
+
+- [ ] **New Project** → **Deploy from GitHub repo** → 选本仓库
+- [ ] 对该 Service：**Settings** → **Root Directory** = `fenghua-backend`
+- [ ] **Build Command**：`npm run build`（或依赖 `fenghua-backend/railway.json`，可不填）
+- [ ] **Start Command**：`node dist/src/main`（或依赖 `railway.json`，可不填）
+
+### 第二步：后端 Variables
+
+- [ ] `NODE_ENV` = `production`
+- [ ] `DATABASE_URL` = Neon 或 Railway Postgres 连接串
+- [ ] `REDIS_URL` = Upstash **Redis 协议** `rediss://...` 或 Railway Redis 提供的 URL
+- [ ] `JWT_SECRET` = 不少于 32 字符的随机串
+- [ ] `FRONTEND_URL` = 前端地址（**可先填占位**，如 `https://placeholder.railway.app`，前端部署后再改；或若已知前端 Railway 域名可直接填）
+
+### 第三步：部署后端
+
+- [ ] 触发部署（推代码或 **Deploy**），等待成功
+- [ ] **Settings** → **Networking** → **Generate Domain**（若未自动生成），复制后端地址，例如：  
+  `https://fenghua-backend-production-xxxx.railway.app`  
+  **记作：`<后端URL>`**
+
+### 第四步：前端 Service
+
+- [ ] 同一项目中 **New** → **GitHub Repo** → 选本仓库（新建一个 Service）
+- [ ] 对该 Service：**Settings** → **Root Directory** = `fenghua-frontend`
+- [ ] **Build Command**：`npm run build`（或依赖 `fenghua-frontend/railway.json`）
+- [ ] **Start Command**：`npx serve -s dist -l $PORT`（或依赖 `railway.json`；若报 `Missing script: "start"` 须在 UI 显式填此项）
+
+### 第五步：前端 Variables
+
+- [ ] `VITE_BACKEND_URL` = `<后端URL>`，**必须含 `https://`**（如 `https://fenghua-backend-production-xxxx.railway.app`）
+
+### 第六步：部署前端
+
+- [ ] 触发部署，等待成功
+- [ ] **Settings** → **Networking** → **Generate Domain**（若未自动生成），复制前端地址，例如：  
+  `https://fenghua-frontend-production-yyyy.railway.app`  
+  **记作：`<前端URL>`**
+
+### 第七步：更新后端 CORS
+
+- [ ] 打开**后端** Service → **Variables**
+- [ ] 将 `FRONTEND_URL` 改为 `<前端URL>`（或在其后追加 `,<前端URL>`，去尾斜杠、无空格）
+- [ ] 保存，触发后端重新部署
+
+### 第八步：验证
+
+- [ ] 浏览器访问 `<后端URL>/health`，应返回 200 或 `{"status":"ok"}` 等
+- [ ] 浏览器访问 `<前端URL>`，应打开登录页
+- [ ] 登录、进入用户管理或仪表盘，无 CORS 报错、无「Unexpected token '<'」或接口 404
+
+---
+
+### 快速对照：Variables 汇总
+
+| Service | 变量 | 示例 / 说明 |
+|---------|------|-------------|
+| **后端** | `NODE_ENV` | `production` |
+| | `DATABASE_URL` | Neon / Railway Postgres 连接串 |
+| | `REDIS_URL` | Upstash `rediss://...` 或 Railway Redis |
+| | `JWT_SECRET` | 随机字符串，≥32 字符 |
+| | `FRONTEND_URL` | `https://<前端>.railway.app`，与浏览器地址栏一致、无尾斜杠 |
+| **前端** | `VITE_BACKEND_URL` | `https://<后端>.railway.app`，必须含 `https://`，构建时注入 |
+
+### 快速对照：Root / Build / Start
+
+| Service | Root Directory | Build Command | Start Command |
+|---------|----------------|---------------|---------------|
+| **后端** | `fenghua-backend` | `npm run build` | `node dist/src/main` |
+| **前端** | `fenghua-frontend` | `npm run build` | `npx serve -s dist -l $PORT` |
+
+若仓库中已存在 `fenghua-backend/railway.json`、`fenghua-frontend/railway.json`，Build / Start 可省略不填，由配置文件生效。
 
 ---
 

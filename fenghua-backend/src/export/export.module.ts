@@ -8,6 +8,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { parseRedisUrlForBull } from '../common/redis/bullmq-connection.util';
 import { ExportController } from './export.controller';
 import { ExportService } from './export.service';
 import { ExportProcessor } from './export.processor';
@@ -31,30 +32,14 @@ import { AuditModule } from '../audit/audit.module';
     ProductsModule, // For ProductsService
     InteractionsModule, // For InteractionsService
     forwardRef(() => AuditModule), // For AuditService - use forwardRef to avoid circular dependency
-    // BullModule configuration - make it optional, use default Redis if REDIS_URL not set
+    // BullModule 使用统一解析，支持 rediss://（Upstash 等 TLS）及有限重试
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
-        try {
-          const url = new URL(redisUrl);
-          return {
-            connection: {
-              host: url.hostname,
-              port: parseInt(url.port || '6379', 10),
-              password: url.password || undefined,
-            },
-          };
-        } catch (error) {
-          // If URL parsing fails, use default localhost Redis
-          return {
-            connection: {
-              host: 'localhost',
-              port: 6379,
-            },
-          };
-        }
-      },
+      useFactory: (configService: ConfigService) =>
+        parseRedisUrlForBull(configService.get<string>('REDIS_URL'), {
+          fallback: 'redis://localhost:6379',
+          required: false,
+        }),
       inject: [ConfigService],
     }),
     BullModule.registerQueue({

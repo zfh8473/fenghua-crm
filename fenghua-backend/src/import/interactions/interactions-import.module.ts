@@ -8,6 +8,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { parseRedisUrlForBull } from '../../common/redis/bullmq-connection.util';
 import { InteractionsImportController } from './interactions-import.controller';
 import { InteractionsImportService } from './interactions-import.service';
 import { PermissionModule } from '../../permission/permission.module';
@@ -36,27 +37,11 @@ import { AuditModule } from '../../audit/audit.module';
     AuditModule, // For AuditService
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
-        try {
-          const url = new URL(redisUrl);
-          return {
-            connection: {
-              host: url.hostname,
-              port: parseInt(url.port || '6379', 10),
-              password: url.password || undefined,
-            },
-          };
-        } catch (error) {
-          // Fallback to default Redis connection
-          return {
-            connection: {
-              host: 'localhost',
-              port: 6379,
-            },
-          };
-        }
-      },
+      useFactory: (configService: ConfigService) =>
+        parseRedisUrlForBull(configService.get<string>('REDIS_URL'), {
+          fallback: 'redis://localhost:6379',
+          required: false,
+        }),
       inject: [ConfigService],
     }),
     BullModule.registerQueue({
