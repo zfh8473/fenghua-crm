@@ -243,3 +243,6 @@
 - [环境变量说明](./vercel-environment-variables.md)
 - [部署检查清单](./vercel-deployment-checklist.md)
 - [Upstash Redis 配置](./upstash-redis-config.md)
+- [部署方案选型：Vercel 与 Railway/Render 等对比](./deployment-platform-comparison.md)
+- [迁移到 Railway 的步骤](./railway-deploy.md)
+- [基础设施需求（Vercel + Neon）](./infrastructure-requirements-vercel-neon.md)
