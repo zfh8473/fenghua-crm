@@ -19,6 +19,7 @@ import { MainLayout } from '../components/layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { isFrontendSpecialist, isBackendSpecialist, isDirector, isAdmin } from '../common/constants/roles';
+import { getErrorMessage } from '../utils/error-handling';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
@@ -48,17 +49,19 @@ export const CustomerManagementPage: React.FC = () => {
     show: false,
     customer: null,
   });
+  /** 用于忽略过期请求：只有最新一次 loadData 的结果会更新 error/loading/列表，避免 401/400 覆盖已成功的列表 */
+  const loadIdRef = useRef(0);
 
   // Unified data loading function
   const loadData = useCallback(async () => {
+    const myId = ++loadIdRef.current;
     try {
       setLoading(true);
       setError(null);
-      
+
       let queryParams: CustomerQueryParams;
-      
+
       if (isSearchMode) {
-        // Search mode: use search filters
         queryParams = {
           limit: 20,
           offset: (searchPage - 1) * 20,
@@ -66,19 +69,19 @@ export const CustomerManagementPage: React.FC = () => {
           customerType: searchFilters.customerType,
         };
       } else {
-        // Normal list mode: use regular filters
-        queryParams = {
-          ...filters,
-        };
+        queryParams = { ...filters };
       }
-      
+
       const response = await customersService.getCustomers(queryParams);
+      if (myId !== loadIdRef.current) return;
       setCustomers(response.customers);
       setTotal(response.total);
+      setError(null);
     } catch (err: unknown) {
-      setError((err as Error).message || (isSearchMode ? '搜索失败' : '加载客户列表失败'));
+      if (myId !== loadIdRef.current) return;
+      setError(getErrorMessage(err) || (isSearchMode ? '搜索失败' : '加载客户列表失败'));
     } finally {
-      setLoading(false);
+      if (myId === loadIdRef.current) setLoading(false);
     }
   }, [filters, isSearchMode, searchFilters, searchPage]);
 

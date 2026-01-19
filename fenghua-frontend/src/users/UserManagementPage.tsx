@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { User, getUsers, createUser, updateUser, deleteUser, CreateUserData, UpdateUserData } from './users.service';
 import { UserList } from './components/UserList';
@@ -21,6 +21,7 @@ export const UserManagementPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
+  const loadIdRef = useRef(0);
 
   useEffect(() => {
     loadUsers();
@@ -28,15 +29,19 @@ export const UserManagementPage: React.FC = () => {
   }, [roleFilter, searchQuery]);
 
   const loadUsers = async () => {
+    const myId = ++loadIdRef.current;
     try {
       setLoading(true);
       setError(null);
       const userList = await getUsers(roleFilter || undefined, searchQuery || undefined);
+      if (myId !== loadIdRef.current) return;
       setUsers(userList);
+      setError(null);
     } catch (err: unknown) {
+      if (myId !== loadIdRef.current) return;
       setError(getErrorMessage(err));
     } finally {
-      setLoading(false);
+      if (myId === loadIdRef.current) setLoading(false);
     }
   };
 
