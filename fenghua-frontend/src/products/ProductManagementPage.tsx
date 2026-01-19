@@ -53,6 +53,8 @@ export const ProductManagementPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasAutoSelectedProduct = useRef(false);
+  /** 用于忽略过期请求：只有最新一次 loadProducts 的结果会更新 error/loading，避免 401 覆盖已成功的列表 */
+  const loadIdRef = useRef(0);
 
   // Load categories on mount
   useEffect(() => {
@@ -68,16 +70,20 @@ export const ProductManagementPage: React.FC = () => {
   }, []);
 
   const loadProducts = useCallback(async () => {
+    const myId = ++loadIdRef.current;
     try {
       setLoading(true);
       setError(null);
       const response = await productsService.getProducts(filters);
+      if (myId !== loadIdRef.current) return;
       setProducts(response.products);
       setTotal(response.total);
+      setError(null);
     } catch (err: unknown) {
+      if (myId !== loadIdRef.current) return;
       setError(getErrorMessage(err));
     } finally {
-      setLoading(false);
+      if (myId === loadIdRef.current) setLoading(false);
     }
   }, [filters]);
 
