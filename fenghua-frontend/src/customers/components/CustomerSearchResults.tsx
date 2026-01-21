@@ -68,13 +68,17 @@ export const CustomerSearchResults: React.FC<CustomerSearchResultsProps> = ({
     }
   };
 
+  /** 19.3 main-business：加载用 skeleton，无 emoji */
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-monday-12">
-        <div className="text-center">
-          <div className="text-monday-4xl mb-monday-4 animate-spin">⏳</div>
-          <p className="text-monday-base text-monday-text-secondary">正在加载搜索结果...</p>
-        </div>
+      <div className="space-y-monday-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-monday-4 rounded-monday-lg border border-gray-200 animate-pulse">
+            <div className="h-5 bg-gray-200 rounded w-1/3 mb-monday-2" />
+            <div className="h-4 bg-gray-200 rounded w-1/2 mb-monday-2" />
+            <div className="h-4 bg-gray-200 rounded w-2/3" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -119,10 +123,10 @@ export const CustomerSearchResults: React.FC<CustomerSearchResultsProps> = ({
                   <h3 className="text-monday-lg font-semibold text-monday-text truncate">
                     {searchQuery ? highlightText(customer.name, searchQuery) : customer.name}
                   </h3>
-                  <span className={`inline-flex items-center px-monday-2 py-monday-1 rounded-full text-monday-xs font-semibold ${
-                    customer.customerType === 'BUYER' 
-                      ? 'bg-primary-blue/10 text-primary-blue'
-                      : 'bg-primary-green/10 text-primary-green'
+                  <span className={`inline-flex items-center px-monday-2 py-monday-1 rounded-full text-monday-xs font-semibold transition-colors duration-200 ${
+                    customer.customerType === 'BUYER'
+                      ? 'bg-uipro-cta/15 text-uipro-cta'
+                      : 'bg-semantic-success/15 text-semantic-success'
                   }`}>
                     {customer.customerType === 'BUYER' ? '采购商' : '供应商'}
                   </span>
@@ -165,7 +169,7 @@ export const CustomerSearchResults: React.FC<CustomerSearchResultsProps> = ({
                     e.stopPropagation();
                     handleCustomerClick(customer);
                   }}
-                  className="text-primary-blue hover:text-primary-blue-hover font-medium text-monday-sm"
+                  className="text-uipro-cta hover:underline font-medium text-monday-sm cursor-pointer transition-colors duration-200"
                 >
                   查看详情 →
                 </button>

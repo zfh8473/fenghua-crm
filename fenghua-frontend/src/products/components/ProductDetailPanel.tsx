@@ -13,6 +13,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { isAdmin } from '../../common/constants/roles';
 import { ProductStatus } from './ProductStatusSelector';
 import { ProductCustomerAssociation } from './ProductCustomerAssociation';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 
 interface ProductDetailPanelProps {
   product: Product;
@@ -107,13 +108,14 @@ export const ProductDetailPanel: React.FC<ProductDetailPanelProps> = ({
     return statusMap[status as ProductStatus] || status;
   };
 
+  /** 19.3 main-business：状态徽章 uipro-* / semantic-* */
   const getStatusColor = (status: ProductStatus | string): string => {
     const colorMap: Record<ProductStatus, string> = {
-      active: 'bg-primary-green text-white',
-      inactive: 'bg-primary-red text-white',
-      archived: 'bg-gray-100 text-monday-text-secondary',
+      active: 'bg-semantic-success/15 text-semantic-success',
+      inactive: 'bg-semantic-error/15 text-semantic-error',
+      archived: 'bg-uipro-secondary/15 text-uipro-secondary',
     };
-    return colorMap[status as ProductStatus] || 'bg-gray-100 text-monday-text-secondary';
+    return colorMap[status as ProductStatus] || 'bg-uipro-secondary/15 text-uipro-secondary';
   };
 
   const handleImageClick = () => {
@@ -135,32 +137,32 @@ export const ProductDetailPanel: React.FC<ProductDetailPanelProps> = ({
   return (
     <>
       <div className="space-y-monday-4">
-        {/* Product Header */}
+        {/* Product Header（19.3 main-business） */}
         <div>
-          <h3 className="text-monday-xl font-bold text-monday-text mb-monday-2">{product.name}</h3>
+          <h3 className="text-monday-xl font-bold text-gray-900 mb-monday-2 font-uipro-heading">{product.name}</h3>
           <div className="flex items-center gap-monday-2">
-            <span className={`px-monday-3 py-monday-1 rounded-full text-monday-xs font-semibold ${getStatusColor(product.status)}`}>
+            <span className={`px-monday-3 py-monday-1 rounded-full text-monday-xs font-semibold transition-colors duration-200 ${getStatusColor(product.status)}`}>
               {getStatusLabel(product.status)}
             </span>
           </div>
         </div>
 
         {/* Basic Information */}
-        <Card variant="outlined" className="p-monday-4">
-          <h4 className="text-monday-base font-semibold text-monday-text mb-monday-3">基本信息</h4>
+        <Card variant="outlined" className="p-monday-4 transition-colors duration-200">
+          <h4 className="text-monday-base font-semibold text-gray-900 mb-monday-3 font-uipro-heading">基本信息</h4>
           <div className="space-y-monday-3">
             <div>
               <div className="text-monday-xs text-monday-text-secondary uppercase tracking-wider">HS编码</div>
-              <p className="text-monday-base text-monday-text font-mono mt-monday-1">{product.hsCode}</p>
+              <p className="text-monday-base text-gray-900 font-medium font-mono mt-monday-1">{product.hsCode}</p>
             </div>
             <div>
               <div className="text-monday-xs text-monday-text-secondary uppercase tracking-wider">产品类别</div>
-              <p className="text-monday-base text-monday-text mt-monday-1">{product.category || '-'}</p>
+              <p className="text-monday-base text-gray-900 font-medium mt-monday-1">{product.category || '-'}</p>
             </div>
             {product.description ? (
               <div>
                 <div className="text-monday-xs text-monday-text-secondary uppercase tracking-wider">产品描述</div>
-                <p className="text-monday-base text-monday-text mt-monday-1 whitespace-pre-wrap">{product.description}</p>
+                <p className="text-monday-base text-gray-900 font-medium mt-monday-1 whitespace-pre-wrap">{product.description}</p>
               </div>
             ) : null}
           </div>
@@ -168,15 +170,15 @@ export const ProductDetailPanel: React.FC<ProductDetailPanelProps> = ({
 
         {/* Specifications */}
         {product.specifications && Object.keys(product.specifications).length > 0 ? (
-          <Card variant="outlined" className="p-monday-4">
-            <h4 className="text-monday-base font-semibold text-monday-text mb-monday-3">产品规格</h4>
+          <Card variant="outlined" className="p-monday-4 transition-colors duration-200">
+            <h4 className="text-monday-base font-semibold text-gray-900 mb-monday-3 font-uipro-heading">产品规格</h4>
             <div className="space-y-monday-2">
               {Object.entries(product.specifications).map(([key, value]) => (
                 <div key={key} className="flex justify-between items-start py-monday-2 border-b border-gray-100 last:border-0">
                   <span className="text-monday-sm font-medium text-monday-text-secondary flex-shrink-0 w-24">
                     {key}:
                   </span>
-                  <span className="text-monday-sm text-monday-text flex-1 text-right break-words">
+                  <span className="text-monday-sm text-gray-900 font-medium flex-1 text-right break-words">
                     {String(value)}
                   </span>
                 </div>
@@ -186,8 +188,8 @@ export const ProductDetailPanel: React.FC<ProductDetailPanelProps> = ({
         ) : null}
 
         {/* Additional Information */}
-        <Card variant="outlined" className="p-monday-4">
-          <h4 className="text-monday-base font-semibold text-monday-text mb-monday-3">其他信息</h4>
+        <Card variant="outlined" className="p-monday-4 transition-colors duration-200">
+          <h4 className="text-monday-base font-semibold text-gray-900 mb-monday-3 font-uipro-heading">其他信息</h4>
           <div className="space-y-monday-3">
             {product.imageUrl ? (
               <div>
@@ -198,7 +200,7 @@ export const ProductDetailPanel: React.FC<ProductDetailPanelProps> = ({
                       ref={imageButtonRef}
                       type="button"
                       onClick={handleImageClick}
-                      className="w-full focus:outline-none focus:ring-2 focus:ring-primary-blue focus:ring-offset-2 rounded-monday-md"
+                      className="w-full focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:ring-offset-2 rounded-monday-md cursor-pointer transition-colors duration-200"
                       aria-label={`查看 ${product.name} 的产品图片`}
                     >
                       <img
@@ -218,14 +220,14 @@ export const ProductDetailPanel: React.FC<ProductDetailPanelProps> = ({
             ) : null}
             <div>
               <div className="text-monday-xs text-monday-text-secondary uppercase tracking-wider">创建时间</div>
-              <p className="text-monday-sm text-monday-text mt-monday-1">
+              <p className="text-monday-sm text-gray-900 font-medium mt-monday-1">
                 {product.createdAt ? new Date(product.createdAt).toLocaleString('zh-CN') : '-'}
               </p>
             </div>
             {product.updatedAt ? (
               <div>
                 <div className="text-monday-xs text-monday-text-secondary uppercase tracking-wider">更新时间</div>
-                <p className="text-monday-sm text-monday-text mt-monday-1">
+                <p className="text-monday-sm text-gray-900 font-medium mt-monday-1">
                   {new Date(product.updatedAt).toLocaleString('zh-CN')}
                 </p>
               </div>
@@ -236,26 +238,28 @@ export const ProductDetailPanel: React.FC<ProductDetailPanelProps> = ({
         {/* 关联的客户 */}
         <ProductCustomerAssociation productId={product.id} product={product} />
 
-        {/* Edit/Delete Buttons (Admin Only) */}
+        {/* Edit/Delete Buttons（与 ProductList 统一：outline、uipro-cta/semantic-error、pencilSquare/trash 图标、居中） */}
         {userIsAdmin && onEdit && onDelete ? (
-          <div className="flex gap-monday-2 mt-monday-4">
+          <div className="flex justify-center gap-monday-2 mt-monday-4">
             <Button
               onClick={() => onEdit(product)}
-              variant="secondary"
+              variant="outline"
               size="sm"
+              title="编辑"
+              leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
               aria-label="编辑产品"
-              className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50"
-              leftIcon={<span>✏️</span>}
+              className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
             >
               编辑
             </Button>
             <Button
               onClick={() => onDelete(product)}
-              variant="ghost"
+              variant="outline"
               size="sm"
+              title="删除"
+              leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
               aria-label="删除产品"
-              className="text-primary-red hover:text-primary-red hover:bg-primary-red/10 border border-transparent hover:border-primary-red/20"
-              leftIcon={<span>🗑️</span>}
+              className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
             >
               删除
             </Button>

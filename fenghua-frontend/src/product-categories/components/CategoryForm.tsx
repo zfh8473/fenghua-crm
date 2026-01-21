@@ -129,29 +129,29 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           id="description"
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
-          className={`w-full p-monday-3 px-monday-4 text-monday-base text-monday-text bg-monday-surface border rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue placeholder:text-monday-text-secondary resize-y ${
-            errors.description ? 'border-primary-red focus:ring-primary-red' : 'border-gray-200'
+          className={`w-full p-monday-3 px-monday-4 text-monday-base text-uipro-text bg-monday-surface border rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 placeholder:text-uipro-secondary resize-y ${
+            errors.description ? 'border-semantic-error focus:ring-semantic-error/50' : 'border-gray-200 focus:ring-uipro-cta/50 focus:border-uipro-cta'
           }`}
           rows={4}
           maxLength={1000}
           disabled={isSubmitting}
         />
         {errors.description && (
-          <span className="text-monday-sm text-primary-red mt-monday-1">{errors.description}</span>
+          <span className="text-monday-sm text-semantic-error mt-monday-1">{errors.description}</span>
         )}
       </div>
 
       {errors.submit && (
-        <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-3 rounded-monday-md" role="alert">
+        <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-3 rounded-monday-md" role="alert">
           {errors.submit}
         </div>
       )}
 
       <div className="flex justify-end gap-monday-3 pt-monday-6 border-t border-gray-200">
-        <Button type="button" onClick={onCancel} disabled={isSubmitting} variant="outline">
+        <Button type="button" onClick={onCancel} disabled={isSubmitting} variant="outline" className="cursor-pointer transition-colors duration-200">
           取消
         </Button>
-        <Button type="submit" isLoading={isSubmitting} variant="primary">
+        <Button type="submit" isLoading={isSubmitting} variant="primary" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
           {category ? '更新类别' : '创建类别'}
         </Button>
       </div>

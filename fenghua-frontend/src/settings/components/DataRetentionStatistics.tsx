@@ -80,7 +80,7 @@ export function DataRetentionStatistics() {
 
   if (error) {
     return (
-      <div className="p-monday-6 bg-primary-red/20 border border-primary-red text-primary-red rounded-monday-md">
+      <div className="p-monday-6 bg-semantic-error/10 border border-semantic-error text-semantic-error rounded-monday-md">
         {error}
       </div>
     );

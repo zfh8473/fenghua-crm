@@ -50,15 +50,16 @@ const getStatusLabel = (status?: string): string => {
 /**
  * Get status badge color
  */
+/** 19.3 main-business：状态徽章 uipro-* / semantic-* */
 const getStatusBadgeColor = (status?: string): string => {
-  if (!status) return 'bg-gray-100 text-gray-600';
+  if (!status) return 'bg-uipro-secondary/15 text-uipro-secondary';
   const colorMap: Record<string, string> = {
-    in_progress: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-red-100 text-red-700',
-    needs_follow_up: 'bg-yellow-100 text-yellow-700',
+    in_progress: 'bg-uipro-cta/15 text-uipro-cta',
+    completed: 'bg-semantic-success/15 text-semantic-success',
+    cancelled: 'bg-semantic-error/15 text-semantic-error',
+    needs_follow_up: 'bg-semantic-warning/15 text-semantic-warning',
   };
-  return colorMap[status] || 'bg-gray-100 text-gray-600';
+  return colorMap[status] || 'bg-uipro-secondary/15 text-uipro-secondary';
 };
 
 export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> = ({
@@ -78,12 +79,17 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
     }
   };
 
+  /** 19.3 main-business：加载 skeleton，空态无 emoji */
   if (loading) {
     return (
       <Card variant="default" className="p-monday-8">
-        <div className="text-center py-monday-12">
-          <span className="animate-spin text-2xl mb-monday-4 block">⏳</span>
-          <p className="text-monday-text-secondary">正在加载搜索结果...</p>
+        <div className="space-y-monday-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="p-monday-4 rounded-monday-lg border border-gray-200 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-monday-2" />
+              <div className="h-4 bg-gray-200 rounded w-1/2" />
+            </div>
+          ))}
         </div>
       </Card>
     );
@@ -93,11 +99,8 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
     return (
       <Card variant="default" className="p-monday-8">
         <div className="text-center py-monday-12">
-          <span className="text-5xl mb-monday-4 block">🔍</span>
-          <h3 className="text-monday-xl font-semibold mb-monday-2">未找到匹配的互动记录</h3>
-          <p className="text-monday-text-secondary">
-            请尝试调整搜索条件或筛选器
-          </p>
+          <h3 className="text-monday-xl font-semibold text-uipro-text mb-monday-2">未找到匹配的互动记录</h3>
+          <p className="text-uipro-secondary">请尝试调整搜索条件或筛选器</p>
         </div>
       </Card>
     );
@@ -107,8 +110,8 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
     <div className="space-y-monday-4">
       {/* Results Summary */}
       <div className="flex items-center justify-between">
-        <p className="text-monday-sm text-monday-text-secondary">
-          找到 <span className="font-semibold text-monday-text">{total}</span> 条互动记录
+        <p className="text-monday-sm text-uipro-secondary">
+          找到 <span className="font-semibold text-uipro-text">{total}</span> 条互动记录
         </p>
       </div>
 
@@ -118,7 +121,7 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
           <Card
             key={interaction.id}
             variant="default"
-            className="p-monday-4 hover:shadow-monday-md transition-shadow cursor-pointer"
+            className="p-monday-4 hover:shadow-monday-md transition-all duration-200 cursor-pointer"
             onClick={() => handleInteractionClick(interaction)}
           >
             <div className="flex items-start justify-between gap-monday-4">
@@ -149,21 +152,21 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
                   <Link
                     to={`/customers/${interaction.customerId}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="hover:text-primary-blue"
+                    className="text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
                   >
                     查看客户
                   </Link>
                   <Link
                     to={`/products/${interaction.productId}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="hover:text-primary-blue"
+                    className="text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
                   >
                     查看产品
                   </Link>
                   <Link
                     to={`/interactions/${interaction.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="hover:text-primary-blue"
+                    className="text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
                   >
                     查看详情
                   </Link>
@@ -182,10 +185,11 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
             size="sm"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
+            className="cursor-pointer transition-colors duration-200"
           >
             上一页
           </Button>
-          <span className="text-monday-sm text-monday-text-secondary">
+          <span className="text-monday-sm text-uipro-secondary">
             第 {currentPage} 页，共 {totalPages} 页
           </span>
           <Button
@@ -193,6 +197,7 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
             size="sm"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
+            className="cursor-pointer transition-colors duration-200"
           >
             下一页
           </Button>

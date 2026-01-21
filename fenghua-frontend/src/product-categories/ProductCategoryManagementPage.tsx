@@ -111,25 +111,18 @@ export const ProductCategoryManagementPage: React.FC = () => {
       <div className="space-y-monday-4">
         {/* Success Message */}
         {successMessage && (
-          <div className="bg-primary-green/20 border border-primary-green text-primary-green p-monday-3 rounded-monday-md" role="alert">
+          <div className="bg-semantic-success/10 border border-semantic-success text-semantic-success p-monday-3 rounded-monday-md" role="alert">
             {successMessage}
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="float-right text-primary-green hover:text-primary-green/80"
-            >
+            <button onClick={() => setSuccessMessage(null)} className="float-right text-semantic-success hover:opacity-80 cursor-pointer transition-colors duration-200" aria-label="关闭">
               ×
             </button>
           </div>
         )}
 
-        {/* Error Message */}
         {error && (
-          <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-3 rounded-monday-md" role="alert">
+          <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-3 rounded-monday-md" role="alert">
             {error}
-            <button
-              onClick={() => setError(null)}
-              className="float-right text-primary-red hover:text-primary-red/80"
-            >
+            <button onClick={() => setError(null)} className="float-right text-semantic-error hover:opacity-80 cursor-pointer transition-colors duration-200" aria-label="关闭">
               ×
             </button>
           </div>
@@ -140,8 +133,8 @@ export const ProductCategoryManagementPage: React.FC = () => {
             {/* Toolbar */}
             <Card variant="default" className="w-full">
               <div className="flex items-center justify-between">
-                <h2 className="text-monday-2xl font-bold text-monday-text tracking-tight">类别管理</h2>
-                <Button onClick={handleCreate} variant="primary">
+                <h2 className="text-monday-2xl font-bold text-uipro-text tracking-tight font-uipro-heading">类别管理</h2>
+                <Button onClick={handleCreate} variant="primary" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
                   创建新类别
                 </Button>
               </div>
@@ -161,7 +154,7 @@ export const ProductCategoryManagementPage: React.FC = () => {
 
         {(viewMode === 'create' || viewMode === 'edit') && (
           <Card variant="default" className="w-full">
-            <h2 className="text-monday-2xl font-bold text-monday-text mb-monday-6 tracking-tight">
+            <h2 className="text-monday-2xl font-bold text-uipro-text mb-monday-6 tracking-tight font-uipro-heading">
               {editingCategory ? '编辑类别' : '创建新类别'}
             </h2>
             <CategoryForm
@@ -179,8 +172,8 @@ export const ProductCategoryManagementPage: React.FC = () => {
             <Card variant="default" className="w-full max-w-md m-monday-4">
               <h3 className="text-monday-xl font-bold text-monday-text mb-monday-4">确认删除类别</h3>
               {deleteConfirm.category.productCount > 0 ? (
-                <div className="bg-primary-red/20 border border-primary-red rounded-monday-md p-monday-4 mb-monday-4">
-                  <p className="text-monday-sm text-primary-red font-semibold mb-monday-2">
+                <div className="bg-semantic-error/10 border border-semantic-error rounded-monday-md p-monday-4 mb-monday-4">
+                  <p className="text-monday-sm text-semantic-error font-semibold mb-monday-2">
                     无法删除该类别
                   </p>
                   <p className="text-monday-sm text-monday-text">
@@ -194,14 +187,11 @@ export const ProductCategoryManagementPage: React.FC = () => {
                 </p>
               )}
               <div className="flex justify-end gap-monday-3">
-                <Button
-                  onClick={() => setDeleteConfirm({ category: null, show: false })}
-                  variant="outline"
-                >
+                <Button onClick={() => setDeleteConfirm({ category: null, show: false })} variant="outline" className="cursor-pointer transition-colors duration-200">
                   取消
                 </Button>
                 {deleteConfirm.category.productCount === 0 && (
-                  <Button onClick={confirmDelete} variant="primary" className="bg-primary-red hover:bg-primary-red/90">
+                  <Button onClick={confirmDelete} variant="primary" className="!bg-semantic-error hover:!bg-semantic-error/90 cursor-pointer transition-colors duration-200">
                     确认删除
                   </Button>
                 )}

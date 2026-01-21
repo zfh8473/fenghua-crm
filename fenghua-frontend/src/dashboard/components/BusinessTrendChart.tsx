@@ -7,6 +7,7 @@
 
 import React, { Suspense, lazy, useMemo } from 'react';
 import { BusinessTrendItem } from '../services/business-trend-analysis.service';
+import { CHART_COLORS } from '../utils/chart-colors';
 
 // Lazy load LineChart component for better performance
 const LineChartComponent = lazy(() => 
@@ -43,7 +44,7 @@ export const BusinessTrendChart: React.FC<BusinessTrendChartProps> = ({
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full text-center text-monday-text-secondary py-monday-8">
+      <div className="w-full text-center text-uipro-secondary py-monday-8">
         <p>暂无数据</p>
       </div>
     );
@@ -88,11 +89,11 @@ export const BusinessTrendChart: React.FC<BusinessTrendChartProps> = ({
 
   const colors = useMemo(() => {
     const colorMap: Record<string, string> = {
-      orderCount: '#3b82f6', // Blue
-      customerGrowth: '#10b981', // Green
-      salesAmount: '#f59e0b', // Amber
+      orderCount: CHART_COLORS[0],
+      customerGrowth: CHART_COLORS[3],
+      salesAmount: CHART_COLORS[4],
     };
-    return dataKeys.map(key => colorMap[key] || '#6b7280');
+    return dataKeys.map(key => colorMap[key] || CHART_COLORS[1]);
   }, [dataKeys]);
 
   return (

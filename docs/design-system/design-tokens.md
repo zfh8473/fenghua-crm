@@ -108,6 +108,22 @@ Linear 风格使用深色背景和浅色文本，营造现代、专业的视觉�
 </div>
 ```
 
+### Epic 19 / ui-ux-pro-max-skill（uipro-*，与 monday/linear 并存）
+
+由 ui-ux-pro-max-skill 生成并人工校订的 B2B CRM 色板与字体，与现有 `monday-*`、`linear-*` **并存**，Epic 19 的 19.2–19.5 可选用；**不替代、不废弃**既有 Token。
+
+| Token 名称 | 值 | Tailwind 类名 | 使用场景 |
+|-----------|-----|--------------|---------|
+| `uipro-primary` | `#0F172A` | `bg-uipro-primary`, `text-uipro-primary` | 主色 |
+| `uipro-secondary` | `#334155` | `bg-uipro-secondary`, `text-uipro-secondary` | 辅助色 |
+| `uipro-cta` | `#0369A1` | `bg-uipro-cta`, `text-uipro-cta` | CTA 按钮、链接 |
+| `uipro-bg` | `#F8FAFC` | `bg-uipro-bg` | 页面背景 |
+| `uipro-text` | `#020617` | `text-uipro-text` | 正文 |
+| `font-uipro-heading` | Fira Code | `font-uipro-heading` | 标题 |
+| `font-uipro-body` | Fira Sans | `font-uipro-body` | 正文 |
+
+详见 [MASTER.md](./MASTER.md)。
+
 ---
 
 ## 间距系统

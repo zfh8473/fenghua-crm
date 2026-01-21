@@ -145,7 +145,7 @@ export const ExportProgress: React.FC<ExportProgressProps> = ({
           </div>
           <div className="w-full bg-monday-border rounded-full h-2">
             <div
-              className="bg-primary-green h-2 rounded-full transition-all duration-300"
+              className="bg-semantic-success h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>

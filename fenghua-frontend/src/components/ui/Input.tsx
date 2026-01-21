@@ -92,10 +92,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     // Base classes
     const baseClasses = 'w-full rounded-monday-md border bg-monday-surface text-monday-text placeholder:text-monday-text-placeholder focus:outline-none transition-all duration-200';
     
-    // State classes
+    /** 19.3 main-business：error 用 semantic-error，focus 用 uipro-cta */
     const stateClasses = error
-      ? 'border-primary-red focus:ring-2 focus:ring-primary-red focus:border-primary-red'
-      : 'border-gray-200 focus:ring-2 focus:ring-primary-blue focus:border-primary-blue';
+      ? 'border-semantic-error focus:ring-2 focus:ring-semantic-error/50 focus:border-semantic-error'
+      : 'border-gray-200 focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta';
     
     // Size classes
     const sizeClasses = {
@@ -115,7 +115,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <label
             id={`${inputId}-label`}
             htmlFor={inputId}
-            className="block text-monday-sm font-medium text-monday-text mb-monday-1"
+            className="block text-monday-sm font-medium text-uipro-text mb-monday-1"
           >
             {label}
           </label>
@@ -144,7 +144,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {errorMessage && (
           <p
             id={errorId}
-            className="mt-monday-1 text-monday-sm text-primary-red"
+            className="mt-monday-1 text-monday-sm text-semantic-error"
             role="alert"
           >
             {errorMessage}
@@ -153,7 +153,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {helperText && !errorMessage && (
           <p
             id={helperId}
-            className="mt-monday-1 text-monday-sm text-monday-text-secondary"
+            className="mt-monday-1 text-monday-sm text-uipro-secondary"
           >
             {helperText}
           </p>

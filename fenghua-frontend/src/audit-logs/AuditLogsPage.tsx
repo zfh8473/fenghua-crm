@@ -131,7 +131,7 @@ export function AuditLogsPage() {
     return (
       <MainLayout title="审计日志">
         <Card variant="default" className="max-w-7xl mx-auto">
-          <div className="p-linear-4 bg-primary-red/20 border border-primary-red rounded-linear-md text-primary-red text-linear-base" role="alert">
+          <div className="p-linear-4 bg-semantic-error/10 border border-semantic-error rounded-linear-md text-semantic-error text-linear-base" role="alert">
             只有管理员可以访问此页面
           </div>
         </Card>
@@ -143,7 +143,7 @@ export function AuditLogsPage() {
     <MainLayout title="审计日志">
       <div className="space-y-linear-6">
         {error && (
-          <div className="bg-primary-red/20 border border-primary-red text-primary-red p-linear-4 rounded-linear-md" role="alert">
+          <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-linear-4 rounded-linear-md" role="alert">
             {error}
           </div>
         )}
@@ -152,9 +152,8 @@ export function AuditLogsPage() {
         <Card variant="default" className="w-full p-linear-5">
           <div className="flex items-center gap-linear-6 flex-wrap">
             <div className="flex items-center gap-linear-3 min-w-0 flex-1 min-w-[200px]">
-              <label htmlFor="filter-action" className="text-linear-base text-linear-text-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
-                <span>⚡</span>
-                <span>操作类型</span>
+              <label htmlFor="filter-action" className="text-linear-base text-uipro-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
+                操作类型
               </label>
               <select
                 id="filter-action"
@@ -163,7 +162,7 @@ export function AuditLogsPage() {
                   setFilters({ ...filters, action: e.target.value || undefined });
                   setPagination({ ...pagination, page: 1 });
                 }}
-                className="flex-1 min-w-0 py-linear-2 px-linear-3 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue font-normal hover:border-gray-300"
+                className="flex-1 min-w-0 py-linear-2 px-linear-3 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta font-normal hover:border-gray-300 cursor-pointer"
               >
                 <option value="">全部</option>
                 <option value="DATA_ACCESS">数据访问</option>
@@ -176,9 +175,8 @@ export function AuditLogsPage() {
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1 min-w-[200px]">
-              <label htmlFor="filter-operator-id" className="text-linear-base text-linear-text-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
-                <span>👤</span>
-                <span>操作者 ID</span>
+              <label htmlFor="filter-operator-id" className="text-linear-base text-uipro-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
+                操作者 ID
               </label>
               <Input
                 id="filter-operator-id"
@@ -194,9 +192,8 @@ export function AuditLogsPage() {
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1 min-w-[200px]">
-              <label htmlFor="filter-operator-email" className="text-linear-base text-linear-text-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
-                <span>📧</span>
-                <span>操作者邮箱</span>
+              <label htmlFor="filter-operator-email" className="text-linear-base text-uipro-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
+                操作者邮箱
               </label>
               <Input
                 id="filter-operator-email"
@@ -212,9 +209,8 @@ export function AuditLogsPage() {
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1 min-w-[200px]">
-              <label htmlFor="filter-entity-type" className="text-linear-base text-linear-text-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
-                <span>📦</span>
-                <span>资源类型</span>
+              <label htmlFor="filter-entity-type" className="text-linear-base text-uipro-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
+                资源类型
               </label>
               <select
                 id="filter-entity-type"
@@ -223,7 +219,7 @@ export function AuditLogsPage() {
                   setFilters({ ...filters, entityType: e.target.value });
                   setPagination({ ...pagination, page: 1 });
                 }}
-                className="flex-1 min-w-0 py-linear-2 px-linear-3 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue font-normal hover:border-gray-300"
+                className="flex-1 min-w-0 py-linear-2 px-linear-3 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta font-normal hover:border-gray-300 cursor-pointer"
               >
                 <option value="">全部</option>
                 <option value="CUSTOMER">客户</option>
@@ -235,9 +231,8 @@ export function AuditLogsPage() {
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1 min-w-[200px]">
-              <label htmlFor="filter-start-date" className="text-linear-base text-linear-text-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
-                <span>📅</span>
-                <span>开始日期</span>
+              <label htmlFor="filter-start-date" className="text-linear-base text-uipro-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
+                开始日期
               </label>
               <Input
                 id="filter-start-date"
@@ -252,9 +247,8 @@ export function AuditLogsPage() {
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1 min-w-[200px]">
-              <label htmlFor="filter-end-date" className="text-linear-base text-linear-text-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
-                <span>📅</span>
-                <span>结束日期</span>
+              <label htmlFor="filter-end-date" className="text-linear-base text-uipro-secondary font-semibold flex items-center gap-linear-1.5 whitespace-nowrap flex-shrink-0">
+                结束日期
               </label>
               <Input
                 id="filter-end-date"
@@ -273,6 +267,7 @@ export function AuditLogsPage() {
               variant="primary"
               onClick={() => handleExport('csv')}
               disabled={isExporting}
+              className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
             >
               {isExporting ? '导出中...' : '导出 CSV'}
             </Button>
@@ -280,6 +275,7 @@ export function AuditLogsPage() {
               variant="secondary"
               onClick={() => handleExport('excel')}
               disabled={isExporting}
+              className="cursor-pointer transition-colors duration-200"
             >
               {isExporting ? '导出中...' : '导出 Excel'}
             </Button>
@@ -289,19 +285,19 @@ export function AuditLogsPage() {
         {/* 审计日志列表卡片 */}
         <Card variant="default" className="w-full p-linear-6">
           {isLoading ? (
-            <div className="text-center p-linear-12">
-              <div className="inline-block animate-spin text-linear-4xl mb-linear-4">⏳</div>
-              <div className="text-linear-text-secondary text-linear-base font-medium">加载中...</div>
+            <div className="p-linear-6 space-y-3" aria-busy="true">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded-linear-lg animate-pulse" />
+              ))}
             </div>
           ) : (
             <>
-              <h2 className="text-linear-2xl font-bold text-linear-text mb-linear-6 tracking-tight">审计日志列表</h2>
-              
+              <h2 className="text-linear-2xl font-bold text-uipro-text font-uipro-heading mb-linear-6 tracking-tight">审计日志列表</h2>
+
               {logs.length === 0 ? (
                 <div className="text-center p-linear-12">
-                  <div className="text-linear-4xl mb-linear-4">📋</div>
-                  <div className="text-linear-text-secondary text-linear-base font-medium">暂无审计日志</div>
-                  <div className="text-linear-text-placeholder text-linear-sm mt-linear-2">当前筛选条件下没有找到审计日志</div>
+                  <div className="text-uipro-secondary text-linear-base font-medium">暂无审计日志</div>
+                  <div className="text-uipro-secondary text-linear-sm mt-linear-2">当前筛选条件下没有找到审计日志</div>
                 </div>
               ) : (
                 <div className="space-y-linear-3 mb-linear-6">
@@ -312,48 +308,47 @@ export function AuditLogsPage() {
                       onClick={() => handleLogClick(log)}
                     >
                       <div className="flex items-center gap-linear-3 mb-linear-3">
-                        <span className="text-linear-sm text-linear-text-secondary font-mono">{formatTimestamp(log.timestamp)}</span>
-                        <span className="px-linear-3 py-linear-1.5 bg-primary-blue text-white rounded-linear-md text-linear-xs font-semibold">
+                        <span className="text-linear-sm text-uipro-secondary font-mono">{formatTimestamp(log.timestamp)}</span>
+                        <span className="px-linear-3 py-linear-1.5 bg-uipro-cta text-white rounded-linear-md text-linear-xs font-semibold">
                           {log.action}
                         </span>
                         {log.metadata?.operationResult && (
                           <span className={`px-linear-3 py-linear-1.5 rounded-linear-md text-linear-xs font-semibold ${
-                            log.metadata.operationResult === 'SUCCESS' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
+                            log.metadata.operationResult === 'SUCCESS'
+                              ? 'bg-semantic-success/15 text-semantic-success'
+                              : 'bg-semantic-error/15 text-semantic-error'
                           }`}>
                             {log.metadata.operationResult === 'SUCCESS' ? '成功' : '失败'}
                           </span>
                         )}
                       </div>
-                      <div className="text-linear-sm text-linear-text space-y-linear-2">
+                      <div className="text-linear-sm text-uipro-text space-y-linear-2">
                         <div className="grid grid-cols-2 gap-linear-4">
                           <div>
-                            <span className="text-linear-text-secondary">操作者:</span>{' '}
+                            <span className="text-uipro-secondary">操作者:</span>{' '}
                             {log.operatorEmail || log.operatorId}
                           </div>
                           <div>
-                            <span className="text-linear-text-secondary">资源类型:</span>{' '}
+                            <span className="text-uipro-secondary">资源类型:</span>{' '}
                             {log.entityType}
                           </div>
                           {log.ipAddress && (
                             <div>
-                              <span className="text-linear-text-secondary">IP地址:</span>{' '}
+                              <span className="text-uipro-secondary">IP地址:</span>{' '}
                               <span className="font-mono">{log.ipAddress}</span>
                             </div>
                           )}
-                          {/* 显示修改字段（仅用于数据修改和删除操作） */}
                           {(log.action === 'DATA_MODIFICATION' || log.action === 'DATA_DELETION') && getChangedFields(log.metadata).length > 0 && (
                             <div>
-                              <span className="text-linear-text-secondary">修改字段:</span>{' '}
-                              <span className="text-primary-blue font-semibold">
+                              <span className="text-uipro-secondary">修改字段:</span>{' '}
+                              <span className="text-uipro-cta font-semibold">
                                 {getChangedFields(log.metadata).join(', ')}
                               </span>
                             </div>
                           )}
                         </div>
                         {log.reason && (
-                          <div className="text-linear-xs text-primary-red bg-primary-red/10 p-linear-2 rounded-linear-md">
+                          <div className="text-linear-xs text-semantic-error bg-semantic-error/10 p-linear-2 rounded-linear-md">
                             失败原因: {log.reason}
                           </div>
                         )}
@@ -371,27 +366,27 @@ export function AuditLogsPage() {
                     size="sm"
                     disabled={pagination.page <= 1}
                     onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
                   >
                     ← 上一页
                   </Button>
                   <div className="flex items-center gap-linear-2 px-linear-4 py-linear-2 bg-linear-surface rounded-linear-md border border-gray-200">
-                    <span className="text-linear-sm font-semibold text-linear-text-secondary">第</span>
-                    <span className="text-linear-base font-bold text-primary-blue">{pagination.page}</span>
-                    <span className="text-linear-sm font-semibold text-linear-text-secondary">页，共</span>
-                    <span className="text-linear-base font-bold text-linear-text">{pagination.totalPages}</span>
-                    <span className="text-linear-sm font-semibold text-linear-text-secondary">页</span>
-                    <span className="text-linear-sm text-linear-text-placeholder mx-linear-2">|</span>
-                    <span className="text-linear-sm font-semibold text-linear-text-secondary">共</span>
-                    <span className="text-linear-base font-bold text-linear-text">{pagination.total}</span>
-                    <span className="text-linear-sm font-semibold text-linear-text-secondary">条</span>
+                    <span className="text-linear-sm font-semibold text-uipro-secondary">第</span>
+                    <span className="text-linear-base font-bold text-uipro-cta">{pagination.page}</span>
+                    <span className="text-linear-sm font-semibold text-uipro-secondary">页，共</span>
+                    <span className="text-linear-base font-bold text-uipro-text">{pagination.totalPages}</span>
+                    <span className="text-linear-sm font-semibold text-uipro-secondary">页</span>
+                    <span className="text-linear-sm text-uipro-secondary mx-linear-2">|</span>
+                    <span className="text-linear-sm font-semibold text-uipro-secondary">共</span>
+                    <span className="text-linear-base font-bold text-uipro-text">{pagination.total}</span>
+                    <span className="text-linear-sm font-semibold text-uipro-secondary">条</span>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={pagination.page >= pagination.totalPages}
                     onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
                   >
                     下一页 →
                   </Button>

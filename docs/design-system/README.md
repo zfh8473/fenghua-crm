@@ -82,19 +82,26 @@ function MyComponent() {
    - 字体系统
    - 阴影、模糊、圆角、渐变
 
-3. **[组件库文档](./components.md)**
+3. **[MASTER.md](./MASTER.md)**（Epic 19）
+   - 由 ui-ux-pro-max-skill 生成并人工校订的 B2B CRM 设计系统参考（Pattern、Style、Colors、Typography、Anti-patterns、Pre-delivery 清单）
+   - 与现有 Token 的协调说明见该文件及 `design-tokens.md`
+
+4. **[页面优化操作指南](./page-optimization-guide.md)**（Epic 19）⭐ **优化时按此执行**
+   - 一步一步完成 19.2–19.5 各批页面优化的流程、范围、Prompt、search.py、检查清单、回滚与存档
+
+5. **[组件库文档](./components.md)**
    - Button 组件
    - Input 组件
    - Card 组件
    - Table 组件
 
-4. **[布局指南](./layout.md)**
+6. **[布局指南](./layout.md)**
    - 页面布局模式
    - 三栏布局
    - 响应式设计
    - 网格系统
 
-5. **[最佳实践文档](./best-practices.md)**
+7. **[最佳实践文档](./best-practices.md)**
    - 组件选择指南
    - Token 使用指南
    - 可访问性最佳实践
@@ -231,6 +238,7 @@ export type { NewComponentProps } from './NewComponent';
 
 ### 相关文档
 
+- **[ui-ux-pro-max-skill 使用说明](./ui-ux-pro-max-skill.md)**：Cursor `/ui-ux-pro-max`、`search.py`（Python 3.x）与 Epic 19 的用法约定
 - **Epic 0：** 设计系统基础设施
 - **Story 0.2：** 设计 Token 系统
 - **Story 0.3：** 核心 UI 组件库

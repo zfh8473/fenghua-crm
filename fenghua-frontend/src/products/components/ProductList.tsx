@@ -10,6 +10,7 @@ import { Table, Column } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../auth/AuthContext';
 import { isAdmin } from '../../common/constants/roles';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 // import './ProductList.css'; // Removed
 
 interface ProductListProps {
@@ -33,7 +34,7 @@ const highlightText = (text: string, keyword?: string): React.ReactNode => {
   return parts.map((part, index) => {
     if (regex.test(part)) {
       return (
-        <mark key={index} className="bg-yellow-200 text-linear-text font-semibold px-linear-0.5 rounded">
+        <mark key={index} className="bg-yellow-200 text-uipro-text font-semibold px-monday-0.5 rounded">
           {part}
         </mark>
       );
@@ -62,32 +63,51 @@ export const ProductList: React.FC<ProductListProps> = ({
     return statusMap[status] || status;
   };
 
+  /** 19.3 main-business：加载用 skeleton，无 emoji */
   if (loading) {
+    const colCount = userIsAdmin ? 7 : 6;
     return (
-      <div className="text-center p-linear-12 text-linear-text-secondary text-linear-base">加载中...</div>
+      <div className="w-full rounded-monday-lg overflow-hidden bg-monday-surface border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-monday-bg border-b border-gray-200">
+                {Array.from({ length: colCount }).map((_, i) => (
+                  <th key={i} className="p-monday-2 p-monday-4 text-left">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-16" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5, 6].map((r) => (
+                <tr key={r} className="border-b border-gray-200">
+                  {Array.from({ length: colCount }).map((_, c) => (
+                    <td key={c} className="p-monday-2 p-monday-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-full max-w-[140px]" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   }
 
   if (products.length === 0) {
-    // Show empty state with search suggestions if searching
     if (searchQuery) {
       return (
-        <div className="flex flex-col items-center justify-center py-linear-12 px-linear-4">
+        <div className="flex flex-col items-center justify-center py-monday-12 px-monday-4">
           <div className="text-center max-w-md">
-            <div className="text-linear-4xl mb-linear-4 opacity-50">
-              🔍
-            </div>
-            <h3 className="text-linear-lg font-semibold text-linear-text mb-linear-2">
-              未找到匹配的产品
-            </h3>
-            <p className="text-linear-sm text-linear-text-secondary mb-linear-4">
-              没有找到与 "<span className="font-semibold text-linear-text">{searchQuery}</span>" 匹配的产品
+            <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-2">未找到匹配的产品</h3>
+            <p className="text-monday-sm text-uipro-secondary mb-monday-4">
+              没有找到与 &quot;<span className="font-semibold text-uipro-text">{searchQuery}</span>&quot; 匹配的产品
             </p>
-            <div className="bg-linear-surface rounded-linear-md p-linear-3">
-              <p className="text-linear-xs font-semibold text-linear-text mb-linear-1">
-                💡 搜索建议：
-              </p>
-              <ul className="text-linear-xs text-linear-text-secondary space-y-linear-0.5 text-left list-disc list-inside">
+            <div className="bg-monday-surface rounded-monday-md p-monday-3 border border-gray-200">
+              <p className="text-monday-xs font-semibold text-uipro-text mb-monday-1">搜索建议：</p>
+              <ul className="text-monday-xs text-uipro-secondary space-y-monday-0.5 text-left list-disc list-inside">
                 <li>检查拼写是否正确</li>
                 <li>尝试使用更通用的关键词</li>
                 <li>使用产品名称或HS编码搜索</li>
@@ -98,29 +118,14 @@ export const ProductList: React.FC<ProductListProps> = ({
         </div>
       );
     }
-    
-    // Show default empty state if not searching
+
     return (
       <div className="w-full">
-        <div className="rounded-linear-lg overflow-hidden bg-linear-surface border border-gray-200">
-          <table className="w-full" aria-label="产品列表（空）">
-            <thead>
-              <tr className="bg-linear-surface border-b border-gray-200">
-                {['产品名称', 'HS编码', '类别', '状态', '描述', '创建时间', ...(userIsAdmin ? ['操作'] : [])].map((header) => (
-                  <th key={header} className="p-linear-2 px-linear-4 text-left text-linear-sm font-semibold text-linear-text">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={userIsAdmin ? 7 : 6} className="p-linear-12 text-center text-linear-text-secondary">
-                  暂无产品
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="rounded-monday-lg overflow-hidden bg-monday-surface border border-gray-200">
+          <div className="text-center p-monday-12">
+            <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-2">暂无产品</h3>
+            <p className="text-monday-sm text-uipro-secondary">点击「创建新产品」按钮添加第一个产品</p>
+          </div>
         </div>
       </div>
     );
@@ -145,11 +150,12 @@ export const ProductList: React.FC<ProductListProps> = ({
     {
       key: 'status',
       header: '状态',
+      minWidth: '4.5rem',
       render: (status) => (
-        <span className={`px-linear-2 py-linear-1 rounded-linear-sm text-linear-xs font-medium ${
-          status === 'active' ? 'bg-primary-green text-white' :
-          status === 'inactive' ? 'bg-primary-red text-white' :
-          'bg-gray-100 text-linear-text-secondary'
+        <span className={`inline-block whitespace-nowrap px-monday-2 py-monday-1 rounded-monday-sm text-monday-xs font-medium transition-colors duration-200 ${
+          status === 'active' ? 'bg-semantic-success/15 text-semantic-success' :
+          status === 'inactive' ? 'bg-semantic-error/15 text-semantic-error' :
+          'bg-uipro-secondary/15 text-uipro-secondary'
         }`}>
           {getStatusLabel(status)}
         </span>
@@ -176,31 +182,34 @@ export const ProductList: React.FC<ProductListProps> = ({
       key: 'actions',
       header: '操作',
       render: (_, product) => (
-        <div className="flex gap-linear-2">
+        <div className="flex gap-monday-2">
           {userIsAdmin && (
             <>
+              {/* 19.7 AC2：与 UserList、CustomerList 统一：outline、uipro-cta/semantic-error、pencilSquare/trash 图标 */}
               <Button
-                onClick={() => onEdit(product)}
-                variant="secondary"
+                onClick={(e) => { e.stopPropagation(); onEdit(product); }}
+                variant="outline"
                 size="sm"
                 title="编辑"
-                className="bg-primary-blue/10 border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50 hover:text-primary-blue font-medium shadow-linear-sm"
+                leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
+                className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
               >
-                ✏️ 编辑
+                编辑
               </Button>
               <Button
-                onClick={() => onDelete(product)}
-                variant="ghost"
+                onClick={(e) => { e.stopPropagation(); onDelete(product); }}
+                variant="outline"
                 size="sm"
                 title="删除"
-                className="bg-primary-red/10 text-primary-red hover:bg-primary-red/20 hover:text-primary-red font-medium border border-primary-red/20 hover:border-primary-red/40 shadow-linear-sm"
+                leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
+                className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
               >
-                🗑️ 删除
+                删除
               </Button>
             </>
           )}
           {!userIsAdmin && (
-            <span className="text-linear-xs text-linear-text-placeholder">仅查看</span>
+            <span className="text-monday-xs text-uipro-secondary">仅查看</span>
           )}
         </div>
       ),
@@ -216,6 +225,7 @@ export const ProductList: React.FC<ProductListProps> = ({
         aria-label="产品列表"
         rowKey={(row) => row.id}
         onRowClick={onSelect}
+        striped
       />
     </div>
   );

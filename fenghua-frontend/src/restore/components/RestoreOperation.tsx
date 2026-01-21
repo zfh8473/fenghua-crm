@@ -38,8 +38,8 @@ export const RestoreOperation: React.FC<RestoreOperationProps> = ({ restoreStatu
           <span className="text-monday-sm font-semibold text-monday-text">状态:</span>
           <span className={`px-monday-2 py-monday-1 rounded-monday-sm text-monday-xs font-medium ${
             restoreStatus.status === 'running' ? 'bg-yellow-100 text-yellow-700' :
-            restoreStatus.status === 'completed' ? 'bg-primary-green/20 text-primary-green' :
-            'bg-primary-red/20 text-primary-red'
+            restoreStatus.status === 'completed' ? 'bg-semantic-success/15 text-semantic-success' :
+            'bg-semantic-error/15 text-semantic-error'
           }`}>
             {restoreStatus.status === 'running' ? '进行中' :
              restoreStatus.status === 'completed' ? '已完成' : '失败'}
@@ -75,7 +75,7 @@ export const RestoreOperation: React.FC<RestoreOperationProps> = ({ restoreStatu
         <div className="mt-monday-4">
           <div className="w-full h-6 bg-monday-bg rounded-full overflow-hidden border border-gray-200">
             <div
-              className="h-full bg-gradient-to-r from-primary-blue to-primary-blue-hover transition-all duration-300"
+              className="h-full bg-uipro-cta transition-all duration-300"
               style={{ width: `${restoreStatus.progress}%` }}
             />
           </div>
@@ -89,7 +89,7 @@ export const RestoreOperation: React.FC<RestoreOperationProps> = ({ restoreStatu
       )}
 
       {restoreStatus.status === 'failed' && (
-        <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-3 rounded-monday-md text-center font-medium mt-monday-4" role="alert">
+        <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-3 rounded-monday-md text-center font-medium mt-monday-4" role="alert">
           ❌ 数据恢复失败: {restoreStatus.errorMessage}
         </div>
       )}

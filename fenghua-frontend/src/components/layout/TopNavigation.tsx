@@ -9,6 +9,7 @@
 
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { AppLogo } from '../AppLogo';
 import { Button } from '../ui';
 
 export const TopNavigation: React.FC = () => {
@@ -33,22 +34,19 @@ export const TopNavigation: React.FC = () => {
           <div className="flex items-center justify-between">
             {/* Left: Logo */}
             <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-monday-3">
-                <div className="text-monday-2xl font-bold text-monday-text tracking-tight">
-                  峰华CRM系统
-                </div>
+              <Link to="/" className="flex items-center gap-monday-3 text-uipro-text cursor-pointer transition-colors duration-200">
+                <AppLogo className="text-monday-3xl font-semibold tracking-tight text-gray-900" />
               </Link>
             </div>
 
-            {/* Right: User Info and Actions */}
             <div className="flex items-center gap-monday-4">
               {user && (
-                <div className="hidden md:flex items-center gap-monday-3 text-monday-text">
+                <div className="hidden md:flex items-center gap-monday-3 text-uipro-text">
                   <div className="text-right">
                     <p className="text-monday-sm font-medium">{user.email}</p>
-                    <p className="text-monday-xs text-monday-text-secondary">{getRoleLabel(user.role || null)}</p>
+                    <p className="text-monday-xs text-uipro-secondary">{getRoleLabel(user.role || null)}</p>
                   </div>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-blue to-primary-purple flex items-center justify-center text-white text-monday-sm font-semibold shadow-monday-sm">
+                  <div className="w-9 h-9 rounded-full bg-uipro-cta flex items-center justify-center text-white text-monday-sm font-semibold shadow-monday-sm">
                     {user.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                 </div>
@@ -57,7 +55,7 @@ export const TopNavigation: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={logout}
-                className="text-monday-text hover:text-monday-text hover:bg-monday-bg"
+                className="text-uipro-text hover:bg-monday-bg cursor-pointer transition-colors duration-200"
               >
                 登出
               </Button>

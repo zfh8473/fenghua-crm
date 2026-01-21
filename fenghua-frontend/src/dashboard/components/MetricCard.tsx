@@ -53,16 +53,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     : value;
 
   const content = (
-    <div className={`flex items-center justify-between ${onClick || href ? 'cursor-pointer' : ''}`}>
+    <div className={`flex items-center justify-between transition-colors duration-200 ${onClick || href ? 'cursor-pointer' : ''}`}>
       <div className="flex-1">
-        <p className="text-monday-sm text-monday-text-secondary mb-monday-2">{title}</p>
+        <p className="text-monday-sm text-uipro-secondary mb-monday-2">{title}</p>
         <div className="flex items-baseline gap-monday-2">
-          <p className="text-monday-2xl font-semibold text-monday-text">{formattedValue}</p>
+          <p className="text-monday-2xl font-semibold text-uipro-text">{formattedValue}</p>
           {trend && (
             <span className={`text-monday-sm ${
-              trend.startsWith('+') ? 'text-green-600' : 
-              trend.startsWith('-') ? 'text-red-600' : 
-              'text-monday-text-secondary'
+              trend.startsWith('+') ? 'text-semantic-success' :
+              trend.startsWith('-') ? 'text-semantic-error' :
+              'text-uipro-secondary'
             }`}>
               {trend}
             </span>
@@ -70,7 +70,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         </div>
       </div>
       {icon && (
-        <div className="ml-monday-4 text-monday-text-secondary">
+        <div className="ml-monday-4 text-uipro-secondary">
           {icon}
         </div>
       )}
@@ -80,7 +80,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   if (href) {
     return (
       <Card variant="default" hoverable className="h-full">
-        <a href={href} className="block">
+        <a href={href} className="block cursor-pointer">
           {content}
         </a>
       </Card>

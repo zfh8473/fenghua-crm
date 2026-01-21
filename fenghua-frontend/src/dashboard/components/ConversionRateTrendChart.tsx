@@ -7,6 +7,7 @@
 
 import React, { Suspense, lazy } from 'react';
 import { ConversionRateTrendItem } from '../services/product-association-analysis.service';
+import { CHART_COLORS } from '../utils/chart-colors';
 
 // Lazy load LineChart component for better performance
 const LineChartComponent = lazy(() => 
@@ -41,7 +42,7 @@ export const ConversionRateTrendChart: React.FC<ConversionRateTrendChartProps> =
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full text-center text-monday-text-secondary py-monday-8">
+      <div className="w-full text-center text-uipro-secondary py-monday-8">
         <p>暂无数据</p>
       </div>
     );
@@ -60,7 +61,7 @@ export const ConversionRateTrendChart: React.FC<ConversionRateTrendChartProps> =
       <LineChartComponent
         data={chartData}
         dataKeys={['conversionRate']}
-        colors={['#3b82f6']}
+        colors={[CHART_COLORS[0]]}
       />
     </Suspense>
   );

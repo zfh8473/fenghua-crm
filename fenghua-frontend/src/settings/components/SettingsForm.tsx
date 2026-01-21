@@ -281,7 +281,7 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
                   backupFrequency: e.target.value as BackupFrequency,
                 })
               }
-              className="w-full p-monday-3 px-monday-4 text-monday-base text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue font-semibold"
+              className="w-full p-monday-3 px-monday-4 text-monday-base text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta font-semibold cursor-pointer"
             >
               <option value={BackupFrequency.DAILY}>每日</option>
               <option value={BackupFrequency.WEEKLY}>每周</option>
@@ -335,7 +335,7 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
                   emailNotificationsEnabled: e.target.checked,
                 })
               }
-              className="w-4 h-4 text-primary-blue bg-monday-surface border-gray-300 rounded-monday-sm focus:ring-2 focus:ring-primary-blue"
+              className="w-4 h-4 text-uipro-cta bg-monday-surface border-gray-300 rounded-monday-sm focus:ring-2 focus:ring-uipro-cta/50 cursor-pointer"
             />
             <span className="text-monday-base text-monday-text font-medium">启用邮件通知</span>
           </label>
@@ -370,7 +370,7 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
                   onClick={() => handleRemoveRecipient(index)}
                   variant="ghost"
                   size="sm"
-                  className="text-primary-red hover:text-primary-red hover:bg-primary-red/10 border border-transparent hover:border-primary-red/20"
+                  className="text-semantic-error hover:bg-semantic-error/10 border border-transparent hover:border-semantic-error/20 cursor-pointer transition-colors duration-200"
                 >
                   删除
                 </Button>
@@ -387,7 +387,7 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
               添加接收人 {currentRecipients.length >= 50 && '(最多 50 个)'}
             </Button>
             {errors.notificationRecipients && (
-              <p className="mt-monday-1 text-monday-sm text-primary-red" role="alert">{errors.notificationRecipients}</p>
+              <p className="mt-monday-1 text-monday-sm text-semantic-error" role="alert">{errors.notificationRecipients}</p>
             )}
           </div>
         )}
@@ -409,7 +409,7 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
                   logLevel: e.target.value as LogLevel,
                 })
               }
-              className="w-full p-monday-3 px-monday-4 text-monday-base text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue font-semibold"
+              className="w-full p-monday-3 px-monday-4 text-monday-base text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta font-semibold cursor-pointer"
             >
               <option value={LogLevel.ERROR}>Error</option>
               <option value={LogLevel.WARN}>Warn</option>
@@ -424,18 +424,18 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
       </div>
 
       {errors.submit && (
-        <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-3 rounded-monday-md" role="alert">
+        <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-3 rounded-monday-md" role="alert">
           {errors.submit}
         </div>
       )}
       {successMessage && (
-        <div className="bg-primary-green/20 border border-primary-green text-primary-green p-monday-3 rounded-monday-md" role="alert">
+        <div className="bg-semantic-success/10 border border-semantic-success text-semantic-success p-monday-3 rounded-monday-md" role="alert">
           {successMessage}
         </div>
       )}
 
       <div className="mt-monday-8 flex justify-end gap-monday-3">
-        <Button type="submit" disabled={isLoading} isLoading={isLoading} variant="primary" size="md">
+        <Button type="submit" disabled={isLoading} isLoading={isLoading} variant="primary" size="md" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
           保存设置
         </Button>
       </div>

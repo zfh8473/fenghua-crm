@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { CHART_COLORS } from '../utils/chart-colors';
 
 export interface PieChartData {
   name: string;
@@ -35,12 +36,10 @@ export interface PieChartProps {
   innerRadius?: number;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-
 export const PieChartComponent: React.FC<PieChartProps> = ({
   data,
   title,
-  colors = COLORS,
+  colors = [...CHART_COLORS],
   innerRadius = 0,
 }) => {
   // Handle empty data
@@ -48,11 +47,11 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
     return (
       <div className="w-full">
         {title && (
-          <h3 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
+          <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-4 font-uipro-heading">
             {title}
           </h3>
         )}
-        <div className="flex items-center justify-center h-[300px] text-monday-text-secondary">
+        <div className="flex items-center justify-center h-[300px] text-uipro-secondary">
           <p>暂无数据</p>
         </div>
       </div>
@@ -61,16 +60,16 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
 
   // Filter out zero values for better visualization
   const filteredData = data.filter(item => item.value > 0);
-  
+
   if (filteredData.length === 0) {
     return (
       <div className="w-full">
         {title && (
-          <h3 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
+          <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-4 font-uipro-heading">
             {title}
           </h3>
         )}
-        <div className="flex items-center justify-center h-[300px] text-monday-text-secondary">
+        <div className="flex items-center justify-center h-[300px] text-uipro-secondary">
           <p>暂无有效数据</p>
         </div>
       </div>
@@ -78,9 +77,9 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full transition-opacity duration-200">
       {title && (
-        <h3 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
+        <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-4 font-uipro-heading">
           {title}
         </h3>
       )}
@@ -101,12 +100,13 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
               <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
             ))}
           </Pie>
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
+              border: '1px solid #e2e8f0',
               borderRadius: '8px',
               padding: '8px',
+              transition: 'opacity 150ms',
             }}
           />
           <Legend />

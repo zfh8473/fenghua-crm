@@ -54,48 +54,27 @@ export const TrendSummaryComponent: React.FC<TrendSummaryProps> = ({
   };
 
   const getGrowthRateColor = (rate: number): string => {
-    if (rate > 0) {
-      return 'text-green-600';
-    }
-    if (rate < 0) {
-      return 'text-red-600';
-    }
-    return 'text-gray-600';
+    if (rate > 0) return 'text-semantic-success';
+    if (rate < 0) return 'text-semantic-error';
+    return 'text-uipro-secondary';
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-monday-4">
-      <Card variant="default" className="p-monday-4">
-        <h3 className="text-monday-sm font-medium text-monday-text-secondary mb-monday-2">
-          总订单量
-        </h3>
-        <p className="text-monday-2xl font-semibold text-monday-text">
-          {formatNumber(summary.totalOrderCount)}
-        </p>
+      <Card variant="default" className="p-monday-4 transition-colors duration-200">
+        <h3 className="text-monday-sm font-medium text-uipro-secondary mb-monday-2">总订单量</h3>
+        <p className="text-monday-2xl font-semibold text-uipro-text">{formatNumber(summary.totalOrderCount)}</p>
       </Card>
-
-      <Card variant="default" className="p-monday-4">
-        <h3 className="text-monday-sm font-medium text-monday-text-secondary mb-monday-2">
-          新增客户数
-        </h3>
-        <p className="text-monday-2xl font-semibold text-monday-text">
-          {formatNumber(summary.totalCustomerGrowth)}
-        </p>
+      <Card variant="default" className="p-monday-4 transition-colors duration-200">
+        <h3 className="text-monday-sm font-medium text-uipro-secondary mb-monday-2">新增客户数</h3>
+        <p className="text-monday-2xl font-semibold text-uipro-text">{formatNumber(summary.totalCustomerGrowth)}</p>
       </Card>
-
-      <Card variant="default" className="p-monday-4">
-        <h3 className="text-monday-sm font-medium text-monday-text-secondary mb-monday-2">
-          总销售额
-        </h3>
-        <p className="text-monday-2xl font-semibold text-monday-text">
-          {formatCurrency(summary.totalSalesAmount)}
-        </p>
+      <Card variant="default" className="p-monday-4 transition-colors duration-200">
+        <h3 className="text-monday-sm font-medium text-uipro-secondary mb-monday-2">总销售额</h3>
+        <p className="text-monday-2xl font-semibold text-uipro-text">{formatCurrency(summary.totalSalesAmount)}</p>
       </Card>
-
-      <Card variant="default" className="p-monday-4">
-        <h3 className="text-monday-sm font-medium text-monday-text-secondary mb-monday-2">
-          平均增长率
-        </h3>
+      <Card variant="default" className="p-monday-4 transition-colors duration-200">
+        <h3 className="text-monday-sm font-medium text-uipro-secondary mb-monday-2">平均增长率</h3>
         <p className={`text-monday-2xl font-semibold ${getGrowthRateColor(summary.averageGrowthRate)}`}>
           {summary.averageGrowthRate >= 0 ? '+' : ''}{summary.averageGrowthRate.toFixed(2)}%
         </p>

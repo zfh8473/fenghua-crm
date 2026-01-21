@@ -73,7 +73,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                   </td>
                   <td className="p-monday-3 text-monday-sm">
                     {category.productCount > 0 ? (
-                      <span className="text-primary-blue font-medium">
+                      <span className="text-uipro-cta font-medium">
                         {category.productCount} 个产品
                       </span>
                     ) : (
@@ -99,7 +99,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                         size="sm"
                         onClick={() => onDelete(category)}
                         disabled={category.productCount > 0}
-                        className={category.productCount > 0 ? 'opacity-50 cursor-not-allowed' : 'text-primary-red hover:text-primary-red hover:bg-primary-red/10'}
+                        className={category.productCount > 0 ? 'opacity-50 cursor-not-allowed' : 'text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200'}
                       >
                         删除
                       </Button>

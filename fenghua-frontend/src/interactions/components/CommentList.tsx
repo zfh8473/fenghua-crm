@@ -184,15 +184,15 @@ export const CommentList: React.FC<CommentListProps> = ({
 
   if (isLoading && comments.length === 0) {
     return (
-      <div className="py-4 text-center text-gray-500">
-        加载评论中...
+      <div className="py-4 flex justify-center">
+        <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
       </div>
     );
   }
 
   if (error && comments.length === 0) {
     return (
-      <div className="py-4 text-center text-red-600">
+      <div className="py-4 text-center text-semantic-error" role="alert">
         {error}
       </div>
     );
@@ -200,7 +200,7 @@ export const CommentList: React.FC<CommentListProps> = ({
 
   if (comments.length === 0) {
     return (
-      <div className="py-8 text-center text-gray-500">
+      <div className="py-8 text-center text-uipro-secondary">
         暂无评论
       </div>
     );
@@ -213,7 +213,7 @@ export const CommentList: React.FC<CommentListProps> = ({
         <div className="sticky top-4 z-10 flex justify-center mb-4">
           <button
             onClick={scrollToTop}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-uipro-cta text-white rounded-lg shadow-lg hover:bg-uipro-cta/90 transition-colors duration-200 cursor-pointer"
           >
             查看新评论 ({newCommentCount})
           </button>
@@ -222,7 +222,7 @@ export const CommentList: React.FC<CommentListProps> = ({
 
       {/* Polling error notification */}
       {pollingError && (
-        <div className="py-2 text-center text-sm text-yellow-600 bg-yellow-50 rounded mb-2">
+        <div className="py-2 text-center text-sm text-semantic-warning bg-semantic-warning/10 rounded mb-2" role="alert">
           {pollingError}
         </div>
       )}
@@ -244,7 +244,7 @@ export const CommentList: React.FC<CommentListProps> = ({
           <button
             onClick={handleLoadMore}
             disabled={isLoading}
-            className="text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+            className="text-sm text-uipro-cta hover:underline disabled:text-gray-400 cursor-pointer transition-colors duration-200"
           >
             {isLoading ? '加载中...' : '加载更多'}
           </button>
@@ -253,14 +253,13 @@ export const CommentList: React.FC<CommentListProps> = ({
 
       {/* Error message */}
       {error && comments.length > 0 && (
-        <div className="py-2 text-center text-sm text-red-600">
+        <div className="py-2 text-center text-sm text-semantic-error" role="alert">
           {error}
         </div>
       )}
 
-      {/* Comment count display */}
       {total > 0 && (
-        <div className="py-2 text-center text-sm text-gray-500">
+        <div className="py-2 text-center text-sm text-uipro-secondary">
           共 {total} 条评论
         </div>
       )}

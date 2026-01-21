@@ -178,7 +178,7 @@ export const ExportPage: React.FC = () => {
                 <select
                   value={dataType}
                   onChange={(e) => setDataType(e.target.value as ExportDataType)}
-                  className="w-full px-monday-3 py-monday-2 border border-monday-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-green"
+                  className="w-full px-monday-3 py-monday-2 border border-monday-border rounded-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50"
                 >
                   <option value={ExportDataType.CUSTOMER}>客户数据</option>
                   <option value={ExportDataType.PRODUCT}>产品数据</option>

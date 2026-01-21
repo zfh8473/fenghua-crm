@@ -5,10 +5,11 @@
  * All custom code is proprietary and not open source.
  */
 
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { InteractionCreateForm } from '../components/InteractionCreateForm';
 import { MainLayout } from '../../components/layout';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 
 export const InteractionCreatePage: React.FC = () => {
   const location = useLocation();
@@ -23,6 +24,13 @@ export const InteractionCreatePage: React.FC = () => {
 
   return (
     <MainLayout title="创建互动记录">
+      <div className="space-y-monday-6">
+        {/* 19.7 AC1：从列表进入的表单页，在标题区提供返回列表入口 */}
+        <Link to="/interactions">
+          <Button variant="outline" size="sm" className="cursor-pointer transition-colors duration-200">
+            ← 返回互动记录列表
+          </Button>
+        </Link>
       <Card variant="default" className="w-full">
         <div className="p-monday-6">
           <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6">
@@ -34,6 +42,7 @@ export const InteractionCreatePage: React.FC = () => {
           />
         </div>
       </Card>
+      </div>
     </MainLayout>
   );
 };

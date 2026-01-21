@@ -399,7 +399,7 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
           onChange={(e) => handleCategoryChange(e.target.value)}
           disabled={syncInProgress || categories.length === 0}
           className={`w-full p-monday-3 px-monday-4 text-monday-base text-monday-text bg-monday-surface border rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue ${
-            errors.category ? 'border-primary-red focus:ring-primary-red' : 'border-gray-200'
+            errors.category ? 'border-semantic-error focus:ring-semantic-error/50' : 'border-gray-200 focus:ring-uipro-cta/50'
           } ${syncInProgress ? 'opacity-50 cursor-wait' : ''}`}
           required
         >
@@ -416,7 +416,7 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
           </span>
         )}
         {errors.category && (
-          <span className="text-monday-sm text-primary-red mt-monday-1">{errors.category}</span>
+          <span className="text-monday-sm text-semantic-error mt-monday-1">{errors.category}</span>
         )}
       </div>
 
@@ -429,13 +429,13 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
           className={`w-full p-monday-3 px-monday-4 text-monday-base text-monday-text bg-monday-surface border rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue placeholder:text-monday-text-secondary resize-y ${
-            errors.description ? 'border-primary-red focus:ring-primary-red' : 'border-gray-200'
+            errors.description ? 'border-semantic-error focus:ring-semantic-error/50' : 'border-gray-200 focus:ring-uipro-cta/50'
           }`}
           rows={4}
           maxLength={5000}
         />
         {errors.description && (
-          <span className="text-monday-sm text-primary-red mt-monday-1">{errors.description}</span>
+          <span className="text-monday-sm text-semantic-error mt-monday-1">{errors.description}</span>
         )}
       </div>
 
@@ -516,16 +516,16 @@ export const ProductCreateForm: React.FC<ProductCreateFormProps> = ({
       </div>
 
       {errors.submit && (
-        <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-3 rounded-monday-md" role="alert">
+        <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-3 rounded-monday-md" role="alert">
           {errors.submit}
         </div>
       )}
 
       <div className="flex justify-end gap-monday-3 pt-monday-6 border-t border-gray-200">
-        <Button type="button" onClick={onCancel} disabled={isSubmitting} variant="outline">
+        <Button type="button" onClick={onCancel} disabled={isSubmitting} variant="outline" className="cursor-pointer transition-colors duration-200">
           取消
         </Button>
-        <Button type="submit" isLoading={isSubmitting} variant="primary">
+        <Button type="submit" isLoading={isSubmitting} variant="primary" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
           创建产品
         </Button>
       </div>

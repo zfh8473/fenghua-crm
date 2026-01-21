@@ -16,6 +16,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthContext';
 import { isAdmin, isDirector } from '../../common/constants/roles';
 import { Button } from '../ui';
+import { AppLogo } from '../AppLogo';
+import { HomeModuleIcon } from '../icons/HomeModuleIcons';
 import { getDashboardOverview } from '../../dashboard/services/dashboard.service';
 
 interface MainLayoutProps {
@@ -72,20 +74,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Simplified sidebar navigation - only main items
+  /** 19.4 login-nav-layout：emoji → iconName，HomeModuleIcon 渲染 SVG */
   const navigationItems = [
-    { path: '/', label: '首页', icon: '🏠' },
-    { path: '/dashboard', label: '业务仪表板', icon: '📊', directorOrAdminOnly: true },
-    { path: '/dashboard/product-association-analysis', label: '产品关联分析', icon: '🔗', directorOrAdminOnly: true },
-    { path: '/dashboard/customer-analysis', label: '客户分析', icon: '👥', directorOrAdminOnly: true },
-    { path: '/dashboard/supplier-analysis', label: '供应商分析', icon: '🏭', directorOrAdminOnly: true },
-          { path: '/dashboard/buyer-analysis', label: '采购商分析', icon: '🛒', directorOrAdminOnly: true },
-          { path: '/dashboard/business-trend-analysis', label: '业务趋势分析', icon: '📈', directorOrAdminOnly: true },
-    { path: '/users', label: '用户管理', icon: '👥', adminOnly: true },
-    { path: '/products', label: '产品管理', icon: '📦', adminOnly: false }, // Allow all roles to access products
-    { path: '/customers', label: '客户管理', icon: '👔', adminOnly: false },
-    { path: '/interactions', label: '互动管理', icon: '💬', adminOnly: false },
-    { path: '/settings', label: '系统', icon: '⚙️', adminOnly: true },
+    { path: '/', label: '首页', iconName: 'home' },
+    { path: '/dashboard', label: '业务仪表板', iconName: 'chartBar', directorOrAdminOnly: true },
+    { path: '/dashboard/product-association-analysis', label: '产品关联分析', iconName: 'link', directorOrAdminOnly: true },
+    { path: '/dashboard/customer-analysis', label: '客户分析', iconName: 'users', directorOrAdminOnly: true },
+    { path: '/dashboard/supplier-analysis', label: '供应商分析', iconName: 'buildingOffice', directorOrAdminOnly: true },
+    { path: '/dashboard/buyer-analysis', label: '采购商分析', iconName: 'shoppingCart', directorOrAdminOnly: true },
+    { path: '/dashboard/business-trend-analysis', label: '业务趋势分析', iconName: 'arrowTrendingUp', directorOrAdminOnly: true },
+    { path: '/users', label: '用户管理', iconName: 'users', adminOnly: true },
+    { path: '/products', label: '产品管理', iconName: 'cube', adminOnly: false },
+    { path: '/customers', label: '客户管理', iconName: 'briefcase', adminOnly: false },
+    { path: '/interactions', label: '互动管理', iconName: 'chat', adminOnly: false },
+    { path: '/settings', label: '系统', iconName: 'cog', adminOnly: true },
   ];
 
   const visibleNavItems = navigationItems.filter(
@@ -140,20 +142,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         {/* Left Sidebar - Card Style - Full Height */}
         <aside
           className={`${
-            sidebarCollapsed ? 'w-16' : 'w-60'
-          } transition-all duration-300 flex flex-col mr-monday-4 h-full`}
+            sidebarCollapsed ? 'w-16' : 'w-52'
+          } transition-all duration-300 flex flex-col mr-monday-4 flex-shrink-0 h-full`}
         >
           <div className="bg-monday-surface rounded-monday-lg shadow-monday-md border border-gray-200 flex flex-col h-full">
-            {/* Logo Section */}
-            <div className="p-monday-4 border-b border-gray-200">
-              <Link to="/" className="flex items-center gap-monday-3">
-                {sidebarCollapsed ? (
-                  <div className="text-monday-2xl font-bold text-primary-blue">峰</div>
-                ) : (
-                  <div className="text-monday-2xl font-bold text-monday-text tracking-tight">
-                    峰华CRM系统
-                  </div>
-                )}
+            <div className="p-monday-4 border-b border-gray-200 flex justify-center">
+              <Link to="/" className="flex items-center justify-center w-full gap-monday-3 cursor-pointer transition-colors duration-200">
+                <AppLogo
+                  collapsed={sidebarCollapsed}
+                  className="text-monday-3xl font-semibold tracking-tight text-gray-900"
+                />
               </Link>
             </div>
 
@@ -166,13 +164,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                       to={item.path}
                       className={`flex items-center ${
                         sidebarCollapsed ? 'justify-center' : 'gap-monday-3'
-                      } p-monday-3 rounded-monday-md transition-colors ${
+                      } p-monday-3 rounded-monday-md transition-colors duration-200 cursor-pointer ${
                         isActive(item.path)
-                          ? 'bg-blue-50 text-primary-blue'
-                          : 'text-monday-text-secondary hover:bg-monday-bg hover:text-monday-text'
+                          ? 'bg-uipro-cta/10 text-uipro-cta'
+                          : 'text-gray-950 hover:bg-monday-bg hover:text-black'
                       }`}
                     >
-                      <span className="text-monday-xl flex-shrink-0">{item.icon}</span>
+                      <HomeModuleIcon name={item.iconName} className="w-5 h-5 flex-shrink-0" />
                       {!sidebarCollapsed && (
                         <span className="text-monday-sm font-medium tracking-tight">{item.label}</span>
                       )}
@@ -187,27 +185,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               {/* User Info */}
               {user && !sidebarCollapsed && (
                 <div className="flex items-center gap-monday-3 p-monday-3 rounded-monday-md bg-monday-bg">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-blue to-primary-purple flex items-center justify-center text-white text-monday-sm font-semibold shadow-monday-sm flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-uipro-cta flex items-center justify-center text-white text-monday-sm font-semibold shadow-monday-sm flex-shrink-0">
                     {getUserDisplayName(user).charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-monday-sm font-medium text-monday-text truncate">{getUserDisplayName(user)}</p>
-                    <p className="text-monday-xs text-monday-text-secondary">{getRoleLabel(user.role || null)}</p>
+                    <p className="text-monday-sm font-medium text-gray-950 truncate">{getUserDisplayName(user)}</p>
+                    <p className="text-monday-xs text-gray-700">{getRoleLabel(user.role || null)}</p>
                   </div>
                 </div>
               )}
               
-              {/* Collapse Button */}
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="w-full flex items-center gap-monday-2 p-monday-3 rounded-monday-md transition-colors text-monday-text-secondary hover:bg-monday-bg hover:text-monday-text"
+                className={`w-full flex items-center gap-monday-2 p-monday-3 rounded-monday-md transition-colors duration-200 text-gray-950 hover:bg-monday-bg hover:text-black cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
                 aria-label={sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'}
               >
-                <span className="text-monday-lg">☰</span>
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
                 {!sidebarCollapsed && (
                   <>
                     <span className="text-monday-sm font-medium">收起菜单</span>
-                    <span className="ml-auto text-monday-text-secondary">←</span>
+                    <svg className="w-5 h-5 ml-auto flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                   </>
                 )}
               </button>
@@ -218,7 +215,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={logout}
-                  className="w-full text-monday-text hover:text-monday-text hover:bg-monday-bg justify-start"
+                  className="w-full text-gray-950 hover:bg-monday-bg justify-start cursor-pointer transition-colors duration-200"
                 >
                   登出
                 </Button>
@@ -234,7 +231,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <div className="bg-monday-surface p-monday-4 shadow-monday-sm rounded-monday-lg border border-gray-200 flex-shrink-0 mb-monday-6">
               <div className="flex items-center justify-between gap-monday-4">
                 {title && (
-                  <h1 className="text-monday-2xl font-semibold text-monday-text flex-shrink-0 tracking-tight">
+                  <h1 className="text-monday-2xl font-semibold text-uipro-text font-uipro-heading flex-shrink-0 tracking-tight">
                     {title}
                   </h1>
                 )}
@@ -259,11 +256,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <div className="bg-monday-surface rounded-monday-lg shadow-monday-md border border-gray-200 flex flex-col h-full">
               {/* Panel Header */}
               <div className="p-monday-4 flex items-center justify-between border-b border-gray-200">
-                <h3 className="text-monday-lg font-semibold text-monday-text">{detailPanelTitle || '详情'}</h3>
+                <h3 className="text-monday-lg font-semibold text-gray-900">{detailPanelTitle || '详情'}</h3>
                 {onCloseDetailPanel && (
                   <button
                     onClick={onCloseDetailPanel}
-                    className="p-monday-2 hover:bg-monday-bg rounded-monday-md transition-colors text-monday-text-secondary hover:text-monday-text"
+                    className="p-monday-2 hover:bg-monday-bg rounded-monday-md transition-colors duration-200 text-uipro-secondary hover:text-uipro-text cursor-pointer"
                     aria-label="关闭详情面板"
                   >
                     ✕

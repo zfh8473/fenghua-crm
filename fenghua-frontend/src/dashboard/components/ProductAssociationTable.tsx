@@ -57,7 +57,7 @@ export const ProductAssociationTable: React.FC<ProductAssociationTableProps> = (
       sortable: true,
       render: (value, row) => (
         <span
-          className="text-primary-blue hover:underline cursor-pointer"
+          className="text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
           onClick={(e) => handleProductNameClick(row, e)}
         >
           {value}
@@ -112,18 +112,40 @@ export const ProductAssociationTable: React.FC<ProductAssociationTableProps> = (
   ];
 
   if (loading) {
+    const colCount = 8;
     return (
-      <div className="flex items-center justify-center py-monday-12">
-        <div className="animate-pulse text-monday-text-secondary">加载中...</div>
+      <div className="w-full rounded-monday-lg overflow-hidden bg-monday-surface border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-monday-bg border-b border-gray-200">
+                {Array.from({ length: colCount }).map((_, i) => (
+                  <th key={i} className="p-monday-2 p-monday-4 text-left">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-16" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5].map((r) => (
+                <tr key={r} className="border-b border-gray-200">
+                  {Array.from({ length: colCount }).map((_, c) => (
+                    <td key={c} className="p-monday-2 p-monday-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-full max-w-[120px]" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="text-center py-monday-12 text-monday-text-secondary">
-        暂无数据
-      </div>
+      <div className="text-center py-monday-12 text-uipro-secondary">暂无数据</div>
     );
   }
 
@@ -135,6 +157,7 @@ export const ProductAssociationTable: React.FC<ProductAssociationTableProps> = (
         onRowClick={handleRowClick}
         sortable={true}
         rowKey={(row) => row.productId}
+        striped
         className="w-full"
         aria-label="产品关联分析表格"
       />

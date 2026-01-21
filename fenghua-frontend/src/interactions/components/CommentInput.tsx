@@ -66,21 +66,25 @@ export const CommentInput: React.FC<CommentInputProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
       <div>
+        <label htmlFor="comment-content" className="block text-monday-sm font-medium text-uipro-text mb-monday-1">
+          评论
+        </label>
         <textarea
+          id="comment-content"
           value={content}
           onChange={handleChange}
           placeholder={placeholder}
           disabled={disabled || isSubmitting}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta disabled:bg-gray-100 disabled:cursor-not-allowed resize-none transition-colors duration-200"
+          aria-invalid={!!error}
+          aria-describedby={error ? 'comment-error' : undefined}
         />
         {error && (
-          <p className="mt-1 text-sm text-red-600">{error}</p>
+          <p id="comment-error" className="mt-1 text-sm text-semantic-error" role="alert">{error}</p>
         )}
         <div className="mt-1 flex justify-between items-center">
-          <span className="text-xs text-gray-500">
-            {content.length}/5000 字符
-          </span>
+          <span className="text-xs text-uipro-secondary">{content.length}/5000 字符</span>
         </div>
       </div>
       <div className="flex justify-end">
@@ -88,6 +92,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
           type="submit"
           disabled={disabled || isSubmitting || !content.trim()}
           variant="primary"
+          className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
         >
           {isSubmitting ? '提交中...' : '提交评论'}
         </Button>

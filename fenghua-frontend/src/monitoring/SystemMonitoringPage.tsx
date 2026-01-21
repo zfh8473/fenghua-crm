@@ -55,7 +55,7 @@ export function SystemMonitoringPage() {
     return (
       <MainLayout title="系统监控">
         <Card variant="default" className="max-w-7xl mx-auto">
-          <div className="p-monday-4 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-base" role="alert">
+          <div className="p-monday-4 bg-semantic-error/10 border border-semantic-error rounded-monday-md text-semantic-error text-monday-base" role="alert">
             只有管理员可以访问此页面
           </div>
         </Card>
@@ -77,7 +77,7 @@ export function SystemMonitoringPage() {
     return (
       <MainLayout title="系统监控">
         <Card variant="default" className="w-full">
-          <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-4 rounded-monday-md" role="alert">
+          <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-4 rounded-monday-md" role="alert">
             {error}
           </div>
         </Card>
@@ -89,7 +89,7 @@ export function SystemMonitoringPage() {
     return (
       <MainLayout title="系统监控">
         <Card variant="default" className="w-full">
-          <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-4 rounded-monday-md" role="alert">
+          <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-4 rounded-monday-md" role="alert">
             无法加载健康状态
           </div>
         </Card>
@@ -101,7 +101,7 @@ export function SystemMonitoringPage() {
     <MainLayout title="系统监控">
       <div className="space-y-monday-6">
         {error && (
-          <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-4 rounded-monday-md" role="alert">
+          <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-4 rounded-monday-md" role="alert">
             {error}
           </div>
         )}

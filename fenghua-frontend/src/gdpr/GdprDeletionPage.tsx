@@ -277,7 +277,7 @@ export function GdprDeletionPage() {
                   onChange={(e) => setConfirmation(e.target.value)}
                   placeholder='请输入"确认删除"或"DELETE"以确认'
                   required
-                  className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-monday-md text-monday-sm focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+                  className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-monday-md text-monday-sm focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-transparent"
                 />
                 <p className="mt-monday-1 text-monday-xs text-monday-text-placeholder">
                   必须输入"确认删除"或"DELETE"以确认删除操作

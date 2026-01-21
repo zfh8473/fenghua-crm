@@ -111,7 +111,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-linear-6">
       {errors.submit && (
-        <div className="p-linear-4 bg-primary-red/20 border border-primary-red rounded-linear-md text-primary-red text-linear-sm" role="alert">
+        <div className="p-linear-4 bg-semantic-error/10 border border-semantic-error rounded-linear-md text-semantic-error text-linear-sm" role="alert">
           {errors.submit}
         </div>
       )}
@@ -119,8 +119,8 @@ export const UserForm: React.FC<UserFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-linear-6">
         {/* 邮箱地址 - 最重要，使用semibold */}
         <div className="flex flex-col gap-linear-2">
-          <label htmlFor="email" className="text-linear-sm font-semibold text-linear-text">
-            邮箱地址 <span className="text-primary-red">*</span>
+          <label htmlFor="email" className="text-linear-sm font-semibold text-uipro-text">
+            邮箱地址 <span className="text-semantic-error">*</span>
           </label>
           <Input
             id="email"
@@ -139,8 +139,8 @@ export const UserForm: React.FC<UserFormProps> = ({
         {/* 密码 - 最重要，使用semibold */}
         {!isEditing && (
           <div className="flex flex-col gap-linear-2">
-            <label htmlFor="password" className="text-linear-sm font-semibold text-linear-text">
-              密码 <span className="text-primary-red">*</span>
+            <label htmlFor="password" className="text-linear-sm font-semibold text-uipro-text">
+              密码 <span className="text-semantic-error">*</span>
             </label>
             <Input
               id="password"
@@ -160,7 +160,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
         {isEditing && (
           <div className="flex flex-col gap-linear-2">
-            <label htmlFor="newPassword" className="text-linear-sm font-medium text-linear-text">
+            <label htmlFor="newPassword" className="text-linear-sm font-medium text-uipro-text">
               新密码（留空则不修改）
             </label>
             <Input
@@ -180,7 +180,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
         {/* 名字 - 次要，使用medium */}
         <div className="flex flex-col gap-linear-2">
-          <label htmlFor="firstName" className="text-linear-sm font-medium text-linear-text">
+          <label htmlFor="firstName" className="text-linear-sm font-medium text-uipro-text">
             名字
           </label>
           <Input
@@ -196,7 +196,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
         {/* 姓氏 - 次要，使用medium */}
         <div className="flex flex-col gap-linear-2">
-          <label htmlFor="lastName" className="text-linear-sm font-medium text-linear-text">
+          <label htmlFor="lastName" className="text-linear-sm font-medium text-uipro-text">
             姓氏
           </label>
           <Input
@@ -213,8 +213,8 @@ export const UserForm: React.FC<UserFormProps> = ({
 
       {/* 角色 - 最重要，使用semibold */}
       <div>
-        <div className="block text-linear-sm font-semibold text-linear-text mb-linear-2">
-          角色 <span className="text-primary-red">*</span>
+        <div className="block text-linear-sm font-semibold text-uipro-text mb-linear-2">
+          角色 <span className="text-semantic-error">*</span>
         </div>
         <RoleSelector
           value={formData.role as UserRole}
@@ -228,7 +228,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-linear-6">
         {/* 部门 - 次要，使用medium */}
         <div className="flex flex-col gap-linear-2">
-          <label htmlFor="department" className="text-linear-sm font-medium text-linear-text">
+          <label htmlFor="department" className="text-linear-sm font-medium text-uipro-text">
             部门
           </label>
           <Input
@@ -244,7 +244,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
         {/* 联系方式 - 次要，使用medium */}
         <div className="flex flex-col gap-linear-2">
-          <label htmlFor="phone" className="text-linear-sm font-medium text-linear-text">
+          <label htmlFor="phone" className="text-linear-sm font-medium text-uipro-text">
             联系方式
           </label>
           <Input
@@ -260,22 +260,23 @@ export const UserForm: React.FC<UserFormProps> = ({
       </div>
 
       <div className="flex justify-end gap-linear-3 pt-linear-6 border-t border-gray-200">
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="md" 
-          onClick={onCancel} 
+        <Button
+          type="button"
+          variant="outline"
+          size="md"
+          onClick={onCancel}
           disabled={isSubmitting}
-          className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-linear-text"
+          className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-uipro-text cursor-pointer transition-colors duration-200"
         >
           取消
         </Button>
-        <Button 
-          type="submit" 
-          variant="primary" 
-          size="md" 
-          disabled={isSubmitting} 
+        <Button
+          type="submit"
+          variant="primary"
+          size="md"
+          disabled={isSubmitting}
           isLoading={isSubmitting}
+          className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
         >
           {!isSubmitting && (isEditing ? '更新' : '创建')}
         </Button>

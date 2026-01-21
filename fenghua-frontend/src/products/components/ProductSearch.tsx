@@ -115,7 +115,7 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             disabled={loading}
-            className="w-full px-monday-3 py-monday-2 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-normal hover:border-gray-300"
+            className="w-full px-monday-4 py-monday-3 text-monday-base text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-normal hover:border-gray-300"
           >
             <option value="">所有类别</option>
             {categories.map((category) => (

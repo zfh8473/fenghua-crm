@@ -31,7 +31,7 @@ export function HealthStatusPanel({ health }: HealthStatusPanelProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-monday-4">
         <div className="p-monday-4 bg-monday-surface rounded-monday-md border border-gray-200">
           <div className="text-monday-sm text-monday-text-secondary mb-monday-2 font-medium">数据库状态</div>
-          <div className={`text-monday-lg font-semibold ${health.database.status === 'connected' ? 'text-primary-green' : 'text-primary-red'}`}>
+          <div className={`text-monday-lg font-semibold ${health.database.status === 'connected' ? 'text-semantic-success' : 'text-semantic-error'}`}>
             {health.database.status === 'connected' ? '正常' : '异常'}
             {health.database.latency && (
               <span className="text-monday-xs text-monday-text-secondary font-normal ml-monday-1">({health.database.latency}ms)</span>
@@ -42,7 +42,7 @@ export function HealthStatusPanel({ health }: HealthStatusPanelProps) {
         {health.redis && (
           <div className="p-monday-4 bg-monday-surface rounded-monday-md border border-gray-200">
             <div className="text-monday-sm text-monday-text-secondary mb-monday-2 font-medium">Redis 状态</div>
-            <div className={`text-monday-lg font-semibold ${health.redis.status === 'connected' ? 'text-primary-green' : 'text-primary-red'}`}>
+            <div className={`text-monday-lg font-semibold ${health.redis.status === 'connected' ? 'text-semantic-success' : 'text-semantic-error'}`}>
               {health.redis.status === 'connected' ? '正常' : '异常'}
               {health.redis.latency && (
                 <span className="text-monday-xs text-monday-text-secondary font-normal ml-monday-1">({health.redis.latency}ms)</span>
@@ -53,7 +53,7 @@ export function HealthStatusPanel({ health }: HealthStatusPanelProps) {
 
         <div className="p-monday-4 bg-monday-surface rounded-monday-md border border-gray-200">
           <div className="text-monday-sm text-monday-text-secondary mb-monday-2 font-medium">服务状态</div>
-          <div className={`text-monday-lg font-semibold ${health.service.status === 'running' ? 'text-primary-green' : 'text-primary-red'}`}>
+          <div className={`text-monday-lg font-semibold ${health.service.status === 'running' ? 'text-semantic-success' : 'text-semantic-error'}`}>
             {health.service.status === 'running' ? '运行中' : '已停止'}
           </div>
         </div>
@@ -73,9 +73,9 @@ export function HealthStatusPanel({ health }: HealthStatusPanelProps) {
           </div>
         )}
 
-        <div className="p-monday-4 bg-primary-blue/10 rounded-monday-md border border-primary-blue/30 col-span-1 md:col-span-2 lg:col-span-3">
-          <div className="text-monday-sm text-monday-text-secondary mb-monday-2 font-medium">整体状态</div>
-          <div className={`text-monday-xl font-semibold ${health.status === 'healthy' ? 'text-primary-green' : 'text-primary-red'}`}>
+        <div className="p-monday-4 bg-uipro-cta/10 rounded-monday-md border border-uipro-cta/30 col-span-1 md:col-span-2 lg:col-span-3">
+          <div className="text-monday-sm text-uipro-secondary mb-monday-2 font-medium">整体状态</div>
+          <div className={`text-monday-xl font-semibold ${health.status === 'healthy' ? 'text-semantic-success' : 'text-semantic-error'}`}>
             {health.status === 'healthy' ? '健康' : '异常'}
           </div>
         </div>

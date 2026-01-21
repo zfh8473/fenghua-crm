@@ -82,7 +82,7 @@ export function ErrorLogsPage() {
     return (
       <MainLayout title="错误日志">
         <Card variant="default" className="max-w-7xl mx-auto">
-          <div className="p-monday-4 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-base" role="alert">
+          <div className="p-monday-4 bg-semantic-error/10 border border-semantic-error rounded-monday-md text-semantic-error text-monday-base" role="alert">
             只有管理员可以访问此页面
           </div>
         </Card>
@@ -94,7 +94,7 @@ export function ErrorLogsPage() {
     <MainLayout title="错误日志">
       <div className="space-y-monday-6">
         {error && (
-          <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-4 rounded-monday-md" role="alert">
+          <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-4 rounded-monday-md" role="alert">
             {error}
           </div>
         )}
@@ -103,9 +103,8 @@ export function ErrorLogsPage() {
         <Card variant="default" className="w-full p-monday-5">
           <div className="flex items-center gap-monday-6 flex-nowrap">
             <div className="flex items-center gap-monday-3 min-w-0 flex-1">
-              <label htmlFor="filter-error-type" className="text-monday-base text-monday-text-secondary font-semibold flex items-center gap-monday-1.5 whitespace-nowrap flex-shrink-0">
-                <span>🔍</span>
-                <span>错误类型</span>
+              <label htmlFor="filter-error-type" className="text-monday-base text-uipro-secondary font-semibold flex items-center gap-monday-1.5 whitespace-nowrap flex-shrink-0">
+                错误类型
               </label>
               <select
                 id="filter-error-type"
@@ -114,7 +113,7 @@ export function ErrorLogsPage() {
                   setFilters({ ...filters, type: e.target.value as ErrorType | '' });
                   setPagination({ ...pagination, page: 1 });
                 }}
-                className="flex-1 min-w-0 py-monday-2 px-monday-3 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue font-normal hover:border-gray-300"
+                className="flex-1 min-w-0 py-monday-2 px-monday-3 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta font-normal hover:border-gray-300 cursor-pointer"
               >
                 <option value="">全部类型</option>
                 <option value={ErrorType.SYSTEM}>系统错误</option>
@@ -124,9 +123,8 @@ export function ErrorLogsPage() {
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1">
-              <label htmlFor="filter-error-start-date" className="text-monday-base text-monday-text-secondary font-semibold flex items-center gap-monday-1.5 whitespace-nowrap flex-shrink-0">
-                <span>📅</span>
-                <span>开始日期</span>
+              <label htmlFor="filter-error-start-date" className="text-monday-base text-uipro-secondary font-semibold flex items-center gap-monday-1.5 whitespace-nowrap flex-shrink-0">
+                开始日期
               </label>
               <Input
                 id="filter-error-start-date"
@@ -141,9 +139,8 @@ export function ErrorLogsPage() {
             </div>
 
             <div className="flex items-center gap-monday-3 min-w-0 flex-1">
-              <label htmlFor="filter-error-end-date" className="text-monday-base text-monday-text-secondary font-semibold flex items-center gap-monday-1.5 whitespace-nowrap flex-shrink-0">
-                <span>📅</span>
-                <span>结束日期</span>
+              <label htmlFor="filter-error-end-date" className="text-monday-base text-uipro-secondary font-semibold flex items-center gap-monday-1.5 whitespace-nowrap flex-shrink-0">
+                结束日期
               </label>
               <Input
                 id="filter-error-end-date"
@@ -162,19 +159,19 @@ export function ErrorLogsPage() {
         {/* 错误日志列表卡片 */}
         <Card variant="default" className="w-full p-monday-6">
           {isLoading ? (
-            <div className="text-center p-monday-12">
-              <div className="inline-block animate-spin text-monday-4xl mb-monday-4">⏳</div>
-              <div className="text-monday-text-secondary text-monday-base font-medium">加载中...</div>
+            <div className="p-monday-6 space-y-3" aria-busy="true">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-20 bg-gray-200 rounded-monday-lg animate-pulse" />
+              ))}
             </div>
           ) : (
             <>
-              <h2 className="text-monday-2xl font-bold text-monday-text mb-monday-6 tracking-tight">错误日志列表</h2>
-              
+              <h2 className="text-monday-2xl font-bold text-uipro-text font-uipro-heading mb-monday-6 tracking-tight">错误日志列表</h2>
+
               {logs.length === 0 ? (
                 <div className="text-center p-monday-12">
-                  <div className="text-monday-4xl mb-monday-4">📋</div>
-                  <div className="text-monday-text-secondary text-monday-base font-medium">暂无错误日志</div>
-                  <div className="text-monday-text-placeholder text-monday-sm mt-monday-2">当前筛选条件下没有找到错误日志</div>
+                  <div className="text-uipro-secondary text-monday-base font-medium">暂无错误日志</div>
+                  <div className="text-uipro-secondary text-monday-sm mt-monday-2">当前筛选条件下没有找到错误日志</div>
                 </div>
               ) : (
                 <div className="space-y-monday-3 mb-monday-6">
@@ -186,27 +183,25 @@ export function ErrorLogsPage() {
                       {/* 头部：时间、类型标签、操作按钮 */}
                       <div className="flex items-center gap-monday-3 mb-monday-3 flex-wrap">
                         <div className="flex items-center gap-monday-2">
-                          <span className="text-monday-xs text-monday-text-placeholder">🕐</span>
-                          <span className="text-monday-sm text-monday-text-secondary font-mono">{formatTimestamp(log.timestamp)}</span>
+                          <span className="text-monday-sm text-uipro-secondary font-mono">{formatTimestamp(log.timestamp)}</span>
                         </div>
                         <span className={`inline-flex items-center px-monday-3 py-monday-1.5 rounded-monday-md text-monday-xs font-semibold ${
-                          log.type === ErrorType.SYSTEM 
-                            ? 'bg-primary-red/15 text-primary-red border border-primary-red/20' :
-                          log.type === ErrorType.BUSINESS 
-                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                          'bg-primary-blue/15 text-primary-blue border border-primary-blue/20'
+                          log.type === ErrorType.SYSTEM
+                            ? 'bg-semantic-error/15 text-semantic-error border border-semantic-error/30'
+                            : log.type === ErrorType.BUSINESS
+                            ? 'bg-semantic-warning/15 text-semantic-warning border border-semantic-warning/30'
+                            : 'bg-uipro-cta/15 text-uipro-cta border border-uipro-cta/30'
                         }`}>
-                          {log.type === ErrorType.SYSTEM ? '⚠️ 系统错误' :
-                           log.type === ErrorType.BUSINESS ? '⚠️ 业务错误' : '⚠️ 用户错误'}
+                          {log.type === ErrorType.SYSTEM ? '系统错误' : log.type === ErrorType.BUSINESS ? '业务错误' : '用户错误'}
                         </span>
                         {log.stack && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
-                            className="ml-auto text-primary-blue hover:text-primary-blue hover:bg-primary-blue/10 border border-transparent hover:border-primary-blue/20 transition-all"
+                            className="ml-auto text-uipro-cta hover:bg-uipro-cta/10 border border-transparent hover:border-uipro-cta/20 transition-colors duration-200 cursor-pointer"
                           >
-                            {expandedIndex === index ? '🔽 收起堆栈' : '▶️ 展开堆栈'}
+                            {expandedIndex === index ? '收起堆栈' : '展开堆栈'}
                           </Button>
                         )}
                       </div>
@@ -219,14 +214,12 @@ export function ErrorLogsPage() {
                       {/* 附加信息 */}
                       <div className="space-y-monday-1.5">
                         {log.requestPath && (
-                          <div className="flex items-center gap-monday-2 text-monday-sm text-monday-text-secondary">
-                            <span className="text-monday-text-placeholder">📍</span>
+                          <div className="flex items-center gap-monday-2 text-monday-sm text-uipro-secondary">
                             <span className="font-mono">路径: {log.requestPath}</span>
                           </div>
                         )}
                         {log.userId && (
-                          <div className="flex items-center gap-monday-2 text-monday-sm text-monday-text-secondary">
-                            <span className="text-monday-text-placeholder">👤</span>
+                          <div className="flex items-center gap-monday-2 text-monday-sm text-uipro-secondary">
                             <span>用户 ID: {log.userId}</span>
                           </div>
                         )}
@@ -236,9 +229,9 @@ export function ErrorLogsPage() {
                       {expandedIndex === index && log.stack && (
                         <div className="mt-monday-4 pt-monday-4 border-t border-gray-200">
                           <div className="flex items-center gap-monday-2 mb-monday-2">
-                            <span className="text-monday-xs font-semibold text-monday-text-secondary">堆栈跟踪</span>
+                            <span className="text-monday-xs font-semibold text-uipro-secondary">堆栈跟踪</span>
                           </div>
-                          <pre className="p-monday-4 bg-monday-bg rounded-monday-md font-mono text-monday-xs overflow-x-auto whitespace-pre-wrap break-all text-monday-text-secondary border border-gray-200 leading-relaxed">
+                          <pre className="p-monday-4 bg-monday-bg rounded-monday-md font-mono text-monday-xs overflow-x-auto whitespace-pre-wrap break-all text-uipro-secondary border border-gray-200 leading-relaxed">
                             {log.stack}
                           </pre>
                         </div>
@@ -256,27 +249,27 @@ export function ErrorLogsPage() {
                     size="sm"
                     disabled={pagination.page <= 1}
                     onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
                   >
                     ← 上一页
                   </Button>
                   <div className="flex items-center gap-monday-2 px-monday-4 py-monday-2 bg-monday-bg rounded-monday-md border border-gray-200">
-                    <span className="text-monday-sm font-semibold text-monday-text-secondary">第</span>
-                    <span className="text-monday-base font-bold text-primary-blue">{pagination.page}</span>
-                    <span className="text-monday-sm font-semibold text-monday-text-secondary">页，共</span>
-                    <span className="text-monday-base font-bold text-monday-text">{pagination.totalPages}</span>
-                    <span className="text-monday-sm font-semibold text-monday-text-secondary">页</span>
-                    <span className="text-monday-sm text-monday-text-placeholder mx-monday-2">|</span>
-                    <span className="text-monday-sm font-semibold text-monday-text-secondary">共</span>
-                    <span className="text-monday-base font-bold text-monday-text">{pagination.total}</span>
-                    <span className="text-monday-sm font-semibold text-monday-text-secondary">条</span>
+                    <span className="text-monday-sm font-semibold text-uipro-secondary">第</span>
+                    <span className="text-monday-base font-bold text-uipro-cta">{pagination.page}</span>
+                    <span className="text-monday-sm font-semibold text-uipro-secondary">页，共</span>
+                    <span className="text-monday-base font-bold text-uipro-text">{pagination.totalPages}</span>
+                    <span className="text-monday-sm font-semibold text-uipro-secondary">页</span>
+                    <span className="text-monday-sm text-uipro-secondary mx-monday-2">|</span>
+                    <span className="text-monday-sm font-semibold text-uipro-secondary">共</span>
+                    <span className="text-monday-base font-bold text-uipro-text">{pagination.total}</span>
+                    <span className="text-monday-sm font-semibold text-uipro-secondary">条</span>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={pagination.page >= pagination.totalPages}
                     onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="bg-gray-50 hover:bg-gray-100 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
                   >
                     下一页 →
                   </Button>

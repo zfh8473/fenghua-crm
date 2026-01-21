@@ -73,7 +73,7 @@ export const BackupStatusPanel: React.FC<BackupStatusPanelProps> = ({ status }) 
         {status.lastBackupError && (
           <div className="flex justify-between items-center py-monday-3">
             <span className="text-monday-sm font-semibold text-monday-text">错误信息:</span>
-            <span className="text-monday-base text-primary-red">{status.lastBackupError}</span>
+            <span className="text-monday-base text-semantic-error">{status.lastBackupError}</span>
           </div>
         )}
       </div>

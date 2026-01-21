@@ -298,7 +298,7 @@ export function GdprExportPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full px-monday-4 py-monday-2 bg-primary-blue text-white rounded-monday-md hover:bg-primary-blue-dark disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-monday-4 py-monday-2 bg-uipro-cta text-white rounded-monday-md hover:bg-uipro-cta/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-200"
               >
                 {isSubmitting ? '创建中...' : '创建导出请求'}
               </button>
@@ -354,7 +354,7 @@ export function GdprExportPage() {
                       {request.status === 'COMPLETED' && request.downloadUrl && (
                         <button
                           onClick={() => handleDownload(request)}
-                          className="px-monday-3 py-monday-2 bg-primary-blue text-white rounded-monday-md hover:bg-primary-blue-dark text-monday-sm"
+                          className="px-monday-3 py-monday-2 bg-uipro-cta text-white rounded-monday-md hover:bg-uipro-cta/90 text-monday-sm cursor-pointer transition-colors duration-200"
                         >
                           下载
                         </button>

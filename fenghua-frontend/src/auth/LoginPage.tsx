@@ -40,26 +40,26 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center min-h-screen bg-gradient-primary p-linear-4 overflow-hidden">
-      {/* Gradient background with subtle animation - using design token colors */}
+    <div className="fixed inset-0 flex items-center justify-center min-h-screen bg-uipro-bg p-monday-4 overflow-hidden">
+      {/* 19.4 login-nav-layout：禁止紫/粉；仅 uipro-cta、uipro-primary、uipro-secondary 浅色装饰 */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute w-[600px] h-[600px] -top-[300px] -left-[300px] rounded-full bg-gradient-to-br from-primary-blue/40 to-transparent blur-[120px] opacity-60 animate-pulse" />
-        <div className="absolute w-[500px] h-[500px] top-1/2 right-0 rounded-full bg-gradient-to-bl from-primary-purple/40 to-transparent blur-[120px] opacity-60 animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute w-[400px] h-[400px] bottom-0 left-1/2 rounded-full bg-gradient-to-t from-primary-purple/40 to-transparent blur-[120px] opacity-60 animate-pulse" style={{ animationDelay: '4s' }} />
+        <div className="absolute w-[600px] h-[600px] -top-[300px] -left-[300px] rounded-full bg-gradient-to-br from-uipro-cta/30 to-transparent blur-[120px] opacity-60 animate-pulse" />
+        <div className="absolute w-[500px] h-[500px] top-1/2 right-0 rounded-full bg-gradient-to-bl from-uipro-secondary/30 to-transparent blur-[120px] opacity-60 animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute w-[400px] h-[400px] bottom-0 left-1/2 rounded-full bg-gradient-to-t from-uipro-cta/20 to-transparent blur-[120px] opacity-60 animate-pulse" style={{ animationDelay: '4s' }} />
       </div>
 
       <Card variant="default" className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-linear-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-linear-full bg-gradient-primary text-white text-linear-2xl font-bold mb-linear-4">
+        <div className="text-center mb-monday-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-uipro-cta text-white text-monday-2xl font-bold mb-monday-4">
             F
           </div>
-          <h1 className="text-linear-3xl font-bold text-linear-text mb-linear-2">欢迎回来</h1>
-          <p className="text-linear-base text-linear-text-secondary">登录您的账户以继续</p>
+          <h1 className="text-monday-3xl font-bold text-uipro-text font-uipro-heading mb-monday-2">欢迎回来</h1>
+          <p className="text-monday-base text-uipro-secondary">登录您的账户以继续</p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-linear-4">
           {error && (
-            <div className="p-linear-3 bg-semantic-error/20 border border-semantic-error rounded-linear-md flex items-center gap-linear-2 text-semantic-error text-linear-sm" role="alert">
+            <div className="p-monday-3 bg-semantic-error/10 border border-semantic-error rounded-monday-md flex items-center gap-monday-2 text-semantic-error text-monday-sm" role="alert">
               <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
@@ -105,7 +105,7 @@ export const LoginPage: React.FC = () => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                  className="text-linear-text-placeholder hover:text-linear-text transition-colors focus:outline-none focus:ring-2 focus:ring-primary-blue rounded-linear-sm"
+                  className="text-uipro-secondary hover:text-uipro-text transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 rounded-monday-sm cursor-pointer"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
@@ -128,14 +128,14 @@ export const LoginPage: React.FC = () => {
             variant="primary"
             size="lg"
             isLoading={isLoading}
-            className="w-full"
+            className="w-full !bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
           >
             {!isLoading && '登录'}
           </Button>
         </form>
 
-        <div className="mt-linear-6 text-center">
-          <p className="text-linear-sm text-linear-text-secondary">© 2025 峰华CRM系统. 专有代码，不开源。</p>
+        <div className="mt-monday-6 text-center">
+          <p className="text-monday-sm text-uipro-secondary">© 2025 峰华AIO. 专有代码，不开源。</p>
         </div>
       </Card>
     </div>

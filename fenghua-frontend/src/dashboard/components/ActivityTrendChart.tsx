@@ -7,6 +7,7 @@
 
 import React, { Suspense, lazy } from 'react';
 import { ActivityTrendItem } from '../services/buyer-analysis.service';
+import { CHART_COLORS } from '../utils/chart-colors';
 
 // Lazy load LineChart component for better performance
 const LineChartComponent = lazy(() => 
@@ -41,7 +42,7 @@ export const ActivityTrendChart: React.FC<ActivityTrendChartProps> = ({
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full text-center text-monday-text-secondary py-monday-8">
+      <div className="w-full text-center text-uipro-secondary py-monday-8">
         <p>暂无数据</p>
       </div>
     );
@@ -60,7 +61,7 @@ export const ActivityTrendChart: React.FC<ActivityTrendChartProps> = ({
       <LineChartComponent
         data={chartData}
         dataKeys={['averageActivityLevel']}
-        colors={['#10b981']}
+        colors={[CHART_COLORS[3]]}
       />
     </Suspense>
   );

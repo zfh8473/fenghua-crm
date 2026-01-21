@@ -269,18 +269,19 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
 
 
         <div className="flex flex-col gap-monday-2">
-          <label htmlFor="customerType" className="text-monday-sm font-semibold text-monday-text">
-            客户类型 <span className="text-red-500">*</span>
+          <label htmlFor="customerType" className="text-monday-sm font-semibold text-uipro-text">
+            客户类型 <span className="text-semantic-error" aria-hidden="true">*</span>
           </label>
           <select
             id="customerType"
             value={formData.customerType}
             onChange={(e) => handleChange('customerType', e.target.value as 'BUYER' | 'SUPPLIER')}
             disabled={availableCustomerTypes.length === 1}
-            className={`px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.customerType ? 'border-red-500' : 'border-gray-300'
-            } ${availableCustomerTypes.length === 1 ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            className={`px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 transition-colors duration-200 ${
+              errors.customerType ? 'border-semantic-error' : 'border-gray-300'
+            } ${availableCustomerTypes.length === 1 ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer'}`}
             required
+            aria-required="true"
           >
             {availableCustomerTypes.map((type) => (
               <option key={type} value={type}>
@@ -289,7 +290,7 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
             ))}
           </select>
           {errors.customerType && (
-            <p className="text-monday-xs text-red-500">{errors.customerType}</p>
+            <p className="text-monday-xs text-semantic-error">{errors.customerType}</p>
           )}
         </div>
 
@@ -413,12 +414,12 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
           onChange={(e) => handleChange('notes', e.target.value)}
           rows={4}
           maxLength={5000}
-          className={`w-full px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.notes ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 transition-colors duration-200 ${
+            errors.notes ? 'border-semantic-error' : 'border-gray-300'
           }`}
         />
         {errors.notes && (
-          <p className="text-monday-xs text-red-500 mt-monday-1">{errors.notes}</p>
+          <p className="text-monday-xs text-semantic-error mt-monday-1">{errors.notes}</p>
         )}
       </div>
 
@@ -427,7 +428,7 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
         <button
           type="button"
           onClick={() => setIsAssociationExpanded(!isAssociationExpanded)}
-          className="w-full flex items-center justify-between text-monday-base font-semibold text-monday-text hover:text-primary-blue transition-colors"
+          className="w-full flex items-center justify-between text-monday-base font-semibold text-uipro-text hover:text-uipro-cta transition-colors duration-200 cursor-pointer"
           aria-expanded={isAssociationExpanded}
           aria-controls="association-section"
         >
@@ -461,16 +462,16 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
       </div>
 
       {errors.submit && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-monday-4 py-monday-3 rounded-monday-md">
+        <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error px-monday-4 py-monday-3 rounded-monday-md" role="alert">
           {errors.submit}
         </div>
       )}
 
       <div className="flex justify-end gap-monday-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} className="cursor-pointer transition-colors duration-200">
           取消
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
           {isSubmitting ? '创建中...' : '创建客户'}
         </Button>
       </div>

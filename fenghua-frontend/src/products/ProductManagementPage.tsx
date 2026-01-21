@@ -322,7 +322,7 @@ export const ProductManagementPage: React.FC = () => {
         <select
           value={filters.category || ''}
           onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
-          className="px-linear-3 py-linear-2 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
+          className="px-monday-4 py-monday-3 text-monday-base text-uipro-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200 font-semibold cursor-pointer"
         >
           <option value="">所有类别</option>
           {categories.map((category) => (
@@ -334,7 +334,7 @@ export const ProductManagementPage: React.FC = () => {
         <select
           value={filters.status || ''}
           onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-          className="px-linear-3 py-linear-2 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
+          className="px-monday-4 py-monday-3 text-monday-base text-uipro-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200 font-semibold cursor-pointer"
         >
           <option value="">所有状态</option>
           <option value="active">活跃</option>
@@ -342,35 +342,24 @@ export const ProductManagementPage: React.FC = () => {
           <option value="archived">已归档</option>
         </select>
         <Link to="/product-categories">
-          <Button 
-            variant="outline" 
-            size="md"
-            className="bg-gradient-to-r from-primary-purple/10 to-primary-blue/10 border-primary-purple/30 text-primary-purple hover:from-primary-purple/20 hover:to-primary-blue/20 hover:border-primary-purple/50 hover:text-primary-purple font-medium shadow-linear-sm"
-          >
-            <span className="mr-linear-2">🏷️</span>
+          <Button variant="outline" size="md" className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200">
             类别管理
           </Button>
         </Link>
         {(userIsAdmin || userIsDirector) && (
           <Link to="/products/import">
-            <Button 
-              variant="outline" 
-              size="md"
-              className="bg-gradient-to-r from-primary-green/10 to-primary-blue/10 border-primary-green/30 text-primary-green hover:from-primary-green/20 hover:to-primary-blue/20 hover:border-primary-green/50 hover:text-primary-green font-medium shadow-linear-sm whitespace-nowrap"
-            >
-              <span className="mr-linear-2">📥</span>
+            <Button variant="outline" size="md" className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200 whitespace-nowrap">
               批量导入
             </Button>
           </Link>
         )}
         {userIsAdmin && (
-          <Button 
-            variant="primary" 
-            size="md" 
+          <Button
+            variant="primary"
+            size="md"
             onClick={handleCreate}
-            className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-linear-md hover:shadow-linear-lg font-semibold"
+            className="!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold cursor-pointer transition-colors duration-200"
           >
-            <span className="mr-linear-2">✨</span>
             创建新产品
           </Button>
         )}
@@ -413,49 +402,45 @@ export const ProductManagementPage: React.FC = () => {
               </div>
             )}
 
-            {loading ? (
-              <div className="text-center p-linear-8 text-linear-text-secondary">加载中...</div>
-            ) : (
-              <>
-                <h2 className="text-linear-2xl font-bold text-linear-text mb-linear-6 tracking-tight">产品列表</h2>
-          <ProductList
-            products={products}
-            onEdit={userIsAdmin ? handleEdit : () => {}}
-            onDelete={userIsAdmin ? handleDelete : () => {}}
-            onSelect={handleSelect}
-            loading={loading}
-            searchQuery={filters.search}
-          />
-                {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-linear-4 mt-linear-6 pt-linear-4 border-t border-gray-200">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage === 1}
-                      onClick={() => handlePageChange(currentPage - 1)}
-                    >
-                      上一页
-                    </Button>
-                    <span className="text-linear-base text-linear-text">
-                      第 {currentPage} 页，共 {totalPages} 页（共 {total} 条）
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage === totalPages}
-                      onClick={() => handlePageChange(currentPage + 1)}
-                    >
-                      下一页
-                    </Button>
-                  </div>
-                )}
-              </>
+            <h2 className="text-monday-2xl font-bold text-uipro-text mb-monday-6 tracking-tight font-uipro-heading">产品列表</h2>
+            <ProductList
+              products={products}
+              onEdit={userIsAdmin ? handleEdit : () => {}}
+              onDelete={userIsAdmin ? handleDelete : () => {}}
+              onSelect={handleSelect}
+              loading={loading}
+              searchQuery={filters.search}
+            />
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-monday-4 mt-monday-6 pt-monday-4 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className="cursor-pointer transition-colors duration-200"
+                >
+                  上一页
+                </Button>
+                <span className="text-monday-base text-uipro-text">
+                  第 {currentPage} 页，共 {totalPages} 页（共 {total} 条）
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className="cursor-pointer transition-colors duration-200"
+                >
+                  下一页
+                </Button>
+              </div>
             )}
           </Card>
         </div>
       ) : (
         <Card variant="default" className="max-w-3xl mx-auto">
-          <h2 className="text-linear-2xl font-semibold text-linear-text mb-linear-6">{viewMode === 'create' ? '创建新产品' : '编辑产品'}</h2>
+          <h2 className="text-monday-2xl font-semibold text-uipro-text mb-monday-6 font-uipro-heading">{viewMode === 'create' ? '创建新产品' : '编辑产品'}</h2>
           {viewMode === 'create' ? (
             <ProductCreateForm
               onSubmit={handleSubmit as (data: CreateProductDto) => Promise<void>}

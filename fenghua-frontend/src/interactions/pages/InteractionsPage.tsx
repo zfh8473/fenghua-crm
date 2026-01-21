@@ -128,45 +128,29 @@ export const InteractionsPage: React.FC = () => {
     navigate(`/interactions/${interaction.id}`);
   }, [navigate]);
 
-  return (
-    <MainLayout title="互动记录">
-      <div className="space-y-monday-6">
-        {/* Header with Actions */}
-        <Card variant="default" className="w-full">
-          <div className="p-monday-6">
-            <div className="flex items-center justify-between mb-monday-6">
-              <h2 className="text-monday-2xl font-semibold text-monday-text">
-                互动记录
-              </h2>
-              <div className="flex items-center gap-monday-3">
-                {(userIsAdmin || userIsDirector) && (
-                  <Link to="/interactions/import">
-                    <Button 
-                      variant="primary" 
-                      size="md" 
-                      className="bg-gradient-to-r from-primary-green to-primary-green-hover hover:from-primary-green-hover hover:to-primary-green shadow-monday-md hover:shadow-monday-lg font-semibold whitespace-nowrap"
-                    >
-                      <span className="mr-monday-2">📥</span>
-                      批量导入
-                    </Button>
-                  </Link>
-                )}
-                <Link to="/interactions/create">
-                  <Button 
-                    variant="primary" 
-                    size="md" 
-                    className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-monday-md hover:shadow-monday-lg font-semibold"
-                  >
-                    <span className="mr-monday-2">✨</span>
-                    记录新互动
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </Card>
+  /** 19.7 AC3：撤掉「仅含批量导入、记录新互动」的独立卡片，将两按钮并入 MainLayout 标题区 toolbar；两按钮统一尺寸 */
+  const btnClass = '!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold whitespace-nowrap cursor-pointer transition-colors duration-200 w-[8.5rem]';
+  const headerToolbar = (
+    <div className="flex items-center gap-monday-3 flex-shrink-0 flex-wrap justify-end">
+      {(userIsAdmin || userIsDirector) && (
+        <Link to="/interactions/import">
+          <Button variant="primary" size="md" className={btnClass}>
+            批量导入
+          </Button>
+        </Link>
+      )}
+      <Link to="/interactions/create">
+        <Button variant="primary" size="md" className={btnClass}>
+          记录新互动
+        </Button>
+      </Link>
+    </div>
+  );
 
-        {/* Advanced Search */}
+  return (
+    <MainLayout title="互动记录" toolbar={headerToolbar}>
+      <div className="space-y-monday-6">
+        {/* 筛选区：单独卡片，位于标题区之下（AC3） */}
         <Card variant="default" className="p-monday-6">
           <InteractionSearch
             onSearch={handleSearch}
@@ -179,7 +163,7 @@ export const InteractionsPage: React.FC = () => {
         {/* Error Display */}
         {error && (
           <Card variant="default" className="p-monday-4">
-            <p className="text-red-600">搜索失败: {error.message}</p>
+            <p className="text-semantic-error" role="alert">搜索失败: {error.message}</p>
           </Card>
         )}
 

@@ -278,28 +278,6 @@ export const CustomerManagementPage: React.FC = () => {
   // Check if user can see customer type filter (Director/Admin only)
   const canFilterByType = isDirector(currentUser?.role) || isAdmin(currentUser?.role);
   
-  // Check if user can see import button (Director/Admin only)
-  // Debug: Log user role and permission check FIRST
-  useEffect(() => {
-    if (currentUser) {
-      console.log('[CustomerManagementPage] Current user:', currentUser);
-      console.log('[CustomerManagementPage] User role (raw):', currentUser.role);
-      console.log('[CustomerManagementPage] User role (type):', typeof currentUser.role);
-      console.log('[CustomerManagementPage] isAdmin check:', isAdmin(currentUser.role));
-      console.log('[CustomerManagementPage] isDirector check:', isDirector(currentUser.role));
-    } else {
-      console.log('[CustomerManagementPage] Current user is null or undefined');
-    }
-  }, [currentUser]);
-  
-  const canSeeImportButton = isAdmin(currentUser?.role) || isDirector(currentUser?.role);
-  
-  // Debug: Log final permission check
-  useEffect(() => {
-    console.log('[CustomerManagementPage] canSeeImportButton:', canSeeImportButton);
-    console.log('[CustomerManagementPage] viewMode:', viewMode);
-  }, [canSeeImportButton, viewMode]);
-
   // Toolbar component
   const toolbar = viewMode === 'list' ? (
     <Card variant="default" className="w-full p-monday-4">
@@ -314,23 +292,21 @@ export const CustomerManagementPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-monday-3 flex-shrink-0">
           {(isAdmin(currentUser?.role) || isDirector(currentUser?.role)) && (
-            <Button 
-              variant="primary" 
-              size="md" 
+            <Button
+              variant="primary"
+              size="md"
               onClick={() => navigate('/customers/import')}
-              className="bg-gradient-to-r from-primary-green to-primary-green-hover hover:from-primary-green-hover hover:to-primary-green shadow-monday-md hover:shadow-monday-lg font-semibold whitespace-nowrap"
+              className="!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold whitespace-nowrap cursor-pointer transition-colors duration-200"
             >
-              <span className="mr-monday-2">📥</span>
               批量导入
             </Button>
           )}
-          <Button 
-            variant="primary" 
-            size="md" 
+          <Button
+            variant="primary"
+            size="md"
             onClick={handleCreate}
-            className="bg-gradient-to-r from-primary-blue to-primary-blue-hover hover:from-primary-blue-hover hover:to-primary-blue shadow-monday-md hover:shadow-monday-lg font-semibold whitespace-nowrap"
+            className="!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold whitespace-nowrap cursor-pointer transition-colors duration-200"
           >
-            <span className="mr-monday-2">✨</span>
             {getCreateButtonText()}
           </Button>
         </div>
@@ -373,16 +349,13 @@ export const CustomerManagementPage: React.FC = () => {
               </div>
             )}
 
-            {loading && !customers.length ? (
-              <div className="text-center p-monday-8 text-monday-text-secondary">加载中...</div>
-            ) : isSearchMode ? (
+            {isSearchMode ? (
               <>
-                <h2 className="text-monday-2xl font-bold text-monday-text mb-monday-6 tracking-tight">搜索结果</h2>
+                <h2 className="text-monday-2xl font-bold text-uipro-text mb-monday-6 tracking-tight font-uipro-heading">搜索结果</h2>
                 {customers.length === 0 ? (
                   <div className="text-center p-monday-12">
-                    <div className="text-monday-4xl mb-monday-4">🔍</div>
-                    <p className="text-monday-lg font-semibold text-monday-text mb-monday-2">未找到匹配的客户</p>
-                    <p className="text-monday-sm text-monday-text-secondary">尝试使用不同的搜索关键词</p>
+                    <p className="text-monday-lg font-semibold text-uipro-text mb-monday-2">未找到匹配的客户</p>
+                    <p className="text-monday-sm text-uipro-secondary">尝试使用不同的搜索关键词</p>
                   </div>
                 ) : (
                   <CustomerSearchResults
@@ -399,7 +372,7 @@ export const CustomerManagementPage: React.FC = () => {
               </>
             ) : (
               <>
-                <h2 className="text-monday-2xl font-bold text-monday-text mb-monday-6 tracking-tight">客户列表</h2>
+                <h2 className="text-monday-2xl font-bold text-uipro-text mb-monday-6 tracking-tight font-uipro-heading">客户列表</h2>
                 <CustomerList
                   customers={customers}
                   onEdit={handleEdit}
@@ -414,10 +387,11 @@ export const CustomerManagementPage: React.FC = () => {
                       size="sm"
                       disabled={currentPage === 1}
                       onClick={() => handlePageChange(currentPage - 1)}
+                      className="cursor-pointer transition-colors duration-200"
                     >
                       上一页
                     </Button>
-                    <span className="text-monday-base text-monday-text">
+                    <span className="text-monday-base text-uipro-text">
                       第 {currentPage} 页，共 {totalPages} 页（共 {total} 条）
                     </span>
                     <Button
@@ -425,6 +399,7 @@ export const CustomerManagementPage: React.FC = () => {
                       size="sm"
                       disabled={currentPage === totalPages}
                       onClick={() => handlePageChange(currentPage + 1)}
+                      className="cursor-pointer transition-colors duration-200"
                     >
                       下一页
                     </Button>

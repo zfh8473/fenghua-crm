@@ -128,9 +128,7 @@ export const PRODUCT_CREATE_ASSOCIATIONS_PARTIAL_FAILURE = (
   successCount: number,
   failureCount: number,
 ): string =>
-  `产品已创建，但部分客户关联失败（成功：${successCount}，失败：${failureCount}）`;export const PRODUCT_CREATE_ASSOCIATIONS_ALL_FAILURE = '产品已创建，但所有客户关联失败';
-
-/**
+  `产品已创建，但部分客户关联失败（成功：${successCount}，失败：${failureCount}）`;export const PRODUCT_CREATE_ASSOCIATIONS_ALL_FAILURE = '产品已创建，但所有客户关联失败';/**
  * Association creation failed message
  * 
  * @param error - Error message

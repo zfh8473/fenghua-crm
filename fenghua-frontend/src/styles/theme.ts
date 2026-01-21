@@ -103,6 +103,12 @@ export interface BackgroundImageTokens {
   'gradient-success': string;
 }
 
+/** Epic 19：由 ui-ux-pro-max-skill 生成的 B2B CRM 设计系统 Token，与现有 monday/linear 并存，供 19.2–19.5 选用 */
+export interface ProMaxTokens {
+  colors: { primary: string; secondary: string; cta: string; background: string; text: string };
+  fontFamily: { heading: string[]; body: string[] };
+}
+
 export interface ThemeTokens {
   colors: ColorTokens;
   spacing: SpacingTokens;
@@ -110,6 +116,7 @@ export interface ThemeTokens {
   boxShadow: ShadowTokens;
   borderRadius: BorderRadiusTokens;
   backgroundImage: BackgroundImageTokens;
+  proMax: ProMaxTokens;
 }
 
 // Color Tokens (Monday.com Style)
@@ -220,6 +227,21 @@ const backgroundImage: BackgroundImageTokens = {
   'gradient-success': colors.gradients.success,
 };
 
+// Pro Max Tokens (Epic 19, ui-ux-pro-max-skill; 与 monday/linear 并存，不替代)
+const proMax: ProMaxTokens = {
+  colors: {
+    primary: '#0F172A',
+    secondary: '#334155',
+    cta: '#0369A1',
+    background: '#F8FAFC',
+    text: '#020617',
+  },
+  fontFamily: {
+    heading: ['Fira Code', 'monospace'],
+    body: ['Fira Sans', 'sans-serif'],
+  },
+};
+
 // Complete Theme Tokens
 const theme: ThemeTokens = {
   colors,
@@ -228,11 +250,12 @@ const theme: ThemeTokens = {
   boxShadow,
   borderRadius,
   backgroundImage,
+  proMax,
 };
 
 // Default export for Tailwind config import
 export default theme;
 
 // Named exports for direct usage in components
-export { colors, spacing, typography, boxShadow, borderRadius, backgroundImage };
+export { colors, spacing, typography, boxShadow, borderRadius, backgroundImage, proMax };
 

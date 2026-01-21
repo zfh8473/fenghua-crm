@@ -308,7 +308,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
   if (error) {
     return (
       <div className="text-center py-monday-8">
-        <p className="text-monday-sm text-primary-red mb-monday-2">
+        <p className="text-monday-sm text-semantic-error mb-monday-2">
           {error instanceof Error
             ? error.message
             : INTERACTION_EDIT_ERRORS.LOAD_FAILED}
@@ -323,7 +323,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
   if (!interaction) {
     return (
       <div className="text-center py-monday-8">
-        <p className="text-monday-sm text-primary-red">
+        <p className="text-monday-sm text-semantic-error">
           {INTERACTION_EDIT_ERRORS.NOT_FOUND}
         </p>
       </div>
@@ -339,7 +339,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
   if (!canEdit) {
     return (
       <div className="text-center py-monday-8">
-        <p className="text-monday-sm text-primary-red">
+        <p className="text-monday-sm text-semantic-error">
           {INTERACTION_EDIT_ERRORS.NO_PERMISSION}
         </p>
       </div>
@@ -351,7 +351,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       {/* Customer field (read-only) */}
       <div>
         <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
-          客户 <span className="text-primary-red">*</span>
+          客户 <span className="text-semantic-error">*</span>
         </label>
         <Input
           value={selectedCustomer?.name || '加载中...'}
@@ -363,7 +363,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       {/* Product field (read-only) */}
       <div>
         <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
-          产品 <span className="text-primary-red">*</span>
+          产品 <span className="text-semantic-error">*</span>
         </label>
         <Input
           value={selectedProduct?.name || '加载中...'}
@@ -375,7 +375,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       {/* Interaction type field (editable) - Radio buttons */}
       <div>
         <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
-          互动类型 <span className="text-primary-red">*</span>
+          互动类型 <span className="text-semantic-error">*</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {interactionTypeOptions.map((option) => {
@@ -389,7 +389,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
                 [FrontendInteractionType.PRODUCT_INQUIRY]: 'bg-blue-500 text-white border-blue-500',      // 蓝色
                 [FrontendInteractionType.QUOTATION]: 'bg-cyan-500 text-white border-cyan-500',           // 青色
                 [FrontendInteractionType.QUOTATION_ACCEPTED]: 'bg-teal-500 text-white border-teal-500',  // 青绿色
-                [FrontendInteractionType.QUOTATION_REJECTED]: 'bg-red-500 text-white border-red-500',   // 红色（拒绝用红色）
+                [FrontendInteractionType.QUOTATION_REJECTED]: 'bg-semantic-error text-white border-semantic-error',
                 [FrontendInteractionType.ORDER_SIGNED]: 'bg-green-500 text-white border-green-500',     // 绿色
                 [FrontendInteractionType.ORDER_FOLLOW_UP]: 'bg-lime-500 text-white border-lime-500',    // 黄绿色（进度跟进）
                 [FrontendInteractionType.ORDER_COMPLETED]: 'bg-emerald-500 text-white border-emerald-500', // 翠绿
@@ -398,8 +398,8 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
                 [BackendInteractionType.QUOTATION_RECEIVED]: 'bg-amber-500 text-white border-amber-500',  // 琥珀
                 [BackendInteractionType.SPECIFICATION_CONFIRMED]: 'bg-orange-500 text-white border-orange-500', // 橙色
                 [BackendInteractionType.PRODUCTION_PROGRESS]: 'bg-orange-600 text-white border-orange-600', // 深橙
-                [BackendInteractionType.PRE_SHIPMENT_INSPECTION]: 'bg-red-500 text-white border-red-500', // 红色
-                [BackendInteractionType.SHIPPED]: 'bg-red-600 text-white border-red-600',                 // 最暖 - 深红
+                [BackendInteractionType.PRE_SHIPMENT_INSPECTION]: 'bg-semantic-error text-white border-semantic-error',
+                [BackendInteractionType.SHIPPED]: 'bg-semantic-error text-white border-semantic-error',
               };
               return colorMap[value] || 'bg-gray-500 text-white border-gray-500';
             };
@@ -440,7 +440,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
           })}
         </div>
         {errors.interactionType && (
-          <p className="mt-monday-2 text-monday-sm text-primary-red" role="alert">
+          <p className="mt-monday-2 text-monday-sm text-semantic-error" role="alert">
             {errors.interactionType.message}
           </p>
         )}
@@ -449,7 +449,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       {/* Interaction date field */}
       <div>
         <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
-          互动时间 <span className="text-primary-red">*</span>
+          互动时间 <span className="text-semantic-error">*</span>
         </label>
         <Input
           type="datetime-local"
@@ -468,7 +468,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
           })}
         />
         {errors.interactionDate && (
-          <p className="text-monday-xs text-primary-red mt-monday-1">
+          <p className="text-monday-xs text-semantic-error mt-monday-1">
             {errors.interactionDate.message}
           </p>
         )}
@@ -487,19 +487,19 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
             },
           })}
           rows={6}
-          className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+          className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200"
           placeholder="请输入互动描述..."
         />
         <div className="flex justify-between mt-monday-1">
           {errors.description && (
-            <p className="text-monday-xs text-primary-red">
+            <p className="text-monday-xs text-semantic-error">
               {errors.description.message}
             </p>
           )}
           <p
             className={`text-monday-xs ml-auto ${
               descriptionLength > MAX_DESCRIPTION_LENGTH
-                ? 'text-primary-red'
+                ? 'text-semantic-error'
                 : 'text-monday-text-secondary'
             }`}
           >
@@ -515,7 +515,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
         </label>
         <select
           {...register('status')}
-          className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+          className="w-full px-monday-3 py-monday-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200"
         >
           {statusOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -543,7 +543,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
                   size="sm"
                   variant="ghost"
                   onClick={() => handleDeleteAttachment(attachment.id)}
-                  className="text-primary-red hover:text-primary-red/80"
+                  className="text-semantic-error hover:text-semantic-error/80"
                 >
                   删除
                 </Button>
@@ -568,11 +568,11 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       {/* Form actions */}
       <div className="flex gap-monday-3 justify-end pt-monday-4 border-t border-gray-200">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} className="cursor-pointer transition-colors duration-200">
             取消
           </Button>
         )}
-        <Button type="submit" variant="primary" disabled={isSubmitting || updateMutation.isPending}>
+        <Button type="submit" variant="primary" disabled={isSubmitting || updateMutation.isPending} className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
           {isSubmitting || updateMutation.isPending ? '保存中...' : '保存'}
         </Button>
       </div>

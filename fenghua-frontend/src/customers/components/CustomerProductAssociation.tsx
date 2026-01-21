@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { Customer, customersService } from '../customers.service';
 import { CustomerAssociationManagementModal } from './CustomerAssociationManagementModal';
 import { CustomerProductAssociationResponseDto } from '../types/customer-product-association-response.dto';
@@ -84,14 +85,14 @@ export const CustomerProductAssociation: React.FC<CustomerProductAssociationProp
     <>
       <Card variant="outlined" className="p-monday-4">
         <div className="flex items-center justify-between mb-monday-3">
-          <h4 className="text-monday-base font-semibold text-monday-text">
+          <h4 className="text-monday-base font-semibold text-gray-900">
             关联的产品
           </h4>
         </div>
 
         {/* 统计信息 */}
         <div className="space-y-monday-2 mb-monday-4">
-          <p className="text-monday-sm text-monday-text-secondary">
+          <p className="text-monday-sm text-gray-900 font-medium">
             {stats.total === 0 ? (
               <span>该客户尚未与任何产品关联</span>
             ) : (
@@ -105,14 +106,16 @@ export const CustomerProductAssociation: React.FC<CustomerProductAssociationProp
           )}
         </div>
 
-        {/* 显示关联产品按钮 */}
+        {/* 显示关联产品按钮（与详情页编辑/删除统一：outline、uipro-cta、图标） */}
         <Button
           type="button"
           size="sm"
-          variant="secondary"
+          variant="outline"
           onClick={() => setIsManagementModalOpen(true)}
-          aria-label="显示关联产品"
-          className="w-full"
+          title={stats.total === 0 ? '添加关联产品' : '显示关联产品'}
+          aria-label={stats.total === 0 ? '添加关联产品' : '显示关联产品'}
+          leftIcon={<HomeModuleIcon name="cube" className="w-4 h-4 flex-shrink-0" />}
+          className="w-full text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
         >
           {stats.total === 0 ? '添加关联产品' : '显示关联产品'}
         </Button>

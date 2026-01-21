@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { isFrontendSpecialist, isBackendSpecialist } from '../../common/constants/roles';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { Product, productsService } from '../products.service';
 import { ProductAssociationManagementModal } from './ProductAssociationManagementModal';
 import { ProductCustomerAssociationResponseDto } from '../types/product-customer-association-response.dto';
@@ -108,14 +109,14 @@ export const ProductCustomerAssociation: React.FC<ProductCustomerAssociationProp
     <>
       <Card variant="outlined" className="p-monday-4">
         <div className="flex items-center justify-between mb-monday-3">
-          <h4 className="text-monday-base font-semibold text-monday-text">
+          <h4 className="text-monday-base font-semibold text-gray-900">
             {getTitle()}
           </h4>
         </div>
 
         {/* 统计信息 */}
         <div className="space-y-monday-2 mb-monday-4">
-          <p className="text-monday-sm text-monday-text-secondary">
+          <p className="text-monday-sm text-gray-900 font-medium">
             {stats.total === 0 ? (
               <span>该产品尚未与任何客户关联</span>
             ) : (
@@ -129,14 +130,16 @@ export const ProductCustomerAssociation: React.FC<ProductCustomerAssociationProp
           )}
         </div>
 
-        {/* 显示关联客户按钮 */}
+        {/* 显示关联客户按钮（与详情页编辑/删除统一：outline、uipro-cta、图标） */}
         <Button
           type="button"
           size="sm"
-          variant="secondary"
+          variant="outline"
           onClick={() => setIsManagementModalOpen(true)}
-          aria-label="显示关联客户"
-          className="w-full"
+          title={stats.total === 0 ? '添加关联客户' : '显示关联客户'}
+          aria-label={stats.total === 0 ? '添加关联客户' : '显示关联客户'}
+          leftIcon={<HomeModuleIcon name="users" className="w-4 h-4 flex-shrink-0" />}
+          className="w-full text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
         >
           {stats.total === 0 ? '添加关联客户' : '显示关联客户'}
         </Button>

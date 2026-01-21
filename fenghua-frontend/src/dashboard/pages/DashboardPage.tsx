@@ -15,6 +15,7 @@ import { Button } from '../../components/ui/Button';
 import { getDashboardOverview, DashboardOverview } from '../services/dashboard.service';
 import { MetricCard } from '../components/MetricCard';
 import { DashboardErrorBoundary } from '../components/ErrorBoundary';
+import { CHART_COLORS } from '../utils/chart-colors';
 
 // Lazy load chart components for better performance
 // Using dynamic import with proper type handling
@@ -177,44 +178,15 @@ export const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Key Metrics Grid */}
+        {/* Key Metrics Grid（Epic 19：无 emoji 图标，Pre-Delivery） */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-monday-4">
-          <MetricCard
-            title="客户总数"
-            value={overview.totalCustomers}
-            icon="👥"
-          />
-          <MetricCard
-            title="采购商"
-            value={overview.totalBuyers}
-            icon="🛒"
-          />
-          <MetricCard
-            title="供应商"
-            value={overview.totalSuppliers}
-            icon="🏭"
-          />
-          <MetricCard
-            title="产品总数"
-            value={overview.totalProducts}
-            icon="📦"
-          />
-          <MetricCard
-            title="互动记录"
-            value={overview.totalInteractions}
-            icon="💬"
-          />
-          <MetricCard
-            title="本月新增客户"
-            value={overview.newCustomersThisMonth}
-            icon="✨"
-          />
-          <MetricCard
-            title="本月新增互动"
-            value={overview.newInteractionsThisMonth}
-            icon="📈"
-          />
-          {/* Note: "待处理任务数" (Pending Tasks) is marked as optional in AC3 and not implemented in this story */}
+          <MetricCard title="客户总数" value={overview.totalCustomers} />
+          <MetricCard title="采购商" value={overview.totalBuyers} />
+          <MetricCard title="供应商" value={overview.totalSuppliers} />
+          <MetricCard title="产品总数" value={overview.totalProducts} />
+          <MetricCard title="互动记录" value={overview.totalInteractions} />
+          <MetricCard title="本月新增客户" value={overview.newCustomersThisMonth} />
+          <MetricCard title="本月新增互动" value={overview.newInteractionsThisMonth} />
         </div>
 
         {/* Charts Section */}
@@ -237,7 +209,7 @@ export const DashboardPage: React.FC = () => {
                   { name: '第4周', customers: Math.floor(overview.newCustomersThisMonth * 0.2), interactions: Math.floor(overview.newInteractionsThisMonth * 0.2) },
                 ]}
                 dataKeys={['customers', 'interactions']}
-                colors={['#3b82f6', '#10b981']}
+                colors={[CHART_COLORS[0], CHART_COLORS[3]]}
               />
             </Suspense>
           </Card>
@@ -250,7 +222,7 @@ export const DashboardPage: React.FC = () => {
                   { name: '采购商', value: overview.totalBuyers },
                   { name: '供应商', value: overview.totalSuppliers },
                 ]}
-                colors={['#3b82f6', '#10b981']}
+                colors={[CHART_COLORS[0], CHART_COLORS[3]]}
                 innerRadius={40}
               />
             </Suspense>

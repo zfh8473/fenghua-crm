@@ -8,6 +8,7 @@ import { Card, Button } from '../components/ui';
 import { MainLayout } from '../components/layout';
 import { Input } from '../components/ui/Input';
 import { getErrorMessage } from '../utils/error-handling';
+import { HomeModuleIcon } from '../components/icons/HomeModuleIcons';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
@@ -106,7 +107,7 @@ export const UserManagementPage: React.FC = () => {
     return (
       <MainLayout title="用户管理">
         <Card variant="default" className="max-w-7xl mx-auto">
-          <div className="p-linear-4 bg-semantic-error/20 border border-semantic-error rounded-linear-md text-semantic-error text-linear-base" role="alert">
+          <div className="p-linear-4 bg-semantic-error/10 border border-semantic-error rounded-linear-md text-semantic-error text-linear-base" role="alert">
             只有管理员可以访问此页面
           </div>
         </Card>
@@ -128,7 +129,7 @@ export const UserManagementPage: React.FC = () => {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-linear-3 py-linear-2 text-linear-sm text-linear-text bg-linear-surface border border-gray-200 rounded-linear-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-colors font-semibold"
+          className="px-monday-4 py-monday-3 text-monday-base text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors font-semibold cursor-pointer"
         >
           <option value="">所有角色</option>
           <option value="ADMIN">管理员</option>
@@ -136,12 +137,12 @@ export const UserManagementPage: React.FC = () => {
           <option value="FRONTEND_SPECIALIST">前端专员</option>
           <option value="BACKEND_SPECIALIST">后端专员</option>
         </select>
-        <Button 
-          variant="primary" 
-          size="md" 
-          onClick={handleCreate} 
-          leftIcon={<span>✨</span>}
-          className="bg-gradient-to-r from-primary-blue to-primary-blue-hover shadow-linear-md hover:shadow-linear-lg font-semibold"
+        <Button
+          variant="primary"
+          size="md"
+          onClick={handleCreate}
+          leftIcon={<HomeModuleIcon name="plus" className="w-5 h-5 flex-shrink-0" />}
+          className="!bg-uipro-cta hover:!bg-uipro-cta/90 shadow-linear-md hover:shadow-linear-lg font-semibold cursor-pointer transition-colors duration-200"
         >
           创建新用户
         </Button>
@@ -162,19 +163,28 @@ export const UserManagementPage: React.FC = () => {
           {/* User List Card */}
           <Card variant="default" className="w-full">
             {successMessage && (
-              <div className="mb-linear-4 p-linear-4 bg-primary-green/20 border border-primary-green rounded-linear-md text-primary-green text-linear-sm" role="alert">
+              <div className="mb-linear-4 p-linear-4 bg-semantic-success/10 border border-semantic-success rounded-linear-md text-semantic-success text-linear-sm" role="alert">
                 {successMessage}
               </div>
             )}
 
             {error && (
-              <div className="mb-linear-4 p-linear-4 bg-primary-red/20 border border-primary-red rounded-linear-md text-primary-red text-linear-sm" role="alert">
+              <div className="mb-linear-4 p-linear-4 bg-semantic-error/10 border border-semantic-error rounded-linear-md text-semantic-error text-linear-sm" role="alert">
                 {error}
               </div>
             )}
 
             {loading ? (
-              <div className="text-center p-linear-8 text-linear-text-secondary">加载中...</div>
+              <div className="p-linear-4 space-y-3" aria-busy="true">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-5 flex-1 max-w-[200px] bg-gray-200 rounded animate-pulse" />
+                    <div className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
             ) : (
             <UserList
               users={users}
@@ -187,7 +197,7 @@ export const UserManagementPage: React.FC = () => {
         </div>
       ) : (
         <Card variant="default" className="max-w-3xl mx-auto">
-          <h2 className="text-linear-2xl font-semibold text-linear-text mb-linear-6">
+          <h2 className="text-linear-2xl font-semibold text-uipro-text font-uipro-heading mb-linear-6">
             {viewMode === 'create' ? '创建新用户' : '编辑用户'}
           </h2>
           <UserForm

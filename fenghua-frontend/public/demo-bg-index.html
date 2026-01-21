@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>背景方案 Demo 入口</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #F4F5F8;
+      padding: 48px 24px;
+      color: #323338;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    p { font-size: 14px; color: #6D7175; margin-bottom: 24px; }
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    a.card {
+      display: block;
+      width: 280px;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-decoration: none;
+      color: #0073EA;
+      font-weight: 600;
+      font-size: 15px;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    a.card:hover {
+      border-color: #0073EA;
+      box-shadow: 0 4px 12px rgba(0, 115, 234, 0.15);
+    }
+    a.card span { display: block; font-size: 13px; font-weight: 400; color: #6D7175; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>峰华AIO 背景方案 Demo</h1>
+  <p>选择下方链接在新标签页中查看各方案效果（需先运行 <code>npm run dev</code>，或直接打开对应 HTML 文件）。</p>
+  <div class="cards">
+    <a href="/demo-bg-a.html" target="_blank" rel="noopener" class="card">
+      方案 A：纯色、完全贴设计系统
+      <span>#F4F5F8，无装饰，最贴 Monday</span>
+    </a>
+    <a href="/demo-bg-b.html" target="_blank" rel="noopener" class="card">
+      方案 B：淡渐变 + 一个品牌色装饰
+      <span>推荐：渐变 + 单一 #0073EA 椭圆</span>
+    </a>
+    <a href="/demo-bg-c.html" target="_blank" rel="noopener" class="card">
+      方案 C：保持渐变、只统一色相
+      <span>四枚 #0073EA / #0369A1 装饰，去 indigo</span>
+    </a>
+  </div>
+</body>
+</html>

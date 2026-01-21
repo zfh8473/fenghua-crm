@@ -37,7 +37,7 @@ export const InteractionEditPage: React.FC = () => {
         <Card variant="default" className="w-full">
           <div className="p-monday-6">
             <div className="text-center py-monday-8">
-              <p className="text-monday-sm text-primary-red">
+              <p className="text-monday-sm text-semantic-error">
                 {INTERACTION_EDIT_ERRORS.INVALID_ID}
               </p>
             </div>
@@ -77,17 +77,17 @@ export const InteractionEditPage: React.FC = () => {
   return (
     <MainLayout title="编辑互动记录">
       <div className="space-y-6">
-        {/* Header with navigation */}
+        {/* 19.7 AC1：编辑页返回列表；AC2 同款：查看详情 uipro-cta、删除 semantic-error，无 emoji */}
         <div className="flex items-center justify-between">
           <Link to="/interactions">
-            <Button variant="outline" size="sm" className="border border-gray-300">
+            <Button variant="outline" size="sm" className="cursor-pointer transition-colors duration-200">
               ← 返回列表
             </Button>
           </Link>
           <div className="flex space-x-2">
             <Link to={`/interactions/${id}`}>
-              <Button variant="secondary" size="sm" className="bg-primary-blue/10 border border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50">
-                📄 查看详情
+              <Button variant="outline" size="sm" className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200">
+                查看详情
               </Button>
             </Link>
             {canDelete && (
@@ -95,10 +95,10 @@ export const InteractionEditPage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-300 hover:border-red-400"
+                className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
                 disabled={isDeleting}
               >
-                🗑️ 删除
+                删除
               </Button>
             )}
           </div>
@@ -170,7 +170,7 @@ export const InteractionEditPage: React.FC = () => {
                 <Button
                   onClick={handleDelete}
                   variant="primary"
-                  className="bg-red-600 hover:bg-red-700"
+                  className="!bg-semantic-error hover:!bg-semantic-error/90 cursor-pointer transition-colors duration-200"
                   disabled={isDeleting}
                 >
                   {isDeleting ? '删除中...' : '确认删除'}

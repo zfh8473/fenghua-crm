@@ -55,6 +55,11 @@ export interface Column<T> {
    * Column width
    */
   width?: string | number;
+
+  /**
+   * Minimum column width (e.g. to avoid badge text wrapping when detail panel is open)
+   */
+  minWidth?: string | number;
 }
 
 export interface TableProps<T> {
@@ -94,6 +99,12 @@ export interface TableProps<T> {
    * Table aria-label for accessibility
    */
   'aria-label'?: string;
+  
+  /**
+   * Zebra striping for rows (Epic 19 / dashboard-analytics)
+   * @default false
+   */
+  striped?: boolean;
 }
 
 export function Table<T extends Record<string, any>>({
@@ -104,6 +115,7 @@ export function Table<T extends Record<string, any>>({
   rowKey,
   className = '',
   'aria-label': ariaLabel,
+  striped = false,
   ...props
 }: TableProps<T>) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -161,12 +173,15 @@ export function Table<T extends Record<string, any>>({
                 <th
                   key={column.key}
                   scope="col"
-                  className={`p-monday-2 p-monday-4 text-left text-monday-sm font-semibold text-monday-text ${
+                  className={`p-monday-2 p-monday-4 text-left text-monday-sm font-semibold text-monday-text whitespace-nowrap ${
                     column.sortable && sortable
-                      ? 'cursor-pointer hover:bg-gray-100 select-none'
+                      ? 'cursor-pointer hover:bg-gray-100 select-none transition-colors duration-200'
                       : ''
                   }`}
-                  style={column.width ? { width: column.width } : undefined}
+                  style={{
+                    ...(column.width && { width: column.width }),
+                    ...(column.minWidth && { minWidth: column.minWidth }),
+                  }}
                   onClick={() => column.sortable && handleSort(column.key)}
                   aria-sort={
                     sortable && column.sortable && sortColumn === column.key
@@ -209,9 +224,9 @@ export function Table<T extends Record<string, any>>({
                 return (
                   <tr
                     key={uniqueKey}
-                    className={`border-b border-gray-200 hover:bg-monday-bg transition-colors duration-150 ${
+                    className={`border-b border-gray-200 hover:bg-monday-bg transition-colors duration-200 ${
                       onRowClick ? 'cursor-pointer' : ''
-                    }`}
+                    } ${striped && rowIndex % 2 === 1 ? 'bg-gray-50' : ''}`}
                     onClick={() => handleRowClick(row)}
                     onKeyDown={(e) => handleKeyDown(e, row)}
                     tabIndex={onRowClick ? 0 : undefined}
@@ -221,7 +236,10 @@ export function Table<T extends Record<string, any>>({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className="p-monday-2 p-monday-4 text-monday-sm text-monday-text"
+                    className="p-monday-2 p-monday-4 text-monday-sm text-gray-900 font-medium"
+                    style={{
+                      ...(column.minWidth && { minWidth: column.minWidth }),
+                    }}
                   >
                     {column.render
                       ? column.render(row[column.key], row)

@@ -8,6 +8,7 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getChartLabel } from '../utils/chart-labels';
+import { CHART_COLORS } from '../utils/chart-colors';
 
 export interface LineChartData {
   name: string;
@@ -47,7 +48,7 @@ export const LineChartComponent: React.FC<LineChartProps> = ({
   data,
   title,
   dataKeys,
-  colors = ['#3b82f6', '#10b981', '#f59e0b'],
+  colors = [...CHART_COLORS],
   labels,
 }) => {
   // Use custom labels or default to Chinese labels
@@ -58,11 +59,11 @@ export const LineChartComponent: React.FC<LineChartProps> = ({
     return (
       <div className="w-full">
         {title && (
-          <h3 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
+          <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-4 font-uipro-heading">
             {title}
           </h3>
         )}
-        <div className="flex items-center justify-center h-[300px] text-monday-text-secondary">
+        <div className="flex items-center justify-center h-[300px] text-uipro-secondary">
           <p>暂无数据</p>
         </div>
       </div>
@@ -70,15 +71,15 @@ export const LineChartComponent: React.FC<LineChartProps> = ({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full transition-opacity duration-200">
       {title && (
-        <h3 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
+        <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-4 font-uipro-heading">
           {title}
         </h3>
       )}
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis 
             dataKey="name" 
             stroke="#6b7280"
@@ -88,12 +89,13 @@ export const LineChartComponent: React.FC<LineChartProps> = ({
             stroke="#6b7280"
             style={{ fontSize: '12px' }}
           />
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
+              border: '1px solid #e2e8f0',
               borderRadius: '8px',
               padding: '8px',
+              transition: 'opacity 150ms',
             }}
           />
           <Legend 

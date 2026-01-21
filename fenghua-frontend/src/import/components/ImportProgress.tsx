@@ -90,7 +90,7 @@ export const ImportProgress: React.FC<ImportProgressProps> = ({
       <Card variant="default">
         <div className="flex items-center justify-center py-monday-12">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-blue mx-auto mb-monday-4" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-uipro-cta mx-auto mb-monday-4" />
             <p className="text-monday-base text-monday-text-secondary">正在启动导入任务...</p>
           </div>
         </div>
@@ -152,7 +152,7 @@ export const ImportProgress: React.FC<ImportProgressProps> = ({
             </div>
             <div>
               <div className="text-monday-sm text-monday-text-secondary">已处理</div>
-              <div className="text-monday-xl font-bold text-primary-blue">
+              <div className="text-monday-xl font-bold text-uipro-cta">
                 {importResult.successCount + importResult.failureCount}
               </div>
             </div>
@@ -166,7 +166,7 @@ export const ImportProgress: React.FC<ImportProgressProps> = ({
                 </div>
                 <div>
                   <div className="text-monday-sm text-monday-text-secondary">失败</div>
-                  <div className="text-monday-xl font-bold text-primary-red">
+                  <div className="text-monday-xl font-bold text-semantic-error">
                     {importResult.failureCount}
                   </div>
                 </div>
@@ -192,7 +192,7 @@ export const ImportProgress: React.FC<ImportProgressProps> = ({
                 key={idx}
                 className="p-monday-3 bg-red-50 border border-red-200 rounded-monday-md"
               >
-                <div className="text-monday-sm font-medium text-primary-red">
+                <div className="text-monday-sm font-medium text-semantic-error">
                   行 {error.row} - {error.field}
                 </div>
                 <div className="text-monday-sm text-monday-text-secondary mt-monday-1">

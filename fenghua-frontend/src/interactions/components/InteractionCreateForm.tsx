@@ -443,7 +443,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-monday-sm font-semibold text-monday-text mb-monday-2">
-            客户 <span className="text-red-500">*</span>
+            客户 <span className="text-semantic-error">*</span>
           </label>
           <CustomerSelect
             selectedCustomer={selectedCustomer}
@@ -459,7 +459,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
         {/* Product Selection */}
         <div>
           <label className="block text-monday-sm font-semibold text-monday-text mb-monday-2">
-            产品 <span className="text-red-500">*</span>
+            产品 <span className="text-semantic-error">*</span>
           </label>
         {!selectedCustomer ? (
           <div className="p-monday-4 bg-gray-100 border-2 border-dashed border-gray-300 rounded-monday-md text-center relative">
@@ -518,7 +518,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
           </>
         )}
         {errors.productIds && (
-          <p className="mt-monday-1 text-monday-xs text-red-500 flex items-center gap-monday-1">
+          <p className="mt-monday-1 text-monday-xs text-semantic-error flex items-center gap-monday-1">
             <span>❌</span>
             {errors.productIds.message}
           </p>
@@ -529,7 +529,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       {/* Interaction Type - Radio buttons */}
       <div>
         <label className="block text-monday-sm font-semibold text-monday-text mb-monday-2">
-          互动类型 <span className="text-red-500">*</span>
+          互动类型 <span className="text-semantic-error">*</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {interactionTypeOptions.map((option) => {
@@ -543,7 +543,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
                 [FrontendInteractionType.PRODUCT_INQUIRY]: 'bg-blue-500 text-white border-blue-500',      // 蓝色
                 [FrontendInteractionType.QUOTATION]: 'bg-cyan-500 text-white border-cyan-500',             // 青色
                 [FrontendInteractionType.QUOTATION_ACCEPTED]: 'bg-teal-500 text-white border-teal-500',  // 青绿色
-                [FrontendInteractionType.QUOTATION_REJECTED]: 'bg-red-500 text-white border-red-500',     // 红色（拒绝用红色）
+                [FrontendInteractionType.QUOTATION_REJECTED]: 'bg-semantic-error text-white border-semantic-error',
                 [FrontendInteractionType.ORDER_SIGNED]: 'bg-green-500 text-white border-green-500',      // 绿色
                 [FrontendInteractionType.ORDER_FOLLOW_UP]: 'bg-lime-500 text-white border-lime-500',    // 黄绿色（进度跟进）
                 [FrontendInteractionType.ORDER_COMPLETED]: 'bg-emerald-500 text-white border-emerald-500', // 翠绿
@@ -552,8 +552,8 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
                 [BackendInteractionType.QUOTATION_RECEIVED]: 'bg-amber-500 text-white border-amber-500',  // 琥珀
                 [BackendInteractionType.SPECIFICATION_CONFIRMED]: 'bg-orange-500 text-white border-orange-500', // 橙色
                 [BackendInteractionType.PRODUCTION_PROGRESS]: 'bg-orange-600 text-white border-orange-600', // 深橙
-                [BackendInteractionType.PRE_SHIPMENT_INSPECTION]: 'bg-red-500 text-white border-red-500', // 红色
-                [BackendInteractionType.SHIPPED]: 'bg-red-600 text-white border-red-600',                 // 最暖 - 深红
+                [BackendInteractionType.PRE_SHIPMENT_INSPECTION]: 'bg-semantic-error text-white border-semantic-error',
+                [BackendInteractionType.SHIPPED]: 'bg-semantic-error text-white border-semantic-error',
               };
               return colorMap[value] || 'bg-gray-500 text-white border-gray-500';
             };
@@ -594,8 +594,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
           })}
         </div>
         {errors.interactionType && (
-          <p className="mt-monday-2 text-monday-sm text-primary-red flex items-center gap-monday-1" role="alert">
-            <span>❌</span>
+          <p className="mt-monday-2 text-monday-sm text-semantic-error flex items-center gap-monday-1" role="alert">
             {errors.interactionType.message}
           </p>
         )}
@@ -604,7 +603,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       {/* Interaction Date */}
       <div>
         <label className="block text-monday-sm font-semibold text-monday-text mb-monday-2">
-          互动时间 <span className="text-red-500">*</span>
+          互动时间 <span className="text-semantic-error">*</span>
         </label>
         <Input
           type="datetime-local"
@@ -625,7 +624,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
           className="min-h-[48px]"
         />
         {errors.interactionDate && (
-          <p className="mt-monday-1 text-monday-xs text-red-500 flex items-center gap-monday-1">
+          <p className="mt-monday-1 text-monday-xs text-semantic-error flex items-center gap-monday-1">
             <span>❌</span>
             {errors.interactionDate.message}
           </p>
@@ -647,8 +646,8 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
           rows={4}
           className={`w-full px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 min-h-[48px] ${
             errors.description
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-monday-border focus:ring-primary-blue focus:border-primary-blue'
+              ? 'border-semantic-error focus:ring-semantic-error/50 focus:border-semantic-error'
+              : 'border-monday-border focus:ring-uipro-cta/50 focus:border-uipro-cta'
           }`}
           placeholder="请输入互动描述..."
         />
@@ -657,7 +656,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
             {descriptionLength}/{MAX_DESCRIPTION_LENGTH}
           </div>
           {errors.description && (
-            <p className="text-monday-xs text-red-500 flex items-center gap-monday-1">
+            <p className="text-monday-xs text-semantic-error flex items-center gap-monday-1">
               <span>❌</span>
               {errors.description.message}
             </p>
@@ -672,7 +671,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
         </label>
         <select
           {...register('status')}
-          className="w-full px-monday-3 py-monday-2 border border-monday-border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue min-h-[48px]"
+          className="w-full px-monday-3 py-monday-2 border border-monday-border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta min-h-[48px] transition-colors duration-200"
         >
           <option value="">请选择状态（可选）</option>
           {statusOptions.map((option) => (
@@ -682,7 +681,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
           ))}
         </select>
         {errors.status && (
-          <p className="mt-monday-1 text-monday-xs text-red-500">{errors.status.message}</p>
+          <p className="mt-monday-1 text-monday-xs text-semantic-error">{errors.status.message}</p>
         )}
       </div>
 
@@ -750,19 +749,14 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       >
         <div className={`flex gap-monday-4 ${isMobile ? 'flex-col' : 'justify-end'}`}>
           {onCancel && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onCancel}
-              className={`min-h-[48px] ${isMobile ? 'w-full' : ''}`}
-            >
+            <Button type="button" variant="secondary" onClick={onCancel} className={`min-h-[48px] cursor-pointer transition-colors duration-200 ${isMobile ? 'w-full' : ''}`}>
               取消
             </Button>
           )}
           <Button
             type="submit"
             disabled={isSubmitting || createMutation.isPending}
-            className={`min-h-[48px] ${isMobile ? 'w-full' : ''}`}
+            className={`min-h-[48px] !bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200 ${isMobile ? 'w-full' : ''}`}
           >
             {isSubmitting || createMutation.isPending ? '创建中...' : '创建互动记录'}
           </Button>

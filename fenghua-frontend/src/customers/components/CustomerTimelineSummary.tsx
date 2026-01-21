@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { customersService } from '../customers.service';
 import { CustomerTimelineModal } from './CustomerTimelineModal';
 
@@ -99,14 +100,14 @@ export const CustomerTimelineSummary: React.FC<CustomerTimelineSummaryProps> = (
     <>
       <Card variant="outlined" className="p-monday-4">
         <div className="flex items-center justify-between mb-monday-3">
-          <h4 className="text-monday-base font-semibold text-monday-text">
+          <h4 className="text-monday-base font-semibold text-gray-900">
             时间线视图
           </h4>
         </div>
 
         {/* 统计信息 */}
         <div className="space-y-monday-2 mb-monday-4">
-          <p className="text-monday-sm text-monday-text-secondary">
+          <p className="text-monday-sm text-gray-900 font-medium">
             {stats.total === 0 ? (
               <span>该客户尚未有任何互动记录</span>
             ) : (
@@ -115,14 +116,16 @@ export const CustomerTimelineSummary: React.FC<CustomerTimelineSummaryProps> = (
           </p>
         </div>
 
-        {/* 显示时间线按钮 */}
+        {/* 显示时间线按钮（与详情页编辑/删除统一：outline、uipro-cta、图标） */}
         <Button
           type="button"
           size="sm"
-          variant="secondary"
+          variant="outline"
           onClick={() => setIsTimelineModalOpen(true)}
-          aria-label="显示时间线"
-          className="w-full"
+          title={stats.total === 0 ? '记录新互动' : '显示时间线'}
+          aria-label={stats.total === 0 ? '记录新互动' : '显示时间线'}
+          leftIcon={<HomeModuleIcon name="chartBar" className="w-4 h-4 flex-shrink-0" />}
+          className="w-full text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
         >
           {stats.total === 0 ? '记录新互动' : '显示时间线'}
         </Button>

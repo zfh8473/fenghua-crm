@@ -130,7 +130,7 @@ export const AnalysisExportDialog: React.FC<AnalysisExportDialogProps> = ({
             {(['csv', 'excel', 'pdf', 'png', 'jpeg'] as ExportFormat[]).map((format) => (
               <label
                 key={format}
-                className="flex items-center space-x-monday-2 cursor-pointer hover:bg-gray-50 p-monday-2 rounded"
+                className="flex items-center space-x-monday-2 cursor-pointer hover:bg-gray-50 p-monday-2 rounded transition-colors duration-200"
               >
                 <input
                   type="radio"
@@ -188,7 +188,12 @@ export const AnalysisExportDialog: React.FC<AnalysisExportDialogProps> = ({
           <Button variant="secondary" onClick={onClose} disabled={isExporting}>
             取消
           </Button>
-          <Button variant="primary" onClick={handleExport} disabled={isExporting}>
+          <Button
+            variant="primary"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="!bg-uipro-cta hover:!bg-uipro-cta/90 focus:ring-uipro-cta/50"
+          >
             {isExporting ? '导出中...' : '导出'}
           </Button>
         </div>

@@ -124,39 +124,30 @@ export const InteractionDetailPage: React.FC = () => {
    * @param type - Interaction type string
    * @returns Tailwind CSS class string for background and text color
    */
+  /** 19.3 main-business：类型色 uipro-* / semantic-*，不引入紫/粉 */
   const getInteractionTypeColor = (type: string): string => {
     const buyerTypes = [
-      'initial_contact',
-      'product_inquiry',
-      'quotation',
-      'quotation_accepted',
-      'quotation_rejected',
-      'order_signed',
-      'order_follow_up',
-      'order_completed',
+      'initial_contact', 'product_inquiry', 'quotation', 'quotation_accepted', 'quotation_rejected',
+      'order_signed', 'order_follow_up', 'order_completed',
     ];
     const supplierTypes = [
-      'product_inquiry_supplier',
-      'quotation_received',
-      'specification_confirmed',
-      'production_progress',
-      'pre_shipment_inspection',
-      'shipped',
+      'product_inquiry_supplier', 'quotation_received', 'specification_confirmed',
+      'production_progress', 'pre_shipment_inspection', 'shipped',
     ];
-    if (buyerTypes.includes(type)) {
-      return 'bg-primary-blue/10 text-primary-blue border border-primary-blue/20';
-    }
-    if (supplierTypes.includes(type)) {
-      return 'bg-primary-purple/10 text-primary-purple border border-primary-purple/20';
-    }
-    return 'bg-gray-100 text-gray-700 border border-gray-200';
+    if (buyerTypes.includes(type)) return 'bg-uipro-cta/15 text-uipro-cta border border-uipro-cta/25';
+    if (supplierTypes.includes(type)) return 'bg-uipro-secondary/15 text-uipro-secondary border border-uipro-secondary/25';
+    return 'bg-uipro-secondary/15 text-uipro-secondary border border-gray-200';
   };
 
   if (isLoading) {
     return (
       <MainLayout title="互动记录详情">
         <Card>
-          <div className="py-8 text-center text-gray-500">加载中...</div>
+          <div className="p-6 space-y-4">
+            <div className="h-6 bg-gray-200 rounded animate-pulse w-1/3" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
+          </div>
         </Card>
       </MainLayout>
     );
@@ -166,9 +157,9 @@ export const InteractionDetailPage: React.FC = () => {
     return (
       <MainLayout title="互动记录详情">
         <Card>
-          <div className="py-8 text-center text-red-600">{error || '互动记录不存在'}</div>
+          <div className="py-8 text-center text-semantic-error" role="alert">{error || '互动记录不存在'}</div>
           <div className="text-center mt-4">
-            <Button onClick={() => navigate('/interactions')} variant="secondary">
+            <Button onClick={() => navigate('/interactions')} variant="outline" className="cursor-pointer transition-colors duration-200">
               返回列表
             </Button>
           </div>
@@ -183,14 +174,14 @@ export const InteractionDetailPage: React.FC = () => {
         {/* Header with back button */}
         <div className="flex items-center justify-between">
           <Link to="/interactions">
-            <Button variant="outline" size="sm" className="border border-gray-300">
+            <Button variant="outline" size="sm" className="cursor-pointer transition-colors duration-200">
               ← 返回列表
             </Button>
           </Link>
           <div className="flex space-x-2">
             <Link to={`/interactions/${id}/edit`}>
-              <Button variant="secondary" size="sm" className="bg-primary-blue/10 border border-primary-blue/30 text-primary-blue hover:bg-primary-blue/20 hover:border-primary-blue/50">
-                ✏️ 编辑
+              <Button variant="primary" size="sm" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+                编辑
               </Button>
             </Link>
             {canDelete && (
@@ -198,10 +189,10 @@ export const InteractionDetailPage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-300 hover:border-red-400"
+                className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
                 disabled={isDeleting}
               >
-                🗑️ 删除
+                删除
               </Button>
             )}
           </div>
@@ -223,15 +214,15 @@ export const InteractionDetailPage: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link
                         to={`/customers?customerId=${customer.id}`}
-                        className="text-base text-primary-blue hover:text-primary-blue-hover hover:underline font-medium"
+                        className="text-base text-uipro-cta hover:underline font-medium cursor-pointer transition-colors duration-200"
                       >
                         {customer.name}
                       </Link>
                       <span
                         className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                           customer.customerType === 'BUYER'
-                            ? 'bg-primary-blue/10 text-primary-blue border border-primary-blue/20'
-                            : 'bg-primary-green/10 text-primary-green border border-primary-green/20'
+                            ? 'bg-uipro-cta/15 text-uipro-cta border border-uipro-cta/25'
+                            : 'bg-semantic-success/15 text-semantic-success border border-semantic-success/25'
                         }`}
                       >
                         {customer.customerType === 'BUYER' ? '采购商' : '供应商'}
@@ -250,7 +241,7 @@ export const InteractionDetailPage: React.FC = () => {
                   <div className="space-y-1">
                     <Link
                       to={`/products?productId=${product.id}`}
-                      className="text-base text-primary-blue hover:text-primary-blue-hover hover:underline font-medium block"
+                      className="text-base text-uipro-cta hover:underline font-medium block cursor-pointer transition-colors duration-200"
                     >
                       {product.name}
                     </Link>
@@ -309,7 +300,7 @@ export const InteractionDetailPage: React.FC = () => {
                       href={attachment.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-blue-600 hover:text-blue-800"
+                      className="block text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
                     >
                       {attachment.fileName}
                     </a>
@@ -366,15 +357,10 @@ export const InteractionDetailPage: React.FC = () => {
                 此操作将执行软删除，数据保留用于审计。
               </p>
               <div className="flex justify-end gap-3">
-                <Button onClick={() => setShowDeleteConfirm(false)} variant="outline" disabled={isDeleting}>
+                <Button onClick={() => setShowDeleteConfirm(false)} variant="outline" disabled={isDeleting} className="cursor-pointer transition-colors duration-200">
                   取消
                 </Button>
-                <Button
-                  onClick={handleDelete}
-                  variant="primary"
-                  className="bg-red-600 hover:bg-red-700"
-                  disabled={isDeleting}
-                >
+                <Button onClick={handleDelete} variant="primary" className="!bg-semantic-error hover:!bg-semantic-error/90 cursor-pointer transition-colors duration-200" disabled={isDeleting}>
                   {isDeleting ? '删除中...' : '确认删除'}
                 </Button>
               </div>

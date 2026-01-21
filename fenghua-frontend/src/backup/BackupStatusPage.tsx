@@ -122,12 +122,12 @@ export const BackupStatusPage: React.FC = () => {
                 </thead>
                 <tbody>
                   {history.map((backup) => (
-                    <tr key={backup.id} className={`border-b border-gray-200 hover:bg-monday-bg transition-colors duration-150 ${backup.status === 'failed' ? 'bg-primary-red/5' : ''}`}>
+                    <tr key={backup.id} className={`border-b border-gray-200 hover:bg-monday-bg transition-colors duration-150 ${backup.status === 'failed' ? 'bg-semantic-error/5' : ''}`}>
                       <td className="p-monday-2 px-monday-4 text-monday-sm text-monday-text">{formatDate(backup.timestamp)}</td>
                       <td className="p-monday-2 px-monday-4 text-monday-sm">
                         <span className={`px-monday-2 py-monday-1 rounded-monday-sm text-monday-xs font-medium ${
-                          backup.status === 'success' ? 'bg-primary-green/20 text-primary-green' :
-                          backup.status === 'failed' ? 'bg-primary-red/20 text-primary-red' :
+                          backup.status === 'success' ? 'bg-semantic-success/15 text-semantic-success' :
+                          backup.status === 'failed' ? 'bg-semantic-error/15 text-semantic-error' :
                           'bg-gray-100 text-monday-text-secondary'
                         }`}>
                           {backup.status === 'success' ? '成功' : '失败'}
@@ -171,7 +171,7 @@ export const BackupStatusPage: React.FC = () => {
                   onClick={() => setSelectedBackup(null)}
                   variant="ghost"
                   size="sm"
-                  className="w-8 h-8 p-0 text-monday-text hover:text-primary-red"
+                  className="w-8 h-8 p-0 text-monday-text hover:text-semantic-error cursor-pointer transition-colors duration-200"
                 >
                   ×
                 </Button>
@@ -214,7 +214,7 @@ export const BackupStatusPage: React.FC = () => {
                 {selectedBackup.errorMessage && (
                   <div className="flex flex-col gap-monday-2">
                     <div className="text-monday-sm font-semibold text-monday-text">错误信息:</div>
-                    <span className="text-monday-base text-primary-red">{selectedBackup.errorMessage}</span>
+                    <span className="text-monday-base text-semantic-error">{selectedBackup.errorMessage}</span>
                   </div>
                 )}
               </div>

@@ -7,6 +7,7 @@
 
 import React, { Suspense, lazy } from 'react';
 import { CooperationTrendItem } from '../services/supplier-analysis.service';
+import { CHART_COLORS } from '../utils/chart-colors';
 
 const LineChartComponent = lazy(() =>
   import('./LineChart').then(module => ({
@@ -37,7 +38,7 @@ export const CooperationTrendChart: React.FC<CooperationTrendChartProps> = ({
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full text-center text-monday-text-secondary py-monday-8">
+      <div className="w-full text-center text-uipro-secondary py-monday-8">
         <p>暂无数据</p>
       </div>
     );
@@ -56,7 +57,7 @@ export const CooperationTrendChart: React.FC<CooperationTrendChartProps> = ({
       <LineChartComponent
         data={chartData}
         dataKeys={['cooperationFrequency']}
-        colors={['#3b82f6']} // Blue color for cooperation frequency
+        colors={[CHART_COLORS[0]]}
       />
     </Suspense>
   );

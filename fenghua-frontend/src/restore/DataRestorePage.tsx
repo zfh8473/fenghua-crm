@@ -147,7 +147,7 @@ export const DataRestorePage: React.FC = () => {
     <MainLayout title="数据恢复">
       <div className="space-y-monday-4">
         {error && (
-          <div className="bg-primary-red/20 border border-primary-red text-primary-red p-monday-4 rounded-monday-md flex justify-between items-center" role="alert">
+          <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error p-monday-4 rounded-monday-md flex justify-between items-center" role="alert">
             <span>{error}</span>
             <Button onClick={loadBackups} variant="outline" size="sm" className="bg-gray-50 hover:bg-gray-100 border-gray-300">
               重试
@@ -221,7 +221,7 @@ export const DataRestorePage: React.FC = () => {
               <p className="text-monday-base text-monday-text mb-monday-2">
                 确定要从备份 <strong>{formatDate(selectedBackup.timestamp)}</strong> 恢复数据吗？
               </p>
-              <p className="text-monday-base text-primary-red font-medium mb-monday-6">
+              <p className="text-monday-base text-semantic-error font-medium mb-monday-6">
                 此操作将覆盖当前数据。系统会在恢复前自动创建快照备份。
               </p>
               <div className="flex justify-end gap-monday-3">

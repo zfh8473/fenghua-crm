@@ -36,6 +36,12 @@ const config: Config = {
         'semantic-warning': themeTokens.colors.semantic.warning,
         'semantic-error': themeTokens.colors.semantic.error,
         'semantic-info': themeTokens.colors.semantic.info,
+        // Epic 19 / ui-ux-pro-max-skill（与 monday/linear 并存，19.2–19.5 可选用）
+        'uipro-primary': themeTokens.proMax.colors.primary,
+        'uipro-secondary': themeTokens.proMax.colors.secondary,
+        'uipro-cta': themeTokens.proMax.colors.cta,
+        'uipro-bg': themeTokens.proMax.colors.background,
+        'uipro-text': themeTokens.proMax.colors.text,
       },
       // Spacing Tokens (extending Tailwind default)
       spacing: {
@@ -57,6 +63,9 @@ const config: Config = {
       // Typography Tokens
       fontFamily: {
         ...themeTokens.typography.fontFamily,
+        // Epic 19 / ui-ux-pro-max-skill（19.2–19.5 可选用）
+        'uipro-heading': themeTokens.proMax.fontFamily.heading,
+        'uipro-body': themeTokens.proMax.fontFamily.body,
       },
       fontSize: {
         ...themeTokens.typography.fontSize,

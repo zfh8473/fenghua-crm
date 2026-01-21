@@ -25,18 +25,14 @@ export function LogsList({ logs }: LogsListProps) {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
+  /** 19.5 admin-settings：级别用 semantic-*、uipro-cta */
   const getLevelColor = (level: LogLevel): string => {
     switch (level) {
-      case LogLevel.ERROR:
-        return 'text-primary-red';
-      case LogLevel.WARN:
-        return 'text-yellow-600';
-      case LogLevel.INFO:
-        return 'text-primary-blue';
-      case LogLevel.DEBUG:
-        return 'text-monday-text-secondary';
-      default:
-        return 'text-monday-text';
+      case LogLevel.ERROR: return 'text-semantic-error';
+      case LogLevel.WARN: return 'text-semantic-warning';
+      case LogLevel.INFO: return 'text-uipro-cta';
+      case LogLevel.DEBUG: return 'text-uipro-secondary';
+      default: return 'text-uipro-text';
     }
   };
 
@@ -45,17 +41,17 @@ export function LogsList({ logs }: LogsListProps) {
       <table className="w-full min-w-[600px] border-collapse">
         <thead>
           <tr className="bg-monday-bg border-b border-gray-200">
-            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">时间戳</th>
-            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">级别</th>
-            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">消息</th>
-            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">上下文</th>
-            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">用户 ID</th>
+            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-uipro-secondary uppercase tracking-wider">时间戳</th>
+            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-uipro-secondary uppercase tracking-wider">级别</th>
+            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-uipro-secondary uppercase tracking-wider">消息</th>
+            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-uipro-secondary uppercase tracking-wider">上下文</th>
+            <th className="p-monday-2 px-monday-4 text-left text-monday-xs font-semibold text-uipro-secondary uppercase tracking-wider">用户 ID</th>
           </tr>
         </thead>
         <tbody>
           {logs.length === 0 ? (
             <tr>
-              <td colSpan={5} className="p-monday-6 text-center text-monday-text-secondary text-monday-sm">
+              <td colSpan={5} className="p-monday-6 text-center text-uipro-secondary text-monday-sm">
                 暂无日志
               </td>
             </tr>
@@ -69,8 +65,8 @@ export function LogsList({ logs }: LogsListProps) {
                   </span>
                 </td>
                 <td className="p-monday-2 px-monday-4 text-monday-sm text-monday-text max-w-[400px] break-words">{log.message}</td>
-                <td className="p-monday-2 px-monday-4 text-monday-sm text-monday-text-secondary">{log.context || '-'}</td>
-                <td className="p-monday-2 px-monday-4 text-monday-sm text-monday-text-secondary font-mono">{log.userId || '-'}</td>
+                <td className="p-monday-2 px-monday-4 text-monday-sm text-uipro-secondary">{log.context || '-'}</td>
+                <td className="p-monday-2 px-monday-4 text-monday-sm text-uipro-secondary font-mono">{log.userId || '-'}</td>
               </tr>
             ))
           )}

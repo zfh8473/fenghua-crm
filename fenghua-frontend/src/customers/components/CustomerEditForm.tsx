@@ -153,14 +153,14 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
 
   if (!hasPermission) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-monday-4 py-monday-3 rounded-monday-md">
+      <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error px-monday-4 py-monday-3 rounded-monday-md" role="alert">
         <p className="font-semibold">权限不足</p>
         <p className="text-monday-sm mt-monday-1">
           {isFrontendSpecialist(user?.role)
             ? '前端专员不能编辑供应商类型的客户'
             : '后端专员不能编辑采购商类型的客户'}
         </p>
-        <Button variant="outline" onClick={onCancel} className="mt-monday-4">
+        <Button variant="outline" onClick={onCancel} className="mt-monday-4 cursor-pointer transition-colors duration-200">
           返回
         </Button>
       </div>
@@ -321,26 +321,26 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
           onChange={(e) => handleChange('notes', e.target.value)}
           rows={4}
           maxLength={5000}
-          className={`w-full px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.notes ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-monday-3 py-monday-2 border rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 transition-colors duration-200 ${
+            errors.notes ? 'border-semantic-error' : 'border-gray-300'
           }`}
         />
         {errors.notes && (
-          <p className="text-monday-xs text-red-500 mt-monday-1">{errors.notes}</p>
+          <p className="text-monday-xs text-semantic-error mt-monday-1">{errors.notes}</p>
         )}
       </div>
 
       {errors.submit && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-monday-4 py-monday-3 rounded-monday-md">
+        <div className="bg-semantic-error/10 border border-semantic-error text-semantic-error px-monday-4 py-monday-3 rounded-monday-md" role="alert">
           {errors.submit}
         </div>
       )}
 
       <div className="flex justify-end gap-monday-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} className="cursor-pointer transition-colors duration-200">
           取消
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
           {isSubmitting ? '更新中...' : '更新客户'}
         </Button>
       </div>

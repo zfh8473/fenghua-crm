@@ -16,6 +16,7 @@ import { UserRole } from '../common/constants/roles';
 import { Card } from '../components/ui/Card';
 import { MainLayout } from '../components/layout';
 import { getErrorMessage } from '../utils/error-handling';
+import { HomeModuleIcon } from '../components/icons/HomeModuleIcons';
 // import './SystemSettingsPage.css'; // Removed
 
 export function SystemSettingsPage() {
@@ -30,13 +31,14 @@ export function SystemSettingsPage() {
   const isAdmin = currentUser?.role === UserRole.ADMIN;
 
   // System sub-menu items
+  /** 19.5 admin-settings：emoji → iconName，用 HomeModuleIcon 渲染 */
   const systemMenuItems = [
-    { path: '/monitoring', label: '系统监控', icon: '📊', description: '查看系统运行状态和性能指标' },
-    { path: '/logs', label: '系统日志', icon: '📝', description: '查看系统运行日志' },
-    { path: '/error-logs', label: '错误日志', icon: '⚠️', description: '查看系统错误和异常日志' },
-    { path: '/audit-logs', label: '审计日志', icon: '🔍', description: '查看系统操作审计记录' },
-    { path: '/backup', label: '数据备份', icon: '💾', description: '管理数据备份任务' },
-    { path: '/restore', label: '数据恢复', icon: '🔄', description: '恢复备份数据' },
+    { path: '/monitoring', label: '系统监控', iconName: 'chartBar', description: '查看系统运行状态和性能指标' },
+    { path: '/logs', label: '系统日志', iconName: 'documentText', description: '查看系统运行日志' },
+    { path: '/error-logs', label: '错误日志', iconName: 'exclamationTriangle', description: '查看系统错误和异常日志' },
+    { path: '/audit-logs', label: '审计日志', iconName: 'magnifyingGlass', description: '查看系统操作审计记录' },
+    { path: '/backup', label: '数据备份', iconName: 'circleStack', description: '管理数据备份任务' },
+    { path: '/restore', label: '数据恢复', iconName: 'arrowPath', description: '恢复备份数据' },
   ];
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export function SystemSettingsPage() {
     return (
       <MainLayout title="系统设置">
         <Card variant="default" className="max-w-7xl mx-auto">
-          <div className="p-monday-4 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-base" role="alert">
+          <div className="p-monday-4 bg-semantic-error/10 border border-semantic-error rounded-monday-md text-semantic-error text-monday-base" role="alert">
             只有管理员可以访问此页面
           </div>
         </Card>
@@ -100,30 +102,30 @@ export function SystemSettingsPage() {
             <div className="flex items-center gap-monday-2">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`px-monday-4 py-monday-2 text-monday-sm font-semibold rounded-monday-md transition-all ${
+                className={`px-monday-4 py-monday-2 text-monday-sm font-semibold rounded-monday-md transition-all cursor-pointer ${
                   activeTab === 'overview'
-                    ? 'bg-primary-blue text-white shadow-monday-sm'
-                    : 'bg-monday-bg text-monday-text-secondary hover:bg-gray-200'
+                    ? 'bg-uipro-cta text-white shadow-monday-sm'
+                    : 'bg-monday-bg text-uipro-secondary hover:bg-gray-200'
                 }`}
               >
                 系统功能
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
-                className={`px-monday-4 py-monday-2 text-monday-sm font-semibold rounded-monday-md transition-all ${
+                className={`px-monday-4 py-monday-2 text-monday-sm font-semibold rounded-monday-md transition-all cursor-pointer ${
                   activeTab === 'settings'
-                    ? 'bg-primary-blue text-white shadow-monday-sm'
-                    : 'bg-monday-bg text-monday-text-secondary hover:bg-gray-200'
+                    ? 'bg-uipro-cta text-white shadow-monday-sm'
+                    : 'bg-monday-bg text-uipro-secondary hover:bg-gray-200'
                 }`}
               >
                 系统配置
               </button>
               <button
                 onClick={() => setActiveTab('data-retention')}
-                className={`px-monday-4 py-monday-2 text-monday-sm font-semibold rounded-monday-md transition-all ${
+                className={`px-monday-4 py-monday-2 text-monday-sm font-semibold rounded-monday-md transition-all cursor-pointer ${
                   activeTab === 'data-retention'
-                    ? 'bg-primary-blue text-white shadow-monday-sm'
-                    : 'bg-monday-bg text-monday-text-secondary hover:bg-gray-200'
+                    ? 'bg-uipro-cta text-white shadow-monday-sm'
+                    : 'bg-monday-bg text-uipro-secondary hover:bg-gray-200'
                 }`}
               >
                 数据保留策略
@@ -135,32 +137,32 @@ export function SystemSettingsPage() {
         {/* Overview Tab - System Menu Items */}
         {activeTab === 'overview' && (
           <Card variant="default" className="w-full">
-            <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6 tracking-tight">系统功能</h2>
+            <h2 className="text-monday-2xl font-semibold text-uipro-text font-uipro-heading mb-monday-6 tracking-tight">系统功能</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-monday-4">
               {systemMenuItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="group block"
+                  className="group block cursor-pointer transition-colors duration-200"
                 >
-                  <Card 
-                    variant="default" 
-                    hoverable 
-                    className="p-monday-5 h-full transition-all duration-200 hover:shadow-monday-md border border-gray-200 hover:border-primary-blue/30"
+                  <Card
+                    variant="default"
+                    hoverable
+                    className="p-monday-5 h-full transition-all duration-200 hover:shadow-monday-md border border-gray-200 hover:border-uipro-cta/30"
                   >
                     <div className="flex items-start gap-monday-4">
-                      <div className="text-monday-3xl flex-shrink-0 transition-transform duration-200 group-hover:scale-110">
-                        {item.icon}
+                      <div className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
+                        <HomeModuleIcon name={item.iconName} className="w-8 h-8 text-uipro-cta" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-monday-base font-semibold text-monday-text mb-monday-1 group-hover:text-primary-blue transition-colors tracking-tight">
+                        <h3 className="text-monday-base font-semibold text-uipro-text mb-monday-1 group-hover:text-uipro-cta transition-colors tracking-tight">
                           {item.label}
                         </h3>
-                        <p className="text-monday-sm text-monday-text-secondary font-normal">
+                        <p className="text-monday-sm text-uipro-secondary font-normal">
                           {item.description}
                         </p>
                       </div>
-                      <div className="text-monday-text-secondary group-hover:text-primary-blue transition-colors flex-shrink-0 text-monday-lg">
+                      <div className="text-uipro-secondary group-hover:text-uipro-cta transition-colors flex-shrink-0 text-monday-lg">
                         →
                       </div>
                     </div>
@@ -174,15 +176,15 @@ export function SystemSettingsPage() {
         {/* Settings Tab - System Settings Form */}
         {activeTab === 'settings' && (
           <Card variant="default" className="w-full">
-            <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6 tracking-tight">系统配置</h2>
+            <h2 className="text-monday-2xl font-semibold text-uipro-text font-uipro-heading mb-monday-6 tracking-tight">系统配置</h2>
             {error && (
-              <div className="bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red p-monday-3 mb-monday-4" role="alert">
+              <div className="bg-semantic-error/10 border border-semantic-error rounded-monday-md text-semantic-error p-monday-3 mb-monday-4" role="alert">
                 {error}
               </div>
             )}
 
             {isLoading ? (
-              <div className="text-center p-monday-8 text-monday-text-secondary">加载中...</div>
+              <div className="text-center p-monday-8 text-uipro-secondary">加载中...</div>
             ) : settings ? (
               <SettingsForm
                 settings={settings}
@@ -190,7 +192,7 @@ export function SystemSettingsPage() {
                 isLoading={isSaving}
               />
             ) : (
-              <div className="text-center p-monday-8 text-monday-text-secondary">
+              <div className="text-center p-monday-8 text-uipro-secondary">
                 无法加载系统设置
               </div>
             )}
@@ -200,7 +202,7 @@ export function SystemSettingsPage() {
         {/* Data Retention Tab - Statistics and History */}
         {activeTab === 'data-retention' && (
           <Card variant="default" className="w-full">
-            <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6 tracking-tight">
+            <h2 className="text-monday-2xl font-semibold text-uipro-text font-uipro-heading mb-monday-6 tracking-tight">
               数据保留策略
             </h2>
             <DataRetentionStatistics />
