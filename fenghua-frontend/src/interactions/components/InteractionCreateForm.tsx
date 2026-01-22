@@ -5,7 +5,7 @@
  * All custom code is proprietary and not open source.
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   CreateInteractionDto,
@@ -13,6 +13,7 @@ import {
   BackendInteractionType,
   InteractionStatus,
   interactionsService,
+  InteractionType, // Story 20.4: For type recommendation
 } from '../services/interactions.service';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -31,6 +32,8 @@ import { FileUpload } from '../../attachments/components/FileUpload';
 import { Attachment, linkAttachmentToInteraction, updateAttachmentMetadata } from '../../attachments/services/attachments.service';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useSwipeable } from 'react-swipeable';
+import { peopleService } from '../../people/people.service'; // Story 20.4: For person validation
+import { generateProtocol, openContactProtocol, ContactMethodType } from '../../people/utils/contact-protocols'; // Story 20.4: For contact protocol
 // Recent customers/products functionality moved to CustomerSelect/ProductMultiSelect components
 
 interface InteractionCreateFormProps {
@@ -38,6 +41,8 @@ interface InteractionCreateFormProps {
   onCancel?: () => void;
   prefillCustomerId?: string; // 预填充的客户 ID（从 navigation state 或 URL 参数）
   prefillProductId?: string; // 预填充的产品 ID（从 URL 参数）
+  prefillPersonId?: string; // Story 20.4: 预填充的联系人 ID（从客户列表的联系人管理模态弹窗）
+  prefillContactMethod?: 'phone' | 'mobile' | 'email' | 'wechat' | 'whatsapp' | 'linkedin' | 'facebook'; // Story 20.4: 预填充的联系方式类型
 }
 
 const INTERACTION_TYPE_OPTIONS_FRONTEND = [
@@ -78,12 +83,16 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
   onCancel,
   prefillCustomerId,
   prefillProductId,
+  prefillPersonId,
+  prefillContactMethod,
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  /** Story 20.4: Selected person (contact) for interaction */
+  const [selectedPerson, setSelectedPerson] = useState<{ id: string; name: string } | null>(null);
   
   // Fetch associated products when customer is selected
   const { data: associatedProductsData, isLoading: isLoadingAssociatedProducts } = useQuery({
@@ -154,6 +163,49 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       : FrontendInteractionType.INITIAL_CONTACT;
   }, [isBackendSpecialist]);
 
+  /**
+   * Story 20.4: Get recommended interaction type based on contact method and user role
+   */
+  const getRecommendedInteractionType = useCallback((contactMethod?: string): InteractionType => {
+    if (!contactMethod) return defaultInteractionType;
+
+    if (isBackendSpecialist) {
+      // Backend specialist recommendations
+      switch (contactMethod) {
+        case 'phone':
+        case 'mobile':
+          return BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER;
+        case 'email':
+          return BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER;
+        case 'whatsapp':
+        case 'wechat':
+          return BackendInteractionType.PRODUCTION_PROGRESS;
+        case 'linkedin':
+        case 'facebook':
+          return BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER;
+        default:
+          return BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER;
+      }
+    } else {
+      // Frontend specialist recommendations
+      switch (contactMethod) {
+        case 'phone':
+        case 'mobile':
+          return FrontendInteractionType.INITIAL_CONTACT;
+        case 'email':
+          return FrontendInteractionType.INITIAL_CONTACT;
+        case 'whatsapp':
+        case 'wechat':
+          return FrontendInteractionType.INITIAL_CONTACT;
+        case 'linkedin':
+        case 'facebook':
+          return FrontendInteractionType.INITIAL_CONTACT;
+        default:
+          return FrontendInteractionType.INITIAL_CONTACT;
+      }
+    }
+  }, [isBackendSpecialist, defaultInteractionType]);
+
   // Determine customer type label and initial filter
   // Customer type label removed - label is now generic "客户"
 
@@ -171,7 +223,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
   } = useForm<CreateInteractionDto>({
     defaultValues: {
       interactionDate: new Date().toISOString().slice(0, 16), // Default to current date/time
-      interactionType: defaultInteractionType,
+      interactionType: prefillContactMethod ? getRecommendedInteractionType(prefillContactMethod) : defaultInteractionType,
       status: InteractionStatus.IN_PROGRESS, // Optional: default status
     },
   });
@@ -308,6 +360,36 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillProductId, selectedCustomer, selectedProducts.length, associatedProducts]);
 
+  // Story 20.4: Prefill person ID when provided
+  useEffect(() => {
+    if (prefillPersonId && selectedCustomer && !selectedPerson) {
+      const loadPerson = async () => {
+        try {
+          const person = await peopleService.getPerson(prefillPersonId);
+          // 验证 personId 是否属于选中的 customerId
+          if (person.companyId !== selectedCustomer.id) {
+            toast.error('该联系人不属于选中的客户');
+            return;
+          }
+          setSelectedPerson({ id: person.id, name: `${person.firstName || ''} ${person.lastName || ''}`.trim() || '未命名联系人' });
+        } catch (error) {
+          console.error('Failed to load person', error);
+          toast.error('加载联系人信息失败');
+        }
+      };
+      loadPerson();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillPersonId, selectedCustomer, selectedPerson]);
+
+  // Story 20.4: Update interaction type when contact method changes
+  useEffect(() => {
+    if (prefillContactMethod) {
+      const recommendedType = getRecommendedInteractionType(prefillContactMethod);
+      setValue('interactionType', recommendedType, { shouldValidate: false });
+    }
+  }, [prefillContactMethod, getRecommendedInteractionType, setValue]);
+
   // Recent customers functionality moved to CustomerSelect component
 
   const onSubmit = async (data: CreateInteractionDto) => {
@@ -350,15 +432,25 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       cleanedData.status = data.status as InteractionStatus;
     }
     
+    // Story 20.4: Include contact method in additionalInfo if provided
+    const additionalInfo: Record<string, unknown> = {
+      ...(data.additionalInfo || {}),
+    };
+    if (prefillContactMethod) {
+      additionalInfo.contactMethod = prefillContactMethod;
+    }
+
     // Only include additionalInfo if it exists and is not empty
-    if (data.additionalInfo && Object.keys(data.additionalInfo).length > 0) {
-      cleanedData.additionalInfo = data.additionalInfo;
+    if (Object.keys(additionalInfo).length > 0) {
+      cleanedData.additionalInfo = additionalInfo;
     }
 
     const submitData: CreateInteractionDto = {
       ...cleanedData,
       customerId: selectedCustomer.id,
       productIds: selectedProducts.map((p) => p.id),
+      // Story 20.4: Include personId if selected
+      ...(selectedPerson ? { personId: selectedPerson.id } : {}),
     } as CreateInteractionDto;
 
     // Debug log in development
@@ -399,6 +491,48 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '关联附件失败';
         toast.error(`互动记录已创建，但${errorMessage}`);
+      }
+    }
+
+    // Story 20.4: Open contact protocol after creating interaction (if contact method provided)
+    if (prefillContactMethod && selectedPerson) {
+      try {
+        // Get contact method value from selected person
+        const person = await peopleService.getPerson(selectedPerson.id);
+        let contactValue: string | undefined;
+        
+        switch (prefillContactMethod) {
+          case 'phone':
+            contactValue = person.phone;
+            break;
+          case 'mobile':
+            contactValue = person.mobile;
+            break;
+          case 'email':
+            contactValue = person.email;
+            break;
+          case 'wechat':
+            contactValue = person.wechat;
+            break;
+          case 'whatsapp':
+            contactValue = person.whatsapp;
+            break;
+          case 'linkedin':
+            contactValue = person.linkedinUrl;
+            break;
+          case 'facebook':
+            contactValue = person.facebook;
+            break;
+        }
+
+        if (contactValue) {
+          const protocol = generateProtocol(prefillContactMethod, contactValue);
+          await openContactProtocol(protocol, prefillContactMethod, contactValue);
+        }
+      } catch (error) {
+        console.error('Failed to open contact protocol:', error);
+        // Don't show error toast here - the interaction was already created successfully
+        // The protocol opening is a "nice to have" feature
       }
     }
   };
@@ -758,7 +892,11 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
             disabled={isSubmitting || createMutation.isPending}
             className={`min-h-[48px] !bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200 ${isMobile ? 'w-full' : ''}`}
           >
-            {isSubmitting || createMutation.isPending ? '创建中...' : '创建互动记录'}
+            {isSubmitting || createMutation.isPending 
+              ? '创建中...' 
+              : prefillContactMethod 
+                ? '创建互动记录并开始互动' 
+                : '创建互动记录'}
           </Button>
         </div>
       </div>

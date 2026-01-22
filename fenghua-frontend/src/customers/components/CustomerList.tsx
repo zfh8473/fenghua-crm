@@ -16,6 +16,7 @@ interface CustomerListProps {
   onEdit: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
   onSelect: (customer: Customer) => void;
+  onShowContacts?: (customer: Customer) => void;
   loading?: boolean;
   searchQuery?: string;
 }
@@ -41,6 +42,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
   onEdit,
   onDelete,
   onSelect,
+  onShowContacts,
   loading = false,
   searchQuery
 }) => {
@@ -165,6 +167,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
       key: 'actions',
       header: '操作',
       /* 19.7 AC2：与 UserList、ProductList 统一 outline、uipro-cta/semantic-error、pencilSquare/trash；编辑在左、删除在右 */
+      /* Story 20.4：添加"显示联系人"按钮 */
       render: (value, customer) => (
         <div className="flex gap-monday-2">
           <Button
@@ -193,6 +196,21 @@ export const CustomerList: React.FC<CustomerListProps> = ({
           >
             删除
           </Button>
+          {onShowContacts && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowContacts(customer);
+              }}
+              title="显示联系人"
+              leftIcon={<HomeModuleIcon name="user" className="w-4 h-4 flex-shrink-0" />}
+              className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
+            >
+              显示联系人
+            </Button>
+          )}
         </div>
       ),
     },

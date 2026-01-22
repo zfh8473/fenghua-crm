@@ -15,6 +15,7 @@ import { CustomerEditForm } from './components/CustomerEditForm';
 import { CustomerSearch, CustomerSearchFilters } from './components/CustomerSearch';
 import { CustomerSearchResults } from './components/CustomerSearchResults';
 import { CustomerDetailPanel } from './components/CustomerDetailPanel';
+import { CustomerPersonManagementModal } from './components/CustomerPersonManagementModal';
 import { MainLayout } from '../components/layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -42,13 +43,20 @@ export const CustomerManagementPage: React.FC = () => {
     offset: 0,
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchFilters, setSearchFilters] = useState<CustomerSearchFilters>({});
-  const [isSearchMode, setIsSearchMode] = useState(false);
+  /** 从 URL ?search= 初始化，便于从互动页「查看客户」带搜索词进入 */
+  const [searchFilters, setSearchFilters] = useState<CustomerSearchFilters>(() => {
+    const q = searchParams.get('search');
+    return q ? { search: q } : {};
+  });
+  const [isSearchMode, setIsSearchMode] = useState(() => !!searchParams.get('search'));
   const [searchPage, setSearchPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; customer: Customer | null }>({
     show: false,
     customer: null,
   });
+  /** Story 20.4: Person management modal state */
+  const [showPersonModal, setShowPersonModal] = useState(false);
+  const [selectedCustomerForContacts, setSelectedCustomerForContacts] = useState<Customer | null>(null);
   /** 用于忽略过期请求：只有最新一次 loadData 的结果会更新 error/loading/列表，避免 401/400 覆盖已成功的列表 */
   const loadIdRef = useRef(0);
 
@@ -266,6 +274,18 @@ export const CustomerManagementPage: React.FC = () => {
     setSelectedCustomer(null);
   };
 
+  /** Story 20.4: Handle show contacts button click */
+  const handleShowContacts = (customer: Customer) => {
+    setSelectedCustomerForContacts(customer);
+    setShowPersonModal(true);
+  };
+
+  /** Story 20.4: Handle close person modal */
+  const handleClosePersonModal = () => {
+    setShowPersonModal(false);
+    setSelectedCustomerForContacts(null);
+  };
+
   const totalPages = Math.ceil(total / (filters.limit || 20));
 
   // Get button text based on user role
@@ -378,6 +398,7 @@ export const CustomerManagementPage: React.FC = () => {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onSelect={handleSelect}
+                  onShowContacts={handleShowContacts}
                   loading={loading}
                 />
                 {totalPages > 1 && (
@@ -461,6 +482,16 @@ export const CustomerManagementPage: React.FC = () => {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* Story 20.4: Customer Person Management Modal */}
+      {showPersonModal && selectedCustomerForContacts && (
+        <CustomerPersonManagementModal
+          customerId={selectedCustomerForContacts.id}
+          customerType={selectedCustomerForContacts.customerType}
+          isOpen={showPersonModal}
+          onClose={handleClosePersonModal}
+        />
       )}
     </MainLayout>
   );

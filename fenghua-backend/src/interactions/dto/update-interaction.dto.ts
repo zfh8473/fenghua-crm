@@ -15,7 +15,9 @@ import {
   IsObject,
   IsEnum,
   IsIn,
+  IsUUID,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { InteractionStatus, FrontendInteractionType, BackendInteractionType } from './create-interaction.dto';
 
 // All valid interaction types
@@ -39,6 +41,12 @@ export class UpdateInteractionDto {
   @IsOptional()
   description?: string;
 
+  @Transform(({ value }) => {
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+      return value + ':00';
+    }
+    return value;
+  })
   @IsDateString({}, { message: '互动时间必须是有效的日期时间格式' })
   @IsOptional()
   interactionDate?: string;
@@ -52,5 +60,10 @@ export class UpdateInteractionDto {
   @IsObject({ message: '额外信息必须是有效的JSON对象' })
   @IsOptional()
   additionalInfo?: Record<string, unknown>;
+
+  @IsString({ message: '联系人ID必须是字符串' })
+  @IsOptional()
+  @IsUUID('4', { message: '联系人ID必须是有效的UUID' })
+  personId?: string; // Optional reference to specific contact person
 }
 
