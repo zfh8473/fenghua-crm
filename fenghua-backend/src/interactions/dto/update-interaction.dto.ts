@@ -16,6 +16,8 @@ import {
   IsEnum,
   IsIn,
   IsUUID,
+  IsArray,
+  ArrayMinSize,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { InteractionStatus, FrontendInteractionType, BackendInteractionType } from './create-interaction.dto';
@@ -65,5 +67,10 @@ export class UpdateInteractionDto {
   @IsOptional()
   @IsUUID('4', { message: '联系人ID必须是有效的UUID' })
   personId?: string; // Optional reference to specific contact person
+
+  @IsArray({ message: '产品ID列表必须是数组' })
+  @IsOptional()
+  @IsUUID('4', { each: true, message: '每个产品ID必须是有效的UUID' })
+  productIds?: string[]; // Optional: Update associated products
 }
 

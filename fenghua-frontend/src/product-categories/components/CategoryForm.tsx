@@ -151,7 +151,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         <Button type="button" onClick={onCancel} disabled={isSubmitting} variant="outline" className="cursor-pointer transition-colors duration-200">
           取消
         </Button>
-        <Button type="submit" isLoading={isSubmitting} variant="primary" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+        <Button type="submit" isLoading={isSubmitting} variant="primary">
           {category ? '更新类别' : '创建类别'}
         </Button>
       </div>

@@ -90,15 +90,26 @@ export class CustomerTimelineInteractionDto {
   @IsOptional()
   creatorLastName?: string;
 
-  // Product information (not in Story 3.5)
+  // Product information (1:N support)
+  @IsOptional()
+  @IsArray()
+  products?: Array<{
+    id: string;
+    name: string;
+    hsCode?: string;
+  }>;
+  
+  /** @deprecated Use products array instead */
   @IsOptional()
   @IsUUID()
   productId?: string;
 
+  /** @deprecated Use products array instead */
   @IsOptional()
   @IsString()
   productName?: string;
 
+  /** @deprecated Use products array instead */
   @IsOptional()
   @IsString()
   productHsCode?: string;

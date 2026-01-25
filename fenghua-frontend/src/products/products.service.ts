@@ -226,6 +226,51 @@ class ProductsService {
       method: 'DELETE',
     });
   }
+
+  /**
+   * Get products associated with a customer
+   * 
+   * @param customerId - The ID of the customer
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 100, to get all associations)
+   * @returns Promise that resolves to products list with total count
+   */
+  async getCustomerProducts(
+    customerId: string,
+    page: number = 1,
+    limit: number = 100,
+  ): Promise<{ products: Product[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', page.toString());
+    queryParams.append('limit', limit.toString());
+
+    // Call /customers/:id/associations endpoint which returns explicit associations
+    const response = await this.request<{ products: Array<{
+      id: string;
+      name: string;
+      hsCode: string;
+      category?: string;
+      interactionCount?: number;
+      associationType?: string;
+      createdBy?: string;
+    }>; total: number }>(
+      `/customers/${customerId}/associations?${queryParams.toString()}`,
+    );
+
+    // Convert association DTOs to Product objects with required fields
+    const products: Product[] = response.products.map((item) => ({
+      id: item.id,
+      name: item.name,
+      hsCode: item.hsCode,
+      category: item.category,
+      status: 'active' as const, // Default to active for associated products
+      createdAt: new Date(), // Default value, not critical for selection
+      updatedAt: new Date(), // Default value, not critical for selection
+      createdBy: item.createdBy,
+    }));
+
+    return { products, total: response.total };
+  }
 }
 
 export const productsService = new ProductsService();

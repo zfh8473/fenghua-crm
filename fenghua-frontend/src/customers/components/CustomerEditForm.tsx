@@ -340,7 +340,7 @@ export const CustomerEditForm: React.FC<CustomerEditFormProps> = ({
         <Button type="button" variant="outline" onClick={onCancel} className="cursor-pointer transition-colors duration-200">
           取消
         </Button>
-        <Button type="submit" disabled={isSubmitting} className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+        <Button type="submit" disabled={isSubmitting} variant="primary">
           {isSubmitting ? '更新中...' : '更新客户'}
         </Button>
       </div>

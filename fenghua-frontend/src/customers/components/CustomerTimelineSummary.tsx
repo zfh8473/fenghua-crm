@@ -120,12 +120,11 @@ export const CustomerTimelineSummary: React.FC<CustomerTimelineSummaryProps> = (
         <Button
           type="button"
           size="sm"
-          variant="outline"
+          variant="primary"
           onClick={() => setIsTimelineModalOpen(true)}
           title={stats.total === 0 ? '记录新互动' : '显示时间线'}
           aria-label={stats.total === 0 ? '记录新互动' : '显示时间线'}
-          leftIcon={<HomeModuleIcon name="chartBar" className="w-4 h-4 flex-shrink-0" />}
-          className="w-full text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
+          className="w-full"
         >
           {stats.total === 0 ? '记录新互动' : '显示时间线'}
         </Button>

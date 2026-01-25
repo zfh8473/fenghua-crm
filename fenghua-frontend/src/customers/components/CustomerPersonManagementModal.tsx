@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthContext';
 import { peopleService, Person, CreatePersonDto, UpdatePersonDto } from '../../people/people.service';
+import { customersService } from '../customers.service';
 import { ContactMethodIcon } from '../../people/components/ContactMethodIcon';
 import { PersonCreateForm } from '../../people/components/PersonCreateForm';
 import { PersonEditForm } from '../../people/components/PersonEditForm';
@@ -21,6 +22,8 @@ import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { toast } from 'react-toastify';
 import { getErrorMessage } from '../../utils/error-handling';
 import { ContactMethodType } from '../../people/utils/contact-protocols';
+import { getPersonName, getPersonInitials, getPersonAvatarColor, formatRelativeTime } from '../../people/utils/person-utils';
+import { PersonInteractionStats } from '../../people/people.service';
 
 interface CustomerPersonManagementModalProps {
   customerId: string;
@@ -51,19 +54,30 @@ const StarIcon: React.FC<{ filled?: boolean; className?: string }> = ({ filled =
 };
 
 /**
- * Get person display name
+ * Person Avatar Component
+ * 
+ * Displays a person's avatar with initials and color
  */
-const getPersonName = (person: Person): string => {
-  if (person.firstName && person.lastName) {
-    return `${person.firstName} ${person.lastName}`;
-  }
-  return person.firstName || person.lastName || '未命名联系人';
+const PersonAvatar: React.FC<{ person: Person }> = ({ person }) => {
+  const initials = getPersonInitials(person);
+  const bgColor = getPersonAvatarColor(person.id);
+  
+  return (
+    <div
+      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-monday-sm font-semibold flex-shrink-0"
+      style={{ backgroundColor: bgColor }}
+      aria-label={`${getPersonName(person)} 的头像`}
+    >
+      {initials}
+    </div>
+  );
 };
 
 /**
  * Person Card Component
  * 
  * Displays a single person (contact) card with contact methods and actions
+ * New design: Card layout with avatar, company name, and action buttons at bottom
  */
 const PersonCard: React.FC<{
   person: Person;
@@ -71,104 +85,140 @@ const PersonCard: React.FC<{
   onDelete: (person: Person) => void;
   onContactMethodClick: (person: Person, method: ContactMethodType, value: string) => void;
   isDeleting: boolean;
-}> = ({ person, onEdit, onDelete, onContactMethodClick, isDeleting }) => {
+  interactionStats?: PersonInteractionStats;
+  isLoadingStats?: boolean;
+}> = ({ person, onEdit, onDelete, onContactMethodClick, isDeleting, interactionStats, isLoadingStats }) => {
+  const avatarColor = getPersonAvatarColor(person.id);
+  
   return (
-    <Card variant="outlined" className="p-monday-3 hover:shadow-monday-sm transition-shadow">
-      <div className="flex items-start justify-between">
+    <Card 
+      variant="outlined" 
+      className="p-monday-4 hover:shadow-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-uipro-cta focus-within:ring-opacity-50"
+    >
+      {/* Header: Avatar + Name + Star */}
+      <div className="flex items-start gap-monday-3 mb-monday-3">
+        <PersonAvatar person={person} />
         <div className="flex-1 min-w-0">
-          {/* Name with star */}
-          <div className="flex items-center gap-monday-2 mb-monday-2">
-            {person.isImportant && (
-              <StarIcon filled={true} className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-            )}
-            <h3 className="text-monday-base font-semibold text-monday-text truncate">
+          <div className="flex items-center gap-monday-2 mb-monday-1">
+            <h3 className="text-monday-base font-semibold text-uipro-text truncate font-uipro-heading">
               {getPersonName(person)}
             </h3>
+            {person.isImportant && (
+              <StarIcon 
+                filled={true} 
+                className="w-4 h-4 text-yellow-500 flex-shrink-0 transition-transform duration-200 hover:scale-110 cursor-pointer" 
+                title="重要联系人"
+              />
+            )}
           </div>
-
-          {/* Job title and department */}
-          {(person.jobTitle || person.department) && (
-            <div className="text-monday-sm text-monday-text-secondary mb-monday-2">
-              {person.jobTitle && <div>{person.jobTitle}</div>}
-              {person.department && <div className="text-monday-xs text-gray-600">{person.department}</div>}
-            </div>
+          
+          {/* Job title */}
+          {person.jobTitle && (
+            <p className="text-monday-sm text-uipro-secondary mb-monday-1 font-uipro-body">
+              {person.jobTitle}
+            </p>
           )}
-
-          {/* Contact methods */}
-          <div className="flex items-center gap-monday-2 flex-wrap">
-            <ContactMethodIcon
-              type="phone"
-              hasValue={!!person.phone}
-              value={person.phone}
-              onClick={() => person.phone && onContactMethodClick(person, 'phone', person.phone!)}
-            />
-            <ContactMethodIcon
-              type="mobile"
-              hasValue={!!person.mobile}
-              value={person.mobile}
-              onClick={() => person.mobile && onContactMethodClick(person, 'mobile', person.mobile!)}
-            />
-            <ContactMethodIcon
-              type="email"
-              hasValue={!!person.email}
-              value={person.email}
-              onClick={() => person.email && onContactMethodClick(person, 'email', person.email!)}
-            />
-            <ContactMethodIcon
-              type="wechat"
-              hasValue={!!person.wechat}
-              value={person.wechat}
-              onClick={() => person.wechat && onContactMethodClick(person, 'wechat', person.wechat!)}
-            />
-            <ContactMethodIcon
-              type="whatsapp"
-              hasValue={!!person.whatsapp}
-              value={person.whatsapp}
-              onClick={() => person.whatsapp && onContactMethodClick(person, 'whatsapp', person.whatsapp!)}
-            />
-            <ContactMethodIcon
-              type="linkedin"
-              hasValue={!!person.linkedinUrl}
-              value={person.linkedinUrl}
-              onClick={() => person.linkedinUrl && onContactMethodClick(person, 'linkedin', person.linkedinUrl!)}
-            />
-            <ContactMethodIcon
-              type="facebook"
-              hasValue={!!person.facebook}
-              value={person.facebook}
-              onClick={() => person.facebook && onContactMethodClick(person, 'facebook', person.facebook!)}
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="ml-monday-4 flex items-center gap-monday-2">
-          {isDeleting && (
-            <HomeModuleIcon name="arrowPath" className="w-4 h-4 animate-spin text-monday-text-secondary" />
+          
+          {/* Department (tag style) - using uipro-cta color */}
+          {person.department && (
+            <span className="inline-flex items-center px-monday-2 py-monday-0.5 rounded-monday-sm text-monday-xs font-medium bg-uipro-cta/10 text-uipro-cta border border-uipro-cta/20">
+              {person.department}
+            </span>
           )}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => onEdit(person)}
-            disabled={isDeleting}
-            className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
-            leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
-          >
-            编辑
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => onDelete(person)}
-            disabled={isDeleting}
-            className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
-            leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
-          >
-            删除
-          </Button>
         </div>
+      </div>
+
+
+      {/* Contact history */}
+      {isLoadingStats ? (
+        <div className="mb-monday-3 text-monday-xs text-uipro-secondary">
+          <span>加载中...</span>
+        </div>
+      ) : interactionStats ? (
+        <div className="mb-monday-3 text-monday-xs text-uipro-secondary">
+          <span>{formatRelativeTime(interactionStats.lastContactDate)}</span>
+          <span className="mx-monday-1">·</span>
+          <span>本月{interactionStats.thisMonthCount}次</span>
+        </div>
+      ) : null}
+
+      {/* Divider between contact info and contact methods */}
+      <div className="mb-monday-3 border-t border-gray-200"></div>
+
+      {/* Contact methods */}
+      <div className="flex items-center gap-monday-2 flex-wrap mb-monday-3">
+        <ContactMethodIcon
+          type="phone"
+          hasValue={!!person.phone}
+          value={person.phone}
+          onClick={() => person.phone && onContactMethodClick(person, 'phone', person.phone!)}
+        />
+        <ContactMethodIcon
+          type="mobile"
+          hasValue={!!person.mobile}
+          value={person.mobile}
+          onClick={() => person.mobile && onContactMethodClick(person, 'mobile', person.mobile!)}
+        />
+        <ContactMethodIcon
+          type="email"
+          hasValue={!!person.email}
+          value={person.email}
+          onClick={() => person.email && onContactMethodClick(person, 'email', person.email!)}
+        />
+        <ContactMethodIcon
+          type="wechat"
+          hasValue={!!person.wechat}
+          value={person.wechat}
+          onClick={() => person.wechat && onContactMethodClick(person, 'wechat', person.wechat!)}
+        />
+        <ContactMethodIcon
+          type="whatsapp"
+          hasValue={!!person.whatsapp}
+          value={person.whatsapp}
+          onClick={() => person.whatsapp && onContactMethodClick(person, 'whatsapp', person.whatsapp!)}
+        />
+        <ContactMethodIcon
+          type="linkedin"
+          hasValue={!!person.linkedinUrl}
+          value={person.linkedinUrl}
+          onClick={() => person.linkedinUrl && onContactMethodClick(person, 'linkedin', person.linkedinUrl!)}
+        />
+        <ContactMethodIcon
+          type="facebook"
+          hasValue={!!person.facebook}
+          value={person.facebook}
+          onClick={() => person.facebook && onContactMethodClick(person, 'facebook', person.facebook!)}
+        />
+      </div>
+
+      {/* Actions: Edit and Delete buttons at bottom */}
+      <div className="flex items-center gap-monday-2 pt-monday-3 border-t border-gray-200">
+        {isDeleting && (
+          <HomeModuleIcon 
+            name="arrowPath" 
+            className="w-4 h-4 animate-spin text-uipro-secondary" 
+            aria-label="删除中..."
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => onEdit(person)}
+          disabled={isDeleting}
+          className="flex-1 text-monday-sm font-medium text-uipro-cta hover:text-uipro-cta/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-uipro-cta focus:ring-opacity-50 rounded-monday-sm px-monday-2 py-monday-1 cursor-pointer"
+          aria-label={`编辑 ${getPersonName(person)}`}
+        >
+          编辑
+        </button>
+        <span className="text-gray-300" aria-hidden="true">|</span>
+        <button
+          type="button"
+          onClick={() => onDelete(person)}
+          disabled={isDeleting}
+          className="flex-1 text-monday-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 rounded-monday-sm px-monday-2 py-monday-1 cursor-pointer"
+          aria-label={`删除 ${getPersonName(person)}`}
+        >
+          删除
+        </button>
       </div>
     </Card>
   );
@@ -195,9 +245,10 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
   const { token } = useAuth(); // Story 20.4: user not used in this component, but token is required for API calls
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(12); // 12 contacts per page (4 rows × 3 columns)
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportantFilter, setIsImportantFilter] = useState<boolean | undefined>(undefined);
+  const [departmentFilter, setDepartmentFilter] = useState<string>(''); // Department filter
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -206,6 +257,19 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
     method: ContactMethodType;
     value: string;
   } | null>(null);
+
+  // Fetch customer information to display customer name in header
+  const {
+    data: customerData,
+    isLoading: customerLoading,
+  } = useQuery({
+    queryKey: ['customer', customerId],
+    queryFn: async () => {
+      return await customersService.getCustomer(customerId);
+    },
+    enabled: isOpen && !!customerId && !!token,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -218,6 +282,7 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
       // Reset search and filter when modal opens
       setSearchQuery('');
       setIsImportantFilter(undefined);
+      setDepartmentFilter('');
       setPage(1);
       setViewMode('list');
       setSelectedPerson(null);
@@ -230,7 +295,7 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
     if (isOpen && viewMode === 'list') {
       setPage(1);
     }
-  }, [searchQuery, isImportantFilter, isOpen, viewMode]);
+  }, [searchQuery, isImportantFilter, departmentFilter, isOpen, viewMode]);
 
   // Handle ESC key and focus trap (参考 CustomerAssociationManagementModal 第 172-226 行)
   useEffect(() => {
@@ -309,7 +374,19 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
-  // Filtered people (client-side filtering for search)
+  // Get unique departments from people data
+  const departments = useMemo(() => {
+    if (!peopleData?.people) return [];
+    const deptSet = new Set<string>();
+    peopleData.people.forEach((person) => {
+      if (person.department) {
+        deptSet.add(person.department);
+      }
+    });
+    return Array.from(deptSet).sort();
+  }, [peopleData?.people]);
+
+  // Filtered people (client-side filtering for search and department)
   const filteredPeople = useMemo(() => {
     if (!peopleData?.people) return [];
 
@@ -323,17 +400,49 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
         const email = person.email?.toLowerCase() || '';
         const jobTitle = person.jobTitle?.toLowerCase() || '';
         const department = person.department?.toLowerCase() || '';
+        const companyName = person.company?.name?.toLowerCase() || '';
         return (
           name.includes(query) ||
           email.includes(query) ||
           jobTitle.includes(query) ||
-          department.includes(query)
+          department.includes(query) ||
+          companyName.includes(query)
         );
       });
     }
 
+    // Department filter
+    if (departmentFilter) {
+      filtered = filtered.filter((person) => person.department === departmentFilter);
+    }
+
     return filtered;
-  }, [peopleData?.people, searchQuery]);
+  }, [peopleData?.people, searchQuery, departmentFilter]);
+
+  // Batch query interaction stats for all filtered people
+  const personIds = useMemo(() => 
+    filteredPeople.map(p => p.id), 
+    [filteredPeople]
+  );
+
+  // Create stable query key from sorted person IDs to avoid unnecessary re-queries
+  const personIdsKey = useMemo(() => 
+    personIds.slice().sort().join(','), 
+    [personIds]
+  );
+
+  const { 
+    data: batchStats, 
+    isLoading: isLoadingStats 
+  } = useQuery({
+    queryKey: ['personInteractionStatsBatch', personIdsKey],
+    queryFn: async () => {
+      if (personIds.length === 0) return new Map<string, PersonInteractionStats>();
+      return await peopleService.getMultiplePersonInteractionStats(personIds);
+    },
+    enabled: isOpen && personIds.length > 0 && viewMode === 'list',
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
   // Create person mutation
   const createPersonMutation = useMutation({
@@ -457,45 +566,74 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
         className="relative max-w-6xl max-h-[90vh] w-full bg-monday-surface rounded-monday-lg shadow-monday-lg overflow-hidden z-10 flex flex-col"
         role="dialog"
         aria-modal="true"
-        aria-label="管理客户联系人"
+        aria-label={viewMode === 'interaction' ? '准备互动' : '管理客户联系人'}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-monday-4 border-b border-gray-200">
-          <h2 className="text-monday-xl font-semibold text-monday-text">管理客户联系人</h2>
-          <div className="flex items-center gap-monday-2">
-            {viewMode === 'list' && (
-              <Button
-                type="button"
-                size="sm"
-                variant="primary"
-                onClick={() => setViewMode('create')}
-                leftIcon={<HomeModuleIcon name="plus" className="w-4 h-4 flex-shrink-0" />}
-              >
-                新建联系人
-              </Button>
-            )}
-            {(viewMode === 'create' || viewMode === 'edit') && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setViewMode('list');
-                  setSelectedPerson(null);
-                }}
-              >
-                返回列表
-              </Button>
-            )}
+        <div className="flex flex-col gap-monday-3 p-monday-4 border-b border-gray-200">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-monday-2 text-monday-sm">
             <button
-              ref={closeButtonRef}
+              type="button"
               onClick={onClose}
-              className="p-monday-2 hover:bg-gray-100 rounded-full transition-colors"
-              aria-label="关闭"
-              tabIndex={0}
+              className="flex items-center gap-monday-1 text-uipro-cta hover:text-uipro-cta/80 transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-uipro-cta focus:ring-opacity-50 rounded-monday-sm px-monday-2 py-monday-1"
+              aria-label="返回客户列表"
             >
-              <span className="text-monday-xl">✕</span>
+              <svg 
+                className="w-4 h-4" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+              <span className="font-medium">客户列表</span>
             </button>
+            <span className="text-uipro-secondary" aria-hidden="true">/</span>
+            {customerData && (
+              <span className="text-uipro-text font-medium">{customerData.name}</span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <h2 className="text-monday-xl font-semibold text-uipro-text font-uipro-heading">
+              {viewMode === 'interaction' ? '准备互动' : '管理客户联系人'}
+            </h2>
+            <div className="flex items-center gap-monday-2">
+              {viewMode === 'list' && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setViewMode('create')}
+                >
+                  新建联系人
+                </Button>
+              )}
+              {(viewMode === 'create' || viewMode === 'edit') && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setViewMode('list');
+                    setSelectedPerson(null);
+                  }}
+                >
+                  返回列表
+                </Button>
+              )}
+              <button
+                ref={closeButtonRef}
+                onClick={onClose}
+                className="p-monday-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-uipro-cta focus:ring-opacity-50 transition-all duration-200 cursor-pointer border border-gray-300 rounded"
+                aria-label="关闭"
+                tabIndex={0}
+              >
+                <HomeModuleIcon name="xMark" className="w-5 h-5 text-uipro-text" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -509,28 +647,70 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索联系人（姓名、邮箱、职位、部门）..."
-                  className="w-full"
+                  placeholder="搜索联系人（姓名、邮箱）..."
+                  className="max-w-xs w-full"
                 />
-                <div className="flex items-center gap-monday-2">
-                  <input
-                    type="checkbox"
-                    id="isImportantFilter"
-                    checked={isImportantFilter === true}
-                    onChange={(e) => setIsImportantFilter(e.target.checked ? true : undefined)}
-                    className="w-4 h-4 text-uipro-cta border-gray-300 rounded focus:ring-uipro-cta cursor-pointer transition-colors duration-200"
-                  />
-                  <label htmlFor="isImportantFilter" className="text-monday-sm font-medium text-uipro-text cursor-pointer">
-                    仅显示重要联系人
-                  </label>
+                <div className="flex items-center gap-monday-4 flex-wrap">
+                  {/* Department filter */}
+                  <div className="flex items-center gap-monday-2">
+                    <label htmlFor="departmentFilter" className="text-monday-sm font-medium text-uipro-text whitespace-nowrap">
+                      部门：
+                    </label>
+                    <select
+                      id="departmentFilter"
+                      value={departmentFilter}
+                      onChange={(e) => setDepartmentFilter(e.target.value)}
+                      className="px-monday-3 py-monday-1.5 border border-gray-300 rounded-monday-md text-monday-sm text-uipro-text bg-white focus:outline-none focus:ring-2 focus:ring-uipro-cta focus:ring-opacity-50 focus:border-transparent cursor-pointer transition-all duration-200 hover:border-uipro-cta/50"
+                    >
+                      <option value="">所有部门</option>
+                      {departments.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Important filter */}
+                  <div className="flex items-center gap-monday-2">
+                    <input
+                      type="checkbox"
+                      id="isImportantFilter"
+                      checked={isImportantFilter === true}
+                      onChange={(e) => setIsImportantFilter(e.target.checked ? true : undefined)}
+                      className="w-4 h-4 text-uipro-cta border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-uipro-cta focus:ring-opacity-50 cursor-pointer transition-all duration-200 hover:border-uipro-cta/50"
+                    />
+                    <label htmlFor="isImportantFilter" className="text-monday-sm font-medium text-uipro-text cursor-pointer">
+                      仅显示重要联系人
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Global hint - using SVG icon instead of emoji */}
+              <div className="mb-monday-4 p-monday-3 bg-uipro-cta/5 border border-uipro-cta/20 rounded-monday-md">
+                <div className="flex items-start gap-monday-2">
+                  <svg 
+                    className="w-5 h-5 text-uipro-cta flex-shrink-0 mt-0.5" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                  </svg>
+                  <p className="text-monday-sm text-uipro-text font-uipro-body">
+                    提示：点击联系人卡片中的图标可快速拨打电话、发送邮件或打开即时通讯应用
+                  </p>
                 </div>
               </div>
 
               {/* Statistics */}
-              {peopleData && (
+                  {peopleData && (
                 <div className="mb-monday-4">
-                  <div className="text-monday-sm text-monday-text-secondary">
-                    {searchQuery.trim() || isImportantFilter !== undefined ? (
+                  <div className="text-monday-sm text-uipro-secondary font-uipro-body">
+                    {searchQuery.trim() || isImportantFilter !== undefined || departmentFilter ? (
                       <>
                         共 {peopleData.total} 个联系人，当前筛选结果 {filteredPeople.length} 个
                       </>
@@ -568,21 +748,20 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
                 <>
                   {filteredPeople.length === 0 ? (
                     <div className="text-center py-monday-8">
-                      {searchQuery.trim() || isImportantFilter !== undefined ? (
-                        <p className="text-monday-sm text-monday-text-secondary">
+                      {searchQuery.trim() || isImportantFilter !== undefined || departmentFilter ? (
+                        <p className="text-monday-sm text-uipro-secondary font-uipro-body">
                           未找到匹配的联系人
                         </p>
                       ) : (
                         <>
-                          <HomeModuleIcon name="user" className="w-12 h-12 mx-auto mb-monday-4 text-monday-text-secondary opacity-50" />
-                          <p className="text-monday-base text-monday-text-secondary mb-monday-2">
+                          <HomeModuleIcon name="user" className="w-12 h-12 mx-auto mb-monday-4 text-uipro-secondary opacity-50" />
+                          <p className="text-monday-base text-uipro-secondary mb-monday-2 font-uipro-body">
                             该客户尚未添加联系人
                           </p>
                           <Button
                             size="sm"
                             variant="primary"
                             onClick={() => setViewMode('create')}
-                            leftIcon={<HomeModuleIcon name="plus" className="w-4 h-4 flex-shrink-0" />}
                           >
                             新建联系人
                           </Button>
@@ -590,7 +769,7 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-monday-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-monday-4">
                       {filteredPeople.map((person) => (
                         <PersonCard
                           key={person.id}
@@ -599,6 +778,8 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
                           onDelete={handleDeletePerson}
                           onContactMethodClick={handleContactMethodClick}
                           isDeleting={isDeleting === person.id}
+                          interactionStats={batchStats?.get(person.id)}
+                          isLoadingStats={isLoadingStats}
                         />
                       ))}
                     </div>
@@ -670,12 +851,13 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
           {viewMode === 'interaction' && selectedContactMethod && (
             <div className="flex-1 overflow-y-auto p-monday-4">
               <InteractionCreateForm
-                prefillCustomerId={customerId}
-                prefillPersonId={selectedContactMethod.person.id}
-                prefillContactMethod={selectedContactMethod.method}
+                initialCustomerId={customerId}
+                initialPersonId={selectedContactMethod.person.id}
+                initialContactMethod={selectedContactMethod.method}
                 onSuccess={() => {
-                  // Refresh people list and return to list view
+                  // Refresh people list and interaction stats, then return to list view
                   queryClient.invalidateQueries({ queryKey: ['people', customerId] });
+                  queryClient.invalidateQueries({ queryKey: ['personInteractionStatsBatch'] });
                   setViewMode('list');
                   setSelectedContactMethod(null);
                 }}

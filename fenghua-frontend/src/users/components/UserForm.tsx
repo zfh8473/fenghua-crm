@@ -276,7 +276,6 @@ export const UserForm: React.FC<UserFormProps> = ({
           size="md"
           disabled={isSubmitting}
           isLoading={isSubmitting}
-          className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
         >
           {!isSubmitting && (isEditing ? '更新' : '创建')}
         </Button>

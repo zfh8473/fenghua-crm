@@ -17,6 +17,7 @@ import { ProductMultiSelect } from '../../products/components/ProductMultiSelect
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { toast } from 'react-toastify';
 import {
   ASSOCIATION_CREATE_SUCCESS,
@@ -411,15 +412,15 @@ export const CustomerAssociationManagementModal: React.FC<CustomerAssociationMan
       >
         {/* Header */}
         <div className="flex items-center justify-between p-monday-4 border-b border-gray-200">
-          <h2 className="text-monday-xl font-semibold text-monday-text">管理客户关联产品</h2>
+          <h2 className="text-monday-xl font-semibold text-uipro-text font-uipro-heading">管理客户关联产品</h2>
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className="p-monday-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-monday-2 hover:bg-gray-100 transition-colors duration-200 cursor-pointer border border-gray-300 rounded"
             aria-label="关闭"
             tabIndex={0}
           >
-            <span className="text-monday-xl">✕</span>
+            <HomeModuleIcon name="xMark" className="w-5 h-5 text-uipro-text" />
           </button>
         </div>
 
@@ -484,8 +485,8 @@ export const CustomerAssociationManagementModal: React.FC<CustomerAssociationMan
             {/* Loading State */}
             {associationsLoading && (
               <div className="flex items-center justify-center py-monday-8">
-                <span className="animate-spin">⏳</span>
-                <span className="ml-monday-2 text-monday-sm text-monday-text-secondary">加载中...</span>
+                <HomeModuleIcon name="arrowPath" className="w-5 h-5 animate-spin text-uipro-secondary" />
+                <span className="ml-monday-2 text-monday-sm text-uipro-secondary">加载中...</span>
               </div>
             )}
 
@@ -512,11 +513,13 @@ export const CustomerAssociationManagementModal: React.FC<CustomerAssociationMan
                       </p>
                     ) : (
                       <>
-                        <div className="text-monday-4xl mb-monday-4 opacity-50">📦</div>
-                        <p className="text-monday-base text-monday-text-secondary mb-monday-2">
+                        <div className="mb-monday-4 flex justify-center">
+                          <HomeModuleIcon name="cube" className="w-12 h-12 text-uipro-secondary/50" />
+                        </div>
+                        <p className="text-monday-base text-uipro-secondary mb-monday-2">
                           该客户尚未与任何产品关联
                         </p>
-                        <p className="text-monday-sm text-monday-text-secondary">
+                        <p className="text-monday-sm text-uipro-secondary">
                           记录互动时关联产品，即可建立关联关系
                         </p>
                       </>
@@ -577,8 +580,8 @@ export const CustomerAssociationManagementModal: React.FC<CustomerAssociationMan
               <div className="relative">
                 {createAssociationMutation.isPending && (
                   <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-monday-md">
-                    <span className="text-monday-sm text-monday-text-secondary flex items-center gap-monday-2">
-                      <span className="animate-spin">⏳</span>
+                    <span className="text-monday-sm text-uipro-secondary flex items-center gap-monday-2">
+                      <HomeModuleIcon name="arrowPath" className="w-4 h-4 animate-spin" />
                       <span>添加中...</span>
                     </span>
                   </div>
@@ -599,7 +602,7 @@ export const CustomerAssociationManagementModal: React.FC<CustomerAssociationMan
               >
                 {createAssociationMutation.isPending ? (
                   <span className="flex items-center gap-monday-2">
-                    <span className="animate-spin">⏳</span>
+                    <HomeModuleIcon name="arrowPath" className="w-4 h-4 animate-spin" />
                     <span>添加中...</span>
                   </span>
                 ) : (

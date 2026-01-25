@@ -161,7 +161,7 @@ export class CustomerProductInteractionHistoryService implements OnModuleDestroy
       LEFT JOIN users u ON u.id = pci.created_by
       LEFT JOIN file_attachments fa ON fa.interaction_id = pci.id AND fa.deleted_at IS NULL
       WHERE pci.customer_id = $1 
-        AND pci.product_id = $2
+        AND EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $2)
         AND pci.deleted_at IS NULL
         AND c.deleted_at IS NULL
         AND ($3::text IS NULL OR c.customer_type = $3)
@@ -189,7 +189,7 @@ export class CustomerProductInteractionHistoryService implements OnModuleDestroy
         FROM product_customer_interactions pci
         INNER JOIN companies c ON c.id = pci.customer_id
         WHERE pci.customer_id = $1 
-          AND pci.product_id = $2
+          AND EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $2)
           AND pci.deleted_at IS NULL
           AND c.deleted_at IS NULL
           AND ($3::text IS NULL OR c.customer_type = $3)

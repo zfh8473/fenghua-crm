@@ -279,7 +279,8 @@ export class BuyerAnalysisService implements OnModuleDestroy {
             AND pci.deleted_at IS NULL
             AND ($3::date IS NULL OR pci.interaction_date >= $3)
             AND ($4::date IS NULL OR pci.interaction_date <= $4)
-          LEFT JOIN products p ON p.id = pci.product_id AND p.deleted_at IS NULL
+          LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+          LEFT JOIN products p ON p.id = ip.product_id AND p.deleted_at IS NULL
           WHERE c.deleted_at IS NULL
             AND c.customer_type = 'BUYER'
             AND ($5::text IS NULL OR p.category = $5)
@@ -328,7 +329,8 @@ export class BuyerAnalysisService implements OnModuleDestroy {
           AND pci.deleted_at IS NULL
           AND ($1::date IS NULL OR pci.interaction_date >= $1)
           AND ($2::date IS NULL OR pci.interaction_date <= $2)
-        LEFT JOIN products p ON p.id = pci.product_id AND p.deleted_at IS NULL
+        LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+        LEFT JOIN products p ON p.id = ip.product_id AND p.deleted_at IS NULL
         WHERE c.deleted_at IS NULL
           AND c.customer_type = 'BUYER'
           AND ($3::text IS NULL OR p.category = $3)
@@ -489,7 +491,8 @@ export class BuyerAnalysisService implements OnModuleDestroy {
           AND pci.deleted_at IS NULL
           AND ($1::date IS NULL OR pci.interaction_date >= $1)
           AND ($2::date IS NULL OR pci.interaction_date <= $2)
-        LEFT JOIN products p ON p.id = pci.product_id AND p.deleted_at IS NULL
+        LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+        LEFT JOIN products p ON p.id = ip.product_id AND p.deleted_at IS NULL
         WHERE c.deleted_at IS NULL
           AND c.customer_type = 'BUYER'
           AND ($3::text IS NULL OR p.category = $3)
@@ -555,7 +558,8 @@ export class BuyerAnalysisService implements OnModuleDestroy {
             AND pci.deleted_at IS NULL
             AND ($3::date IS NULL OR pci.interaction_date >= $3)
             AND ($4::date IS NULL OR pci.interaction_date <= $4)
-          LEFT JOIN products p ON p.id = pci.product_id AND p.deleted_at IS NULL
+          LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+          LEFT JOIN products p ON p.id = ip.product_id AND p.deleted_at IS NULL
           WHERE c.deleted_at IS NULL
             AND c.customer_type = 'BUYER'
             AND ($5::text IS NULL OR p.category = $5)

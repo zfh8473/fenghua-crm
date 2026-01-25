@@ -492,7 +492,8 @@ export class InteractionsService implements OnModuleDestroy {
       throw new ForbiddenException('您没有权限查看互动记录');
     }
 
-    // 5. Query interaction record with role-based filtering and attachments
+    // 5. Query interaction record with role-based filtering, attachments, and products
+    // Note: We need separate aggregations for products and attachments to avoid duplicates
     const query = `
       SELECT
         pci.id,
@@ -507,12 +508,29 @@ export class InteractionsService implements OnModuleDestroy {
         pci.created_by,
         pci.updated_at,
         pci.updated_by,
+        pci.person_id,
+        c.name as customer_name,
         u.email as creator_email,
         u.first_name as creator_first_name,
         u.last_name as creator_last_name,
         COALESCE(
+          (
+            SELECT json_agg(
+              jsonb_build_object(
+                'id', p2.id,
+                'name', p2.name,
+                'status', p2.status
+              )
+            )
+            FROM interaction_products ip2
+            INNER JOIN products p2 ON p2.id = ip2.product_id
+            WHERE ip2.interaction_id = pci.id
+          ),
+          '[]'::json
+        ) as products,
+        COALESCE(
           json_agg(
-            json_build_object(
+            jsonb_build_object(
               'id', fa.id,
               'fileName', fa.file_name,
               'fileUrl', fa.file_url,
@@ -534,7 +552,7 @@ export class InteractionsService implements OnModuleDestroy {
       GROUP BY pci.id, pci.product_id, pci.customer_id, pci.interaction_type,
                pci.interaction_date, pci.description, pci.status, pci.additional_info,
                pci.created_at, pci.created_by, pci.updated_at, pci.updated_by,
-               u.email, u.first_name, u.last_name
+               pci.person_id, c.id, c.name, u.email, u.first_name, u.last_name
     `;
 
     const result = await this.pgPool.query(query, [interactionId, customerTypeFilter]);
@@ -572,10 +590,21 @@ export class InteractionsService implements OnModuleDestroy {
       }
     }
 
+    // Parse products from JSON
+    let products: any[] = [];
+    if (interaction.products) {
+      if (typeof interaction.products === 'string') {
+        products = JSON.parse(interaction.products);
+      } else if (Array.isArray(interaction.products)) {
+        products = interaction.products;
+      }
+    }
+
     return {
       id: interaction.id,
       productId: interaction.product_id,
       customerId: interaction.customer_id,
+      customerName: interaction.customer_name,
       interactionType: interaction.interaction_type,
       interactionDate: interaction.interaction_date,
       description: interaction.description,
@@ -589,6 +618,8 @@ export class InteractionsService implements OnModuleDestroy {
       createdBy: interaction.created_by,
       updatedAt: interaction.updated_at || undefined,
       updatedBy: interaction.updated_by || undefined,
+      personId: interaction.person_id,
+      products: products.length > 0 ? products : undefined,
       attachments: attachments.length > 0 ? attachments : undefined,
     };
   }
@@ -664,7 +695,7 @@ export class InteractionsService implements OnModuleDestroy {
 
     // Product filter
     if (filters.productId) {
-      whereConditions.push(`pci.product_id = $${paramIndex}`);
+      whereConditions.push(`EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $${paramIndex})`);
       params.push(filters.productId);
       paramIndex++;
     }
@@ -714,7 +745,6 @@ export class InteractionsService implements OnModuleDestroy {
     const query = `
       SELECT
         pci.id,
-        pci.product_id,
         pci.customer_id,
         pci.interaction_type,
         pci.interaction_date,
@@ -725,13 +755,28 @@ export class InteractionsService implements OnModuleDestroy {
         pci.created_by,
         pci.updated_at,
         pci.updated_by,
+        pci.person_id,
+        c.name as customer_name,
         u.email as creator_email,
         u.first_name as creator_first_name,
-        u.last_name as creator_last_name
+        u.last_name as creator_last_name,
+        COALESCE(
+          json_agg(
+            jsonb_build_object(
+              'id', p.id,
+              'name', p.name,
+              'status', p.status
+            )
+          ) FILTER (WHERE p.id IS NOT NULL),
+          '[]'::json
+        ) as products
       FROM product_customer_interactions pci
       INNER JOIN companies c ON c.id = pci.customer_id
       LEFT JOIN users u ON u.id = pci.created_by
+      LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+      LEFT JOIN products p ON p.id = ip.product_id
       ${whereClause}
+      GROUP BY pci.id, c.id, c.name, u.email, u.first_name, u.last_name, pci.person_id
       ORDER BY pci.interaction_date DESC, pci.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -742,8 +787,8 @@ export class InteractionsService implements OnModuleDestroy {
     // 8. Map to response DTOs
     const interactions: InteractionResponseDto[] = result.rows.map((row) => ({
       id: row.id,
-      productId: row.product_id,
       customerId: row.customer_id,
+      customerName: row.customer_name,
       interactionType: row.interaction_type,
       interactionDate: row.interaction_date,
       description: row.description,
@@ -757,6 +802,8 @@ export class InteractionsService implements OnModuleDestroy {
       createdBy: row.created_by,
       updatedAt: row.updated_at,
       updatedBy: row.updated_by,
+      personId: row.person_id,
+      products: row.products || [],
     }));
 
     return { interactions, total };
@@ -859,14 +906,19 @@ export class InteractionsService implements OnModuleDestroy {
 
     // Product filter
     if (searchDto.productId) {
-      whereConditions.push(`pci.product_id = $${paramIndex}`);
+      whereConditions.push(`EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $${paramIndex})`);
       params.push(searchDto.productId);
       paramIndex++;
     }
 
-    // Product categories filter (requires JOIN with products table)
+    // Product categories filter (requires JOIN with interaction_products and products table)
     if (searchDto.categories && searchDto.categories.length > 0) {
-      whereConditions.push(`p.category = ANY($${paramIndex}::text[])`);
+      whereConditions.push(`EXISTS (
+        SELECT 1 FROM interaction_products ip
+        INNER JOIN products p ON p.id = ip.product_id
+        WHERE ip.interaction_id = pci.id
+          AND p.category = ANY($${paramIndex}::text[])
+      )`);
       params.push(searchDto.categories);
       paramIndex++;
     }
@@ -891,10 +943,12 @@ export class InteractionsService implements OnModuleDestroy {
         orderByClause = `ORDER BY c.name ${orderDirection}, pci.interaction_date DESC`;
         break;
       case 'productName':
-        orderByClause = `ORDER BY p.name ${orderDirection}, pci.interaction_date DESC`;
+        // For product name sorting, we need to use the first product name from the aggregated list
+        // Since we're using json_agg, we'll sort by the first product name in the array
+        orderByClause = `ORDER BY MIN(p.name) ${orderDirection}, pci.interaction_date DESC`;
         break;
       case 'productHsCode':
-        orderByClause = `ORDER BY p.hs_code ${orderDirection}, pci.interaction_date DESC`;
+        orderByClause = `ORDER BY MIN(p.hs_code) ${orderDirection}, pci.interaction_date DESC`;
         break;
       case 'interactionType':
         orderByClause = `ORDER BY pci.interaction_type ${orderDirection}, pci.interaction_date DESC`;
@@ -907,10 +961,9 @@ export class InteractionsService implements OnModuleDestroy {
 
     // 7. Get total count
     const countQuery = `
-      SELECT COUNT(*) as total
+      SELECT COUNT(DISTINCT pci.id) as total
       FROM product_customer_interactions pci
       INNER JOIN companies c ON c.id = pci.customer_id
-      ${searchDto.categories && searchDto.categories.length > 0 ? 'INNER JOIN products p ON p.id = pci.product_id' : ''}
       ${whereClause}
     `;
     const countResult = await this.pgPool.query(countQuery, params);
@@ -923,7 +976,6 @@ export class InteractionsService implements OnModuleDestroy {
     const query = `
       SELECT
         pci.id,
-        pci.product_id,
         pci.customer_id,
         pci.interaction_type,
         pci.interaction_date,
@@ -934,19 +986,29 @@ export class InteractionsService implements OnModuleDestroy {
         pci.created_by,
         pci.updated_at,
         pci.updated_by,
+        pci.person_id,
         c.name as customer_name,
         c.customer_type,
-        p.name as product_name,
-        p.hs_code as product_hs_code,
-        p.category as product_category,
         u.email as creator_email,
         u.first_name as creator_first_name,
-        u.last_name as creator_last_name
+        u.last_name as creator_last_name,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', p.id,
+              'name', p.name,
+              'status', p.status
+            )
+          ) FILTER (WHERE p.id IS NOT NULL),
+          '[]'::json
+        ) as products
       FROM product_customer_interactions pci
       INNER JOIN companies c ON c.id = pci.customer_id
-      ${searchDto.categories && searchDto.categories.length > 0 ? 'INNER JOIN products p ON p.id = pci.product_id' : 'LEFT JOIN products p ON p.id = pci.product_id'}
       LEFT JOIN users u ON u.id = pci.created_by
+      LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+      LEFT JOIN products p ON p.id = ip.product_id
       ${whereClause}
+      GROUP BY pci.id, c.id, c.name, c.customer_type, u.email, u.first_name, u.last_name, pci.person_id
       ${orderByClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -957,8 +1019,8 @@ export class InteractionsService implements OnModuleDestroy {
     // 9. Map to response DTOs
     const interactions: InteractionResponseDto[] = result.rows.map((row) => ({
       id: row.id,
-      productId: row.product_id,
       customerId: row.customer_id,
+      customerName: row.customer_name,
       interactionType: row.interaction_type,
       interactionDate: row.interaction_date,
       description: row.description,
@@ -972,6 +1034,8 @@ export class InteractionsService implements OnModuleDestroy {
       createdBy: row.created_by,
       updatedAt: row.updated_at,
       updatedBy: row.updated_by,
+      personId: row.person_id,
+      products: row.products || [],
     }));
 
     return { interactions, total };
@@ -1047,6 +1111,58 @@ export class InteractionsService implements OnModuleDestroy {
         }
       }
 
+      // 4.5. Handle product list update if provided
+      if (updateDto.productIds !== undefined) {
+        // Get current customer ID for validation
+        const customerCheck = await client.query(
+          'SELECT customer_id FROM product_customer_interactions WHERE id = $1 AND deleted_at IS NULL',
+          [interactionId],
+        );
+        if (customerCheck.rows.length === 0) {
+          await client.query('ROLLBACK');
+          throw new NotFoundException('互动记录不存在');
+        }
+        const customerId = customerCheck.rows[0].customer_id;
+
+        // Validate all products are associated with the customer
+        if (updateDto.productIds.length > 0) {
+          const productValidationQuery = `
+            SELECT COUNT(*) as count
+            FROM product_customer_associations
+            WHERE customer_id = $1
+              AND product_id = ANY($2::uuid[])
+              AND deleted_at IS NULL
+          `;
+          const validationResult = await client.query(productValidationQuery, [
+            customerId,
+            updateDto.productIds,
+          ]);
+          const validCount = parseInt(validationResult.rows[0].count, 10);
+          if (validCount !== updateDto.productIds.length) {
+            await client.query('ROLLBACK');
+            throw new BadRequestException('部分产品未与客户建立关联关系');
+          }
+        }
+
+        // Delete existing product associations
+        await client.query(
+          'DELETE FROM interaction_products WHERE interaction_id = $1',
+          [interactionId],
+        );
+
+        // Insert new product associations
+        if (updateDto.productIds.length > 0) {
+          const insertValues = updateDto.productIds
+            .map((productId, index) => `($1, $${index + 2}, NOW())`)
+            .join(', ');
+          const insertQuery = `
+            INSERT INTO interaction_products (interaction_id, product_id, created_at)
+            VALUES ${insertValues}
+          `;
+          await client.query(insertQuery, [interactionId, ...updateDto.productIds]);
+        }
+      }
+
       // 5. Build update query dynamically (only update provided fields)
       const updateFields: string[] = [];
       const updateValues: any[] = [];
@@ -1095,8 +1211,11 @@ export class InteractionsService implements OnModuleDestroy {
 
       if (updateFields.length === 2) {
         // Only updated_by and updated_at were added, no actual fields to update
-        await client.query('ROLLBACK');
-        throw new BadRequestException('没有提供要更新的字段');
+        // But if productIds were updated, we should still proceed
+        if (updateDto.productIds === undefined) {
+          await client.query('ROLLBACK');
+          throw new BadRequestException('没有提供要更新的字段');
+        }
       }
 
       // 6. Update interaction record
@@ -1132,9 +1251,18 @@ export class InteractionsService implements OnModuleDestroy {
         }
       });
 
+      // Fetch products for response
+      const productsQuery = `
+        SELECT p.id, p.name, p.status
+        FROM interaction_products ip
+        JOIN products p ON p.id = ip.product_id
+        WHERE ip.interaction_id = $1
+      `;
+      const productsResult = await this.pgPool.query(productsQuery, [interactionId]);
+      const products = productsResult.rows;
+
       return {
         id: updatedInteraction.id,
-        productId: updatedInteraction.product_id,
         customerId: updatedInteraction.customer_id,
         interactionType: updatedInteraction.interaction_type,
         interactionDate: updatedInteraction.interaction_date,
@@ -1149,6 +1277,7 @@ export class InteractionsService implements OnModuleDestroy {
         createdBy: updatedInteraction.created_by,
         updatedAt: updatedInteraction.updated_at,
         updatedBy: updatedInteraction.updated_by,
+        products: products,
       };
     } catch (error) {
       await client.query('ROLLBACK');

@@ -176,6 +176,24 @@ curl -s -o /dev/null -w "%{http_code}" https://<railway-backend>/health
   3. 更新 `REDIS_URL` 后重新部署后端；若曾用 `redis://`，务必改为 `rediss://`。
 - 详见 `docs/upstash-redis-config.md`。
 
+### 3.2 跨区域部署与 401 / 间歇性「Invalid or expired token」
+
+当 **Railway 在一个区域（如 Singapore）、Neon 与 Upstash 在另一区域（如 Virginia）** 时，跨区延迟会放大下列问题：
+
+- **每次鉴权都查库**：`validateToken` 会连 Neon 查用户与角色。Singapore ↔ Virginia 单程约 150–250ms，容易遇上连接超时、`ECONNRESET` 等。此前这类错误被统一当成 token 无效，直接返回 401。
+- **本次改动**：DB/网络类错误（如 `ECONNRESET`、`ETIMEDOUT`、`connection refused`）改为返回 **503**，前端会看到「服务暂时不可用，请稍后重试」而不是「Invalid or expired token」，避免误清登录态。AuthService 的 PG 连接池已设 `connectionTimeoutMillis: 15000`，给跨区建连留足时间。
+
+**建议：**
+
+1. **优先把 Railway 放到与 Neon、Redis 同区**  
+   - 若 Neon、Upstash 在 **Virginia (us-east-1)**，在 Railway 上优先选 **US East** 或相近区域，可明显减少 401/503 与间歇性鉴权失败。
+2. **Neon**  
+   - 确认 `DATABASE_URL` 无误；Neon 控制台可查看实例区域，便于和 Railway 对齐。
+3. **Upstash**  
+   - Redis 跨区主要影响 BullMQ、缓存，一般不直接导致 401；鉴权主要走 DB。若 Upstash 也在 Virginia，与 Neon 一起和 Railway 同区即可。
+
+**400 Bad Request**：多为请求参数或格式问题，一般与跨区无关；需结合具体接口与日志排查。
+
 ### 4. `Cannot find module '/app/dist/main'` 或 `dist/...` 不存在
 
 - **本项目 Nest 产出在 `dist/src/main.js`**，Start 必须为 `node dist/src/main`（不能是 `node dist/main`）。`package.json` 的 `start:prod` 已按此修正。

@@ -128,7 +128,7 @@ export const LoginPage: React.FC = () => {
             variant="primary"
             size="lg"
             isLoading={isLoading}
-            className="w-full !bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
+            className="w-full"
           >
             {!isLoading && '登录'}
           </Button>

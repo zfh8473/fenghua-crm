@@ -316,7 +316,7 @@ export const CustomerManagementPage: React.FC = () => {
               variant="primary"
               size="md"
               onClick={() => navigate('/customers/import')}
-              className="!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold whitespace-nowrap cursor-pointer transition-colors duration-200"
+              className="whitespace-nowrap"
             >
               批量导入
             </Button>
@@ -325,7 +325,7 @@ export const CustomerManagementPage: React.FC = () => {
             variant="primary"
             size="md"
             onClick={handleCreate}
-            className="!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold whitespace-nowrap cursor-pointer transition-colors duration-200"
+            className="whitespace-nowrap"
           >
             {getCreateButtonText()}
           </Button>
@@ -399,6 +399,7 @@ export const CustomerManagementPage: React.FC = () => {
                   onDelete={handleDelete}
                   onSelect={handleSelect}
                   onShowContacts={handleShowContacts}
+                  selectedCustomerId={selectedCustomer?.id}
                   loading={loading}
                 />
                 {totalPages > 1 && (

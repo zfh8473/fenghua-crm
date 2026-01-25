@@ -18,6 +18,7 @@ import { CustomerMultiSelect } from '../../customers/components/CustomerMultiSel
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { toast } from 'react-toastify';
 import {
   ASSOCIATION_CREATE_SUCCESS,
@@ -576,46 +577,133 @@ export const ProductAssociationManagementModal: React.FC<ProductAssociationManag
           </div>
 
           {/* Right: Add Association */}
-          <div className="w-full md:w-80 p-monday-4 border-t md:border-t-0 md:border-l border-gray-200 overflow-y-auto">
-            <h3 className="text-monday-base font-semibold text-monday-text mb-monday-3">添加关联</h3>
-            <div className="space-y-monday-4">
-              <div className="relative">
-                {createAssociationMutation.isPending && (
-                  <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-monday-md">
-                    <span className="text-monday-sm text-monday-text-secondary flex items-center gap-monday-2">
-                      <span className="animate-spin">⏳</span>
-                      <span>添加中...</span>
-                    </span>
+          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-gray-200 overflow-y-auto bg-gray-50">
+            <Card className="m-monday-4">
+              {/* Header */}
+              <div className="mb-monday-4">
+                <div className="flex items-center gap-monday-2 mb-monday-1">
+                  <HomeModuleIcon name="plus" className="w-5 h-5 text-uipro-cta" />
+                  <h3 className="text-monday-lg font-semibold text-uipro-text font-uipro-heading">添加客户关联</h3>
+                </div>
+                <p className="text-monday-sm text-monday-text-secondary">
+                  从下方搜索并选择要关联的客户
+                </p>
+              </div>
+
+              <div className="space-y-monday-4">
+                {/* Search Input */}
+                <div className="relative">
+                  {createAssociationMutation.isPending && (
+                    <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-monday-md">
+                      <span className="text-monday-sm text-uipro-secondary flex items-center gap-monday-2">
+                        <HomeModuleIcon name="arrowPath" className="w-4 h-4 animate-spin" />
+                        <span>添加中...</span>
+                      </span>
+                    </div>
+                  )}
+                  <CustomerMultiSelect
+                    selectedCustomers={selectedCustomer ? [selectedCustomer] : []}
+                    onChange={(customers) => setSelectedCustomer(customers[0] || null)}
+                    userRole={user?.role}
+                    placeholder="搜索客户名称或代码..."
+                    disabled={createAssociationMutation.isPending}
+                    excludeIds={associatedCustomerIds}
+                  />
+                </div>
+
+                {/* Selected Customer Display */}
+                {selectedCustomer ? (
+                  <div className="space-y-monday-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-monday-sm font-medium text-uipro-text">已选择客户</span>
+                      <span className="px-2 py-0.5 bg-uipro-cta/15 text-uipro-cta text-monday-xs font-semibold rounded-full">
+                        1个
+                      </span>
+                    </div>
+                    <Card variant="outlined" className="p-monday-3 bg-uipro-cta/5 border-2 border-uipro-cta/20 transition-all duration-200">
+                      <div className="flex items-start justify-between gap-monday-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-monday-base font-semibold text-uipro-text mb-monday-2 break-words">
+                            {selectedCustomer.name}
+                          </h4>
+                          <div className="flex items-center gap-monday-2 flex-wrap">
+                            {selectedCustomer.customerCode && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-monday-bg-secondary text-monday-text-secondary text-monday-xs rounded">
+                                {selectedCustomer.customerCode}
+                              </span>
+                            )}
+                            <span
+                              className={`px-2 py-0.5 text-monday-xs font-semibold rounded-full ${
+                                selectedCustomer.customerType === 'BUYER'
+                                  ? 'bg-uipro-cta/15 text-uipro-cta'
+                                  : 'bg-semantic-success/15 text-semantic-success'
+                              }`}
+                            >
+                              {selectedCustomer.customerType === 'BUYER' ? '采购商' : '供应商'}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCustomer(null)}
+                          className="flex-shrink-0 w-6 h-6 rounded-full bg-white border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-semantic-error/10 hover:border-semantic-error/30 hover:text-semantic-error transition-all duration-200 cursor-pointer"
+                          aria-label="移除选择"
+                        >
+                          <HomeModuleIcon name="xMark" className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="text-center py-monday-6 text-monday-sm text-monday-text-placeholder">
+                    <HomeModuleIcon name="users" className="w-8 h-8 mx-auto mb-monday-2 text-gray-300" />
+                    <p>尚未选择客户</p>
                   </div>
                 )}
-                <CustomerMultiSelect
-                  selectedCustomers={selectedCustomer ? [selectedCustomer] : []}
-                  onChange={(customers) => setSelectedCustomer(customers[0] || null)}
-                  userRole={user?.role}
-                  placeholder="搜索客户名称或代码..."
-                  disabled={createAssociationMutation.isPending}
-                  excludeIds={associatedCustomerIds}
-                />
+
+                {/* Hint Message */}
+                <div className="p-monday-3 bg-semantic-warning/10 border border-semantic-warning/30 rounded-monday-md">
+                  <div className="flex items-start gap-monday-2">
+                    <span className="text-semantic-warning text-monday-sm">💡</span>
+                    <p className="text-monday-xs text-monday-text flex-1">
+                      选择客户后，系统将根据客户类型自动设置关联类型
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-monday-2">
+                  <Button
+                    type="button"
+                    onClick={handleAddAssociation}
+                    disabled={!selectedCustomer || createAssociationMutation.isPending}
+                    className="w-full"
+                    variant={selectedCustomer ? 'primary' : 'outline'}
+                  >
+                    {createAssociationMutation.isPending ? (
+                      <span className="flex items-center gap-monday-2">
+                        <HomeModuleIcon name="arrowPath" className="w-4 h-4 animate-spin" />
+                        <span>添加中...</span>
+                      </span>
+                    ) : selectedCustomer ? (
+                      `添加 1 个关联`
+                    ) : (
+                      '添加关联'
+                    )}
+                  </Button>
+                  {selectedCustomer && (
+                    <Button
+                      type="button"
+                      onClick={() => setSelectedCustomer(null)}
+                      variant="ghost"
+                      className="w-full"
+                    >
+                      清空选择
+                    </Button>
+                  )}
+                </div>
               </div>
-              <Button
-                type="button"
-                onClick={handleAddAssociation}
-                disabled={!selectedCustomer || createAssociationMutation.isPending}
-                className="w-full"
-              >
-                {createAssociationMutation.isPending ? (
-                  <span className="flex items-center gap-monday-2">
-                    <span className="animate-spin">⏳</span>
-                    <span>添加中...</span>
-                  </span>
-                ) : (
-                  '添加关联'
-                )}
-              </Button>
-              <p className="text-monday-xs text-monday-text-placeholder">
-                选择客户后，系统将根据客户类型自动设置关联类型
-              </p>
-            </div>
+            </Card>
           </div>
         </div>
       </div>

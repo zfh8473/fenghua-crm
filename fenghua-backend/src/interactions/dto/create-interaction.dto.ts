@@ -106,5 +106,10 @@ export class CreateInteractionDto {
   @IsObject({ message: '额外信息必须是有效的JSON对象' })
   @IsOptional()
   additionalInfo?: Record<string, unknown>;
+
+  @IsString({ message: '联系人ID必须是字符串' })
+  @IsOptional()
+  @IsUUID('4', { message: '联系人ID必须是有效的UUID' })
+  personId?: string; // Optional reference to specific contact person
 }
 

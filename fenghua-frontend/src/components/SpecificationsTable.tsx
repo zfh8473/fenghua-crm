@@ -198,10 +198,9 @@ export const SpecificationsTable: React.FC<SpecificationsTableProps> = ({
       <div className="flex items-center justify-between">
         <Button
           type="button"
-          variant="outline"
+          variant="primary"
           size="sm"
           onClick={handleAddRow}
-          leftIcon={<span>+</span>}
         >
           添加规格
         </Button>

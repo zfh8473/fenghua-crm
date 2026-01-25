@@ -458,7 +458,10 @@ export class DataRetentionScheduler implements OnModuleInit {
                 [row.id],
               );
               const interactionCheck = await this.pgPool.query(
-                'SELECT COUNT(*) as count FROM product_customer_interactions WHERE product_id = $1 AND deleted_at IS NULL',
+                `SELECT COUNT(*) as count 
+                 FROM interaction_products ip
+                 INNER JOIN product_customer_interactions pci ON pci.id = ip.interaction_id
+                 WHERE ip.product_id = $1 AND pci.deleted_at IS NULL`,
                 [row.id],
               );
               if (

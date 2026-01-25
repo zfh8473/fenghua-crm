@@ -437,7 +437,7 @@ export const PersonCreateForm: React.FC<PersonCreateFormProps> = ({
         <Button type="button" variant="outline" onClick={onCancel} className="cursor-pointer transition-colors duration-200">
           取消
         </Button>
-        <Button type="submit" disabled={isSubmitting} className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+        <Button type="submit" disabled={isSubmitting} variant="primary">
           {isSubmitting ? '创建中...' : '创建联系人'}
         </Button>
       </div>

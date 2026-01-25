@@ -109,7 +109,7 @@ export class ProductCustomerAssociationService implements OnModuleDestroy {
         COUNT(pci.id) as interaction_count
       FROM product_customer_interactions pci
       INNER JOIN companies c ON c.id = pci.customer_id
-      WHERE pci.product_id = $1 
+      WHERE EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $1)
         AND pci.deleted_at IS NULL
         AND c.deleted_at IS NULL
         AND ($2::text IS NULL OR c.customer_type = $2)
@@ -133,7 +133,7 @@ export class ProductCustomerAssociationService implements OnModuleDestroy {
         SELECT COUNT(DISTINCT c.id) as total
         FROM product_customer_interactions pci
         INNER JOIN companies c ON c.id = pci.customer_id
-        WHERE pci.product_id = $1 
+        WHERE EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $1)
           AND pci.deleted_at IS NULL
           AND c.deleted_at IS NULL
           AND ($2::text IS NULL OR c.customer_type = $2)

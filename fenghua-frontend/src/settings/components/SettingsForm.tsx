@@ -435,7 +435,7 @@ export function SettingsForm({ settings, onSubmit, isLoading = false }: Settings
       )}
 
       <div className="mt-monday-8 flex justify-end gap-monday-3">
-        <Button type="submit" disabled={isLoading} isLoading={isLoading} variant="primary" size="md" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+        <Button type="submit" disabled={isLoading} isLoading={isLoading} variant="primary" size="md">
           保存设置
         </Button>
       </div>

@@ -726,7 +726,8 @@ export class GdprDeletionProcessor extends WorkerHost implements OnModuleDestroy
               `SELECT COUNT(*) as count 
                FROM product_customer_interactions pci
                INNER JOIN companies c ON pci.customer_id = c.id
-               WHERE pci.product_id = $1 AND c.created_by != $2 AND pci.deleted_at IS NULL`,
+               WHERE EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $1) 
+                 AND c.created_by != $2 AND pci.deleted_at IS NULL`,
               [product.id, userId],
             );
 

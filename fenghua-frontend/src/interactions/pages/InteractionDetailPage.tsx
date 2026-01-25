@@ -17,9 +17,13 @@ import { CommentList } from '../components/CommentList';
 import { CommentInput } from '../components/CommentInput';
 import { useAuth } from '../../auth/AuthContext';
 import { isAdmin, isDirector } from '../../common/constants/roles';
-import { getInteractionTypeLabel } from '../constants/interaction-types';
+import { getInteractionTypeLabel, getStatusLabel } from '../constants/interaction-types';
 import { productsService } from '../../products/products.service';
 import { customersService } from '../../customers/customers.service';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
+import { peopleService, Person } from '../../people/people.service'; // Story 20.5: Person type and service
+import { ContactMethodIcon } from '../../people/components/ContactMethodIcon'; // Story 20.5: Contact method icons
+import { getPersonName } from '../../people/utils/person-utils'; // Story 20.5: Person utility functions
 
 export const InteractionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,18 +40,18 @@ export const InteractionDetailPage: React.FC = () => {
   const userIsDirector = isDirector(user?.role);
   const canDelete = userIsAdmin || userIsDirector;
 
-  // Fetch product information
-  const { data: product, isLoading: productLoading } = useQuery({
-    queryKey: ['product', interaction?.productId],
-    queryFn: () => productsService.getProduct(interaction!.productId),
-    enabled: !!interaction?.productId,
-  });
-
   // Fetch customer information
   const { data: customer, isLoading: customerLoading } = useQuery({
     queryKey: ['customer', interaction?.customerId],
     queryFn: () => customersService.getCustomer(interaction!.customerId),
     enabled: !!interaction?.customerId,
+  });
+
+  // Story 20.5: Fetch person information if personId exists
+  const { data: person, isLoading: personLoading } = useQuery<Person>({
+    queryKey: ['person', interaction?.personId],
+    queryFn: () => peopleService.getPerson(interaction!.personId!),
+    enabled: !!interaction?.personId,
   });
 
   useEffect(() => {
@@ -178,18 +182,24 @@ export const InteractionDetailPage: React.FC = () => {
               ← 返回列表
             </Button>
           </Link>
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-monday-2">
             <Link to={`/interactions/${id}/edit`}>
-              <Button variant="primary" size="sm" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+              <Button
+                variant="primary"
+                size="sm"
+                title="编辑"
+                aria-label="编辑互动记录"
+              >
                 编辑
               </Button>
             </Link>
             {canDelete && (
               <Button
-                variant="outline"
+                variant="danger"
                 size="sm"
+                title="删除"
+                aria-label="删除互动记录"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
                 disabled={isDeleting}
               >
                 删除
@@ -233,27 +243,175 @@ export const InteractionDetailPage: React.FC = () => {
                   <p className="text-base text-gray-500">未知客户</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500 block">产品</label>
-                {productLoading ? (
-                  <p className="text-base text-gray-500">加载中...</p>
-                ) : product ? (
-                  <div className="space-y-1">
-                    <Link
-                      to={`/products?productId=${product.id}`}
-                      className="text-base text-uipro-cta hover:underline font-medium block cursor-pointer transition-colors duration-200"
-                    >
-                      {product.name}
-                    </Link>
-                    {product.hsCode && (
-                      <p className="text-sm text-gray-500">HS Code: {product.hsCode}</p>
-                    )}
+            </div>
+
+            {/* Story 20.8: Products Table (Multi-product support) */}
+            {interaction.products && interaction.products.length > 0 && (
+              <div className="pb-6 border-b border-gray-200">
+                <label className="text-sm font-medium text-gray-500 block mb-3">关联产品</label>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          产品名称
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          状态
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          操作
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {interaction.products.map((product) => (
+                        <tr key={product.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <Link
+                              to={`/products?productId=${product.id}`}
+                              className="text-base text-uipro-cta hover:underline font-medium cursor-pointer transition-colors duration-200"
+                            >
+                              {product.name}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {product.status && (
+                              <span
+                                className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                  product.status === 'active'
+                                    ? 'bg-semantic-success/15 text-semantic-success'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {product.status === 'active' ? '活跃' : product.status}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <Link
+                              to={`/products?productId=${product.id}`}
+                              className="text-sm text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
+                            >
+                              查看详情 →
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Fallback for legacy data or empty products */}
+            {(!interaction.products || interaction.products.length === 0) && interaction.productName && (
+              <div className="pb-6 border-b border-gray-200">
+                <label className="text-sm font-medium text-gray-500 block mb-2">产品</label>
+                <p className="text-base text-gray-900">{interaction.productName}</p>
+              </div>
+            )}
+            {(!interaction.products || interaction.products.length === 0) && !interaction.productName && (
+              <div className="pb-6 border-b border-gray-200">
+                <label className="text-sm font-medium text-gray-500 block mb-2">产品</label>
+                <p className="text-base text-gray-500">无关联产品</p>
+              </div>
+            )}
+
+            {/* Story 20.5: Person Information */}
+            {interaction.personId && (
+              <div className="pb-6 border-b border-gray-200">
+                <label className="text-sm font-medium text-gray-500 block mb-3">关联联系人</label>
+                {personLoading ? (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-base text-gray-500">加载中...</p>
                   </div>
+                ) : person ? (
+                  <Card variant="outlined" className="p-4">
+                    <div className="space-y-3">
+                      {/* Person Name */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-semibold text-gray-900">
+                          {getPersonName(person)}
+                        </h3>
+                        {person.isImportant && (
+                          <span className="text-yellow-500" title="重要联系人">★</span>
+                        )}
+                      </div>
+
+                      {/* Job Title and Department */}
+                      {(person.jobTitle || person.department) && (
+                        <div className="text-sm text-gray-600">
+                          {person.jobTitle && person.department
+                            ? `${person.jobTitle} · ${person.department}`
+                            : person.jobTitle || person.department}
+                        </div>
+                      )}
+
+                      {/* Contact Methods */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <ContactMethodIcon
+                          type="phone"
+                          hasValue={!!person.phone}
+                          value={person.phone}
+                          onClick={() => person.phone && window.open(`tel:${person.phone}`, '_blank')}
+                        />
+                        <ContactMethodIcon
+                          type="mobile"
+                          hasValue={!!person.mobile}
+                          value={person.mobile}
+                          onClick={() => person.mobile && window.open(`tel:${person.mobile}`, '_blank')}
+                        />
+                        <ContactMethodIcon
+                          type="email"
+                          hasValue={!!person.email}
+                          value={person.email}
+                          onClick={() => person.email && window.open(`mailto:${person.email}`, '_blank')}
+                        />
+                        <ContactMethodIcon
+                          type="wechat"
+                          hasValue={!!person.wechat}
+                          value={person.wechat}
+                        />
+                        <ContactMethodIcon
+                          type="whatsapp"
+                          hasValue={!!person.whatsapp}
+                          value={person.whatsapp}
+                        />
+                        <ContactMethodIcon
+                          type="linkedin"
+                          hasValue={!!person.linkedinUrl}
+                          value={person.linkedinUrl}
+                          onClick={() => person.linkedinUrl && window.open(person.linkedinUrl, '_blank')}
+                        />
+                        <ContactMethodIcon
+                          type="facebook"
+                          hasValue={!!person.facebook}
+                          value={person.facebook}
+                          onClick={() => person.facebook && window.open(person.facebook, '_blank')}
+                        />
+                      </div>
+
+                      {/* Link to Customer */}
+                      {person.companyId && (
+                        <div className="pt-2">
+                          <Link
+                            to={`/customers?customerId=${person.companyId}`}
+                            className="text-sm text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
+                          >
+                            查看客户详情 →
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
                 ) : (
-                  <p className="text-base text-gray-500">未知产品</p>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-500">联系人信息加载失败</p>
+                  </div>
                 )}
               </div>
-            </div>
+            )}
 
             {/* Interaction Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -274,7 +432,7 @@ export const InteractionDetailPage: React.FC = () => {
               {interaction.status && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-500">状态</label>
-                  <p className="text-base text-gray-900">{interaction.status}</p>
+                  <p className="text-base text-gray-900">{getStatusLabel(interaction.status)}</p>
                 </div>
               )}
               <div className="space-y-2">

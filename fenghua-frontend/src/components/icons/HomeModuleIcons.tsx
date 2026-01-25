@@ -128,6 +128,12 @@ const iconMap: Record<string, JSX.Element> = {
       <path d="M12 4.5v15m7.5-7.5h-15" />
     </svg>
   ),
+  /** 关闭按钮图标 */
+  xMark: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
 };
 
 export function HomeModuleIcon({ name, className = 'w-6 h-6 flex-shrink-0' }: { name: string; className?: string }) {

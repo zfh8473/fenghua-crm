@@ -18,6 +18,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { isAdmin, isDirector } from '../../common/constants/roles';
 import { useState } from 'react';
 import { INTERACTION_EDIT_ERRORS } from '../../common/constants/error-messages';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 
 export const InteractionEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -84,18 +85,24 @@ export const InteractionEditPage: React.FC = () => {
               ← 返回列表
             </Button>
           </Link>
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-monday-2">
             <Link to={`/interactions/${id}`}>
-              <Button variant="outline" size="sm" className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200">
+              <Button
+                variant="primary"
+                size="sm"
+                title="查看详情"
+                aria-label="查看互动记录详情"
+              >
                 查看详情
               </Button>
             </Link>
             {canDelete && (
               <Button
-                variant="outline"
+                variant="danger"
                 size="sm"
+                title="删除"
+                aria-label="删除互动记录"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
                 disabled={isDeleting}
               >
                 删除

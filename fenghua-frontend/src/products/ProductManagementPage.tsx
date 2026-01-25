@@ -43,13 +43,13 @@ export const ProductManagementPage: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [filters, setFilters] = useState<ProductQueryParams>({
-    limit: 20,
-    offset: 0,
-    includeInactive: false, // Default: don't show inactive products
+  /** 从 URL ?search= 初始化，便于从互动页「查看产品」带搜索词进入 */
+  const [filters, setFilters] = useState<ProductQueryParams>(() => {
+    const q = searchParams.get('search');
+    return { limit: 20, offset: 0, includeInactive: false, ...(q ? { search: q } : {}) };
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') ?? '');
   const [categories, setCategories] = useState<Category[]>([]);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasAutoSelectedProduct = useRef(false);
@@ -342,13 +342,13 @@ export const ProductManagementPage: React.FC = () => {
           <option value="archived">已归档</option>
         </select>
         <Link to="/product-categories">
-          <Button variant="outline" size="md" className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200">
+          <Button variant="primary" size="md">
             类别管理
           </Button>
         </Link>
         {(userIsAdmin || userIsDirector) && (
           <Link to="/products/import">
-            <Button variant="outline" size="md" className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200 whitespace-nowrap">
+            <Button variant="primary" size="md" className="whitespace-nowrap">
               批量导入
             </Button>
           </Link>
@@ -358,7 +358,6 @@ export const ProductManagementPage: React.FC = () => {
             variant="primary"
             size="md"
             onClick={handleCreate}
-            className="!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold cursor-pointer transition-colors duration-200"
           >
             创建新产品
           </Button>
@@ -408,6 +407,7 @@ export const ProductManagementPage: React.FC = () => {
               onEdit={userIsAdmin ? handleEdit : () => {}}
               onDelete={userIsAdmin ? handleDelete : () => {}}
               onSelect={handleSelect}
+              selectedProductId={selectedProduct?.id}
               loading={loading}
               searchQuery={filters.search}
             />

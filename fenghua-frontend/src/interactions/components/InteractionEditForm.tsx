@@ -21,6 +21,8 @@ import { Customer } from '../../customers/customers.service';
 import { customersService } from '../../customers/customers.service';
 import { Product } from '../../products/products.service';
 import { productsService } from '../../products/products.service';
+import { Person, peopleService } from '../../people/people.service'; // Story 20.5: Person type and service
+import { PersonSelect } from '../../people/components/PersonSelect'; // Story 20.5: Person selection component
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -100,6 +102,8 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
   const queryClient = useQueryClient();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  /** Story 20.5: Selected person (contact) for interaction */
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [existingAttachments, setExistingAttachments] = useState<Attachment[]>([]);
   const [newAttachments, setNewAttachments] = useState<Attachment[]>([]);
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<string[]>([]);
@@ -133,16 +137,42 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
           toast.error('加载客户信息失败');
         });
 
-      // Load product
-      productsService
-        .getProduct(interaction.productId)
-        .then((product) => {
-          setSelectedProduct(product);
-        })
-        .catch((error) => {
-          console.error('Failed to load product', error);
-          toast.error('加载产品信息失败');
-        });
+      // Story 20.8: Load products (multi-product support)
+      // Note: Products are now loaded from interaction.products array
+      // For legacy data, fallback to productId if products array is empty
+      if (interaction.products && interaction.products.length > 0) {
+        // Products are already included in interaction response
+        // No need to fetch separately
+      } else if (interaction.productId) {
+        // Fallback for legacy data
+        productsService
+          .getProduct(interaction.productId)
+          .then((product) => {
+            setSelectedProduct(product);
+          })
+          .catch((error) => {
+            console.error('Failed to load product', error);
+            toast.error('加载产品信息失败');
+          });
+      }
+
+      // Story 20.5: Load person if personId exists
+      if (interaction.personId) {
+        peopleService
+          .getPerson(interaction.personId)
+          .then((person) => {
+            // Validate person belongs to current customer
+            if (person.companyId === interaction.customerId) {
+              setSelectedPerson(person);
+            } else {
+              console.warn('Person does not belong to interaction customer');
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to load person', error);
+            // Don't show error toast as person is optional
+          });
+      }
 
       // Load existing attachments
       if (interaction.attachments && interaction.attachments.length > 0) {
@@ -269,7 +299,26 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       }
     }
 
-    await updateMutation.mutateAsync(data);
+    // datetime-local 产出 "YYYY-MM-DDTHH:mm"，后端 @IsDateString 需要带秒的 ISO 8601，补全 ":00"
+    const payload: UpdateInteractionDto = { ...data };
+    if (payload.interactionDate && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(payload.interactionDate)) {
+      payload.interactionDate = payload.interactionDate + ':00';
+    }
+
+    // Story 20.5: Include personId if selected, or set to undefined if cleared
+    if (selectedPerson) {
+      // Validate person belongs to current customer
+      if (selectedPerson.companyId !== interaction?.customerId) {
+        toast.error('该联系人不属于当前客户');
+        return;
+      }
+      payload.personId = selectedPerson.id;
+    } else {
+      // If person selection is cleared, set personId to undefined (backend will handle as null)
+      payload.personId = undefined;
+    }
+
+    await updateMutation.mutateAsync(payload);
   };
 
   /**
@@ -360,16 +409,67 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
         />
       </div>
 
-      {/* Product field (read-only) */}
+      {/* Story 20.5: Person Selection */}
       <div>
         <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
-          产品 <span className="text-semantic-error">*</span>
+          关联联系人（可选）
         </label>
-        <Input
-          value={selectedProduct?.name || '加载中...'}
-          disabled
-          className="bg-gray-50 cursor-not-allowed"
-        />
+        {!selectedCustomer ? (
+          <div className="p-monday-4 bg-gray-100 border-2 border-dashed border-gray-300 rounded-monday-md text-center">
+            <p className="text-monday-sm text-monday-text-secondary font-medium">
+              加载客户信息中...
+            </p>
+          </div>
+        ) : (
+          <PersonSelect
+            selectedPerson={selectedPerson}
+            onChange={(person) => {
+              // Story 20.5: Validate person belongs to current customer
+              if (person && person.companyId !== interaction.customerId) {
+                toast.error('该联系人不属于当前客户');
+                return;
+              }
+              setSelectedPerson(person);
+            }}
+            companyId={interaction.customerId}
+            placeholder="搜索联系人（姓名、邮箱、职位）..."
+            disabled={isSubmitting}
+          />
+        )}
+      </div>
+
+      {/* Story 20.8: Products field (read-only, multi-product support) */}
+      <div>
+        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          关联产品 <span className="text-semantic-error">*</span>
+        </label>
+        {interaction.products && interaction.products.length > 0 ? (
+          <div className="space-y-2">
+            {interaction.products.map((product) => (
+              <Input
+                key={product.id}
+                value={product.name}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            ))}
+          </div>
+        ) : selectedProduct ? (
+          <Input
+            value={selectedProduct.name}
+            disabled
+            className="bg-gray-50 cursor-not-allowed"
+          />
+        ) : (
+          <Input
+            value="加载中..."
+            disabled
+            className="bg-gray-50 cursor-not-allowed"
+          />
+        )}
+        <p className="mt-1 text-xs text-gray-500">
+          注意：产品关联暂不支持在编辑时修改，如需修改请删除后重新创建
+        </p>
       </div>
 
       {/* Interaction type field (editable) - Radio buttons */}
@@ -572,7 +672,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
             取消
           </Button>
         )}
-        <Button type="submit" variant="primary" disabled={isSubmitting || updateMutation.isPending} className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+        <Button type="submit" variant="primary" disabled={isSubmitting || updateMutation.isPending}>
           {isSubmitting || updateMutation.isPending ? '保存中...' : '保存'}
         </Button>
       </div>

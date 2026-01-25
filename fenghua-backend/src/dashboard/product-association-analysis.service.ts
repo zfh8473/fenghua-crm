@@ -180,8 +180,10 @@ export class ProductAssociationAnalysisService implements OnModuleDestroy {
               WHERE pci.interaction_type IN ($1, $2)
             ) as order_count
           FROM products p
+          LEFT JOIN interaction_products ip
+            ON ip.product_id = p.id
           LEFT JOIN product_customer_interactions pci 
-            ON pci.product_id = p.id 
+            ON pci.id = ip.interaction_id
             AND pci.deleted_at IS NULL
           LEFT JOIN companies c 
             ON c.id = pci.customer_id 
@@ -215,8 +217,9 @@ export class ProductAssociationAnalysisService implements OnModuleDestroy {
       const countQuery = `
         SELECT COUNT(DISTINCT p.id) as total
         FROM products p
+        LEFT JOIN interaction_products ip ON ip.product_id = p.id
         LEFT JOIN product_customer_interactions pci 
-          ON pci.product_id = p.id 
+          ON pci.id = ip.interaction_id 
           AND pci.deleted_at IS NULL
         LEFT JOIN companies c 
           ON c.id = pci.customer_id 
@@ -377,7 +380,8 @@ export class ProductAssociationAnalysisService implements OnModuleDestroy {
               WHERE pci.interaction_type IN ($2, $3)
             ) as order_count
           FROM product_customer_interactions pci
-          INNER JOIN products p ON p.id = pci.product_id AND p.deleted_at IS NULL
+          INNER JOIN interaction_products ip ON ip.interaction_id = pci.id
+          INNER JOIN products p ON p.id = ip.product_id AND p.deleted_at IS NULL
           INNER JOIN companies c ON c.id = pci.customer_id AND c.deleted_at IS NULL
           WHERE pci.deleted_at IS NULL
             AND ($4::text IS NULL OR c.customer_type = $4)

@@ -5,13 +5,14 @@
  * All custom code is proprietary and not open source.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Person } from '../people.service';
 import { Table, Column } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
 import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { useNavigate } from 'react-router-dom';
 import { ContactMethodIcon } from './ContactMethodIcon';
+import { getPersonName } from '../utils/person-utils';
 
 interface PersonListProps {
   people: Person[];
@@ -20,6 +21,8 @@ interface PersonListProps {
   onSelect: (person: Person) => void;
   loading?: boolean;
   searchQuery?: string;
+  selectedPersonIds?: string[];
+  onSelectionChange?: (selectedIds: string[]) => void;
 }
 
 const highlightText = (text: string, query?: string): React.ReactNode => {
@@ -68,15 +71,38 @@ export const PersonList: React.FC<PersonListProps> = ({
   onDelete,
   onSelect,
   loading = false,
-  searchQuery
+  searchQuery,
+  selectedPersonIds = [],
+  onSelectionChange,
 }) => {
   const navigate = useNavigate();
 
-  const getPersonName = (person: Person): string => {
-    const firstName = person.firstName?.trim() || '';
-    const lastName = person.lastName?.trim() || '';
-    return `${firstName} ${lastName}`.trim() || '未命名联系人';
+  // Handle checkbox selection
+  const handleCheckboxChange = (personId: string, checked: boolean) => {
+    if (!onSelectionChange) return;
+    
+    if (checked) {
+      onSelectionChange([...selectedPersonIds, personId]);
+    } else {
+      onSelectionChange(selectedPersonIds.filter(id => id !== personId));
+    }
   };
+
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    if (!onSelectionChange) return;
+    
+    if (checked) {
+      onSelectionChange(people.map(p => p.id));
+    } else {
+      onSelectionChange([]);
+    }
+  };
+
+  // Check if all are selected
+  const allSelected = people.length > 0 && people.every(p => selectedPersonIds.includes(p.id));
+  // Check if some are selected (for indeterminate state)
+  const someSelected = selectedPersonIds.length > 0 && !allSelected;
 
   /** 19.3 main-business：加载用 skeleton，禁止空白/纯文字 */
   if (loading) {
@@ -143,6 +169,38 @@ export const PersonList: React.FC<PersonListProps> = ({
   }
 
   const columns: Column<Person>[] = [
+    // Checkbox column (if selection is enabled)
+    ...(onSelectionChange ? [{
+      key: 'checkbox',
+      header: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someSelected;
+          }}
+          onChange={(e) => handleSelectAll(e.target.checked)}
+          onClick={(e) => e.stopPropagation()}
+          className="w-4 h-4 text-uipro-cta border-gray-300 rounded focus:ring-uipro-cta cursor-pointer transition-colors duration-200"
+          aria-label="全选"
+        />
+      ),
+      width: '3rem',
+      minWidth: '3rem',
+      render: (value, person) => (
+        <input
+          type="checkbox"
+          checked={selectedPersonIds.includes(person.id)}
+          onChange={(e) => {
+            e.stopPropagation();
+            handleCheckboxChange(person.id, e.target.checked);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-4 h-4 text-uipro-cta border-gray-300 rounded focus:ring-uipro-cta cursor-pointer transition-colors duration-200"
+          aria-label={`选择 ${getPersonName(person)}`}
+        />
+      ),
+    } as Column<Person>] : []),
     {
       key: 'name',
       header: '姓名',
@@ -244,28 +302,24 @@ export const PersonList: React.FC<PersonListProps> = ({
       render: (value, person) => (
         <div className="flex gap-monday-2">
           <Button
-            variant="outline"
+            variant="primary"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(person);
             }}
             title="编辑"
-            leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
-            className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
           >
             编辑
           </Button>
           <Button
-            variant="outline"
+            variant="danger"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(person);
             }}
             title="删除"
-            leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
-            className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
           >
             删除
           </Button>

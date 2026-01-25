@@ -26,7 +26,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    * Button variant style
    * @default 'primary'
    */
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
   
   /**
    * Button size
@@ -69,9 +69,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Base classes (Monday.com style: 8px rounded)
     const baseClasses = 'inline-flex items-center justify-center font-medium rounded-monday-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:ring-offset-2 focus:ring-offset-monday-bg disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap';
     
-    // Variant classes - all buttons have borders for consistency
+    // Variant classes - unified filled button style (white text on colored background)
+    // Based on ui-ux-pro-max design system: Trust & Authority style
     const variantClasses = {
-      primary: 'bg-primary-blue text-white hover:bg-primary-blue-hover border border-primary-blue shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
+      primary: 'bg-[#0369A1] text-white hover:bg-[#025a8a] border border-[#0369A1] shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
+      danger: 'bg-[#A00030] text-white hover:bg-[#8B0028] border border-[#A00030] shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3', // 浅酒红色（Lighter Burgundy），降低视觉冲击力
+      success: 'bg-[#10B981] text-white hover:bg-[#059669] border border-[#10B981] shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3', // 清新的绿色
       secondary: 'border border-primary-blue text-primary-blue bg-transparent hover:bg-primary-blue/10 px-monday-6 py-monday-3',
       outline: 'border border-gray-300 text-monday-text bg-transparent hover:bg-monday-bg px-monday-6 py-monday-3',
       ghost: 'border border-transparent text-monday-text bg-transparent hover:bg-monday-bg hover:border-gray-200 px-monday-4 py-monday-2',
@@ -128,9 +131,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         ) : (
           <>
-            {leftIcon && <span className="mr-monday-2 inline-flex shrink-0 items-center">{leftIcon}</span>}
+            {/* Icons removed per unified button style: white text on filled background, no SVG icons */}
             {children}
-            {rightIcon && <span className="ml-monday-2 inline-flex shrink-0 items-center">{rightIcon}</span>}
           </>
         )}
       </button>

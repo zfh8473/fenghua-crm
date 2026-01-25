@@ -38,3 +38,24 @@ export const getInteractionTypeLabel = (type: string): string => {
   return INTERACTION_TYPE_LABELS[type] || type;
 };
 
+/**
+ * Interaction status Chinese labels mapping
+ */
+export const INTERACTION_STATUS_LABELS: Record<string, string> = {
+  in_progress: '进行中',
+  completed: '已完成',
+  cancelled: '已取消',
+  needs_follow_up: '需要跟进',
+};
+
+/**
+ * Get interaction status label
+ *
+ * @param status - Status string (e.g. in_progress)
+ * @returns Chinese label for the status, or the original value if not found
+ */
+export const getStatusLabel = (status?: string): string => {
+  if (!status) return '—';
+  return INTERACTION_STATUS_LABELS[status] || status;
+};
+

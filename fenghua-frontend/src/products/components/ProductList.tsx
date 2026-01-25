@@ -15,9 +15,10 @@ import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 
 interface ProductListProps {
   products: Product[];
-  onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
+  onEdit?: (product: Product) => void; // Optional: 编辑按钮已移至详情页
+  onDelete?: (product: Product) => void; // Optional: 删除按钮已移至详情页
   onSelect?: (product: Product) => void;
+  selectedProductId?: string | null; // 当前选中的产品 ID，用于高亮显示
   loading?: boolean;
   searchQuery?: string; // Add search query for highlighting
 }
@@ -48,6 +49,7 @@ export const ProductList: React.FC<ProductListProps> = ({
   onEdit,
   onDelete,
   onSelect,
+  selectedProductId,
   loading = false,
   searchQuery,
 }) => {
@@ -178,42 +180,6 @@ export const ProductList: React.FC<ProductListProps> = ({
       header: '创建时间',
       render: (value) => value ? new Date(value).toLocaleDateString('zh-CN') : '-',
     },
-    {
-      key: 'actions',
-      header: '操作',
-      render: (_, product) => (
-        <div className="flex gap-monday-2">
-          {userIsAdmin && (
-            <>
-              {/* 19.7 AC2：与 UserList、CustomerList 统一：outline、uipro-cta/semantic-error、pencilSquare/trash 图标 */}
-              <Button
-                onClick={(e) => { e.stopPropagation(); onEdit(product); }}
-                variant="outline"
-                size="sm"
-                title="编辑"
-                leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
-                className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
-              >
-                编辑
-              </Button>
-              <Button
-                onClick={(e) => { e.stopPropagation(); onDelete(product); }}
-                variant="outline"
-                size="sm"
-                title="删除"
-                leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
-                className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
-              >
-                删除
-              </Button>
-            </>
-          )}
-          {!userIsAdmin && (
-            <span className="text-monday-xs text-uipro-secondary">仅查看</span>
-          )}
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -225,6 +191,7 @@ export const ProductList: React.FC<ProductListProps> = ({
         aria-label="产品列表"
         rowKey={(row) => row.id}
         onRowClick={onSelect}
+        selectedRowKey={selectedProductId}
         striped
       />
     </div>

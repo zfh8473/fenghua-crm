@@ -27,6 +27,10 @@ import { useQuery } from '@tanstack/react-query';
 interface InteractionSearchProps {
   onSearch: (filters: InteractionSearchFilters) => void;
   initialFilters?: InteractionSearchFilters;
+  /** 排序字段（由页面 toolbar 控制） */
+  sortBy?: InteractionSearchFilters['sortBy'];
+  /** 排序方向（由页面 toolbar 控制） */
+  sortOrder?: 'asc' | 'desc';
   loading?: boolean;
   userRole?: string;
 }
@@ -64,6 +68,8 @@ const getStatusOptions = (): MultiSelectOption[] => {
 export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   onSearch,
   initialFilters = {},
+  sortBy = initialFilters.sortBy ?? '',
+  sortOrder = initialFilters.sortOrder ?? '',
   loading = false,
   userRole,
 }) => {
@@ -77,12 +83,6 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<string[]>(initialFilters.categories || []);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [sortBy, setSortBy] = useState<InteractionSearchFilters['sortBy']>(
-    initialFilters.sortBy || 'interactionDate'
-  );
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
-    initialFilters.sortOrder || 'desc'
-  );
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const onSearchRef = useRef(onSearch);
@@ -173,13 +173,8 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
     if (selectedUser && selectedUser.id) {
       filters.createdBy = selectedUser.id;
     }
-    if (sortBy) {
-      filters.sortBy = sortBy;
-    }
-    if (sortOrder) {
-      filters.sortOrder = sortOrder;
-    }
-
+    filters.sortBy = (sortBy && String(sortBy).trim()) ? (sortBy as InteractionSearchFilters['sortBy']) : undefined;
+    filters.sortOrder = (sortOrder && String(sortOrder).trim()) ? (sortOrder as 'asc' | 'desc') : undefined;
     return filters;
   }, [
     interactionTypes,
@@ -220,8 +215,7 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
     setSelectedProduct(null);
     setCategories([]);
     setSelectedUser(null);
-    setSortBy('interactionDate');
-    setSortOrder('desc');
+    /* 排序 sortBy/sortOrder 由页面 toolbar 控制，清除筛选不重置 */
   };
 
   const hasActiveFilters =
@@ -247,8 +241,9 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   }));
 
   return (
-    <div className="space-y-monday-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-monday-4">
+    <div className="space-y-monday-3">
+      {/* 8 个搜索条件：两行排布（每行 4 个），排序已移至页面 toolbar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-monday-3">
         {/* Interaction Types Multi-Select */}
         <div>
           <MultiSelect
@@ -358,41 +353,6 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
             placeholder="选择创建者..."
             disabled={loading}
           />
-        </div>
-
-        {/* Sort By */}
-        <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
-            排序字段
-          </label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as InteractionSearchFilters['sortBy'])}
-            disabled={loading}
-            className="w-full px-monday-3 py-monday-2 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue"
-          >
-            <option value="interactionDate">互动时间</option>
-            <option value="customerName">客户名称</option>
-            <option value="productName">产品名称</option>
-            <option value="productHsCode">产品HS编码</option>
-            <option value="interactionType">互动类型</option>
-          </select>
-        </div>
-
-        {/* Sort Order */}
-        <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
-            排序方向
-          </label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-            disabled={loading}
-            className="w-full px-monday-3 py-monday-2 text-monday-sm text-monday-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-primary-blue"
-          >
-            <option value="desc">降序</option>
-            <option value="asc">升序</option>
-          </select>
         </div>
       </div>
 

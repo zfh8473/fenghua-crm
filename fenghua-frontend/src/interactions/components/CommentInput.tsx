@@ -92,7 +92,6 @@ export const CommentInput: React.FC<CommentInputProps> = ({
           type="submit"
           disabled={disabled || isSubmitting || !content.trim()}
           variant="primary"
-          className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
         >
           {isSubmitting ? '提交中...' : '提交评论'}
         </Button>

@@ -134,7 +134,7 @@ export const ProductCategoryManagementPage: React.FC = () => {
             <Card variant="default" className="w-full">
               <div className="flex items-center justify-between">
                 <h2 className="text-monday-2xl font-bold text-uipro-text tracking-tight font-uipro-heading">类别管理</h2>
-                <Button onClick={handleCreate} variant="primary" className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200">
+                <Button onClick={handleCreate} variant="primary">
                   创建新类别
                 </Button>
               </div>

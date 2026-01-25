@@ -141,8 +141,6 @@ export const UserManagementPage: React.FC = () => {
           variant="primary"
           size="md"
           onClick={handleCreate}
-          leftIcon={<HomeModuleIcon name="plus" className="w-5 h-5 flex-shrink-0" />}
-          className="!bg-uipro-cta hover:!bg-uipro-cta/90 shadow-linear-md hover:shadow-linear-lg font-semibold cursor-pointer transition-colors duration-200"
         >
           创建新用户
         </Button>

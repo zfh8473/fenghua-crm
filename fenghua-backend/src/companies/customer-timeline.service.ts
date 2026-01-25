@@ -168,12 +168,14 @@ export class CustomerTimelineService implements OnModuleDestroy {
         pci.additional_info,
         pci.created_at,
         pci.created_by,
-        p.id as product_id,
-        p.name as product_name,
-        p.hs_code as product_hs_code,
         u.email as creator_email,
         u.first_name as creator_first_name,
         u.last_name as creator_last_name,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', p.id, 'name', p.name, 'hsCode', p.hs_code)) 
+          FILTER (WHERE p.id IS NOT NULL), 
+          '[]'::json
+        ) as products,
         COALESCE(
           json_agg(
             json_build_object(
@@ -189,7 +191,8 @@ export class CustomerTimelineService implements OnModuleDestroy {
         ) as attachments
       FROM product_customer_interactions pci
       INNER JOIN companies c ON c.id = pci.customer_id
-      LEFT JOIN products p ON p.id = pci.product_id AND p.deleted_at IS NULL
+      LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+      LEFT JOIN products p ON p.id = ip.product_id AND p.deleted_at IS NULL
       LEFT JOIN users u ON u.id = pci.created_by
       LEFT JOIN file_attachments fa ON fa.interaction_id = pci.id AND fa.deleted_at IS NULL
       WHERE pci.customer_id = $1
@@ -199,7 +202,6 @@ export class CustomerTimelineService implements OnModuleDestroy {
         AND ($3::timestamp IS NULL OR pci.interaction_date >= $3)
       GROUP BY pci.id, pci.interaction_type, pci.interaction_date, pci.description,
                pci.status, pci.additional_info, pci.created_at, pci.created_by,
-               p.id, p.name, p.hs_code,
                u.email, u.first_name, u.last_name
       ORDER BY pci.interaction_date ${orderDirection}
       LIMIT $4 OFFSET $5
@@ -248,6 +250,19 @@ export class CustomerTimelineService implements OnModuleDestroy {
           attachments = [];
         }
 
+        // 解析产品列表 JSON
+        let products: Array<{ id: string; name: string; hsCode?: string }> = [];
+        try {
+          if (row.products && typeof row.products === 'string') {
+            products = JSON.parse(row.products);
+          } else if (Array.isArray(row.products)) {
+            products = row.products;
+          }
+        } catch (error) {
+          this.logger.warn('Failed to parse products JSON', error);
+          products = [];
+        }
+
         return {
           id: row.id,
           interactionType: row.interaction_type,
@@ -260,9 +275,11 @@ export class CustomerTimelineService implements OnModuleDestroy {
           creatorEmail: row.creator_email,
           creatorFirstName: row.creator_first_name,
           creatorLastName: row.creator_last_name,
-          productId: row.product_id,
-          productName: row.product_name,
-          productHsCode: row.product_hs_code,
+          products: products, // New: products array
+          // Legacy fields for backward compatibility
+          productId: products.length > 0 ? products[0].id : undefined,
+          productName: products.length > 0 ? products[0].name : undefined,
+          productHsCode: products.length > 0 ? products[0].hsCode : undefined,
           attachments: attachments,
         };
       });

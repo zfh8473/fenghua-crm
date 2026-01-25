@@ -168,7 +168,7 @@ export class ProductCustomerInteractionHistoryService implements OnModuleDestroy
       INNER JOIN companies c ON c.id = pci.customer_id
       LEFT JOIN users u ON u.id = pci.created_by
       LEFT JOIN file_attachments fa ON fa.interaction_id = pci.id AND fa.deleted_at IS NULL
-      WHERE pci.product_id = $1 
+      WHERE EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $1)
         AND pci.customer_id = $2
         AND pci.deleted_at IS NULL
         AND c.deleted_at IS NULL
@@ -196,7 +196,7 @@ export class ProductCustomerInteractionHistoryService implements OnModuleDestroy
         SELECT COUNT(DISTINCT pci.id) as total
         FROM product_customer_interactions pci
         INNER JOIN companies c ON c.id = pci.customer_id
-        WHERE pci.product_id = $1 
+        WHERE EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $1)
           AND pci.customer_id = $2
           AND pci.deleted_at IS NULL
           AND c.deleted_at IS NULL

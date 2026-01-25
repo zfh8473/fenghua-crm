@@ -13,10 +13,11 @@ import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 
 interface CustomerListProps {
   customers: Customer[];
-  onEdit: (customer: Customer) => void;
-  onDelete: (customer: Customer) => void;
+  onEdit?: (customer: Customer) => void; // Optional: 编辑按钮已移至详情页
+  onDelete?: (customer: Customer) => void; // Optional: 删除按钮已移至详情页
   onSelect: (customer: Customer) => void;
-  onShowContacts?: (customer: Customer) => void;
+  onShowContacts?: (customer: Customer) => void; // Optional: 已移至详情页联系人卡片
+  selectedCustomerId?: string | null; // 当前选中的客户 ID，用于高亮显示
   loading?: boolean;
   searchQuery?: string;
 }
@@ -43,6 +44,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
   onDelete,
   onSelect,
   onShowContacts,
+  selectedCustomerId,
   loading = false,
   searchQuery
 }) => {
@@ -163,57 +165,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
         </span>
       ),
     },
-    {
-      key: 'actions',
-      header: '操作',
-      /* 19.7 AC2：与 UserList、ProductList 统一 outline、uipro-cta/semantic-error、pencilSquare/trash；编辑在左、删除在右 */
-      /* Story 20.4：添加"显示联系人"按钮 */
-      render: (value, customer) => (
-        <div className="flex gap-monday-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(customer);
-            }}
-            title="编辑"
-            leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
-            className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
-          >
-            编辑
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(customer);
-            }}
-            title="删除"
-            leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
-            className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
-          >
-            删除
-          </Button>
-          {onShowContacts && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onShowContacts(customer);
-              }}
-              title="显示联系人"
-              leftIcon={<HomeModuleIcon name="user" className="w-4 h-4 flex-shrink-0" />}
-              className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
-            >
-              显示联系人
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    // 操作列已移除：编辑/删除按钮已移至详情页头部，"显示联系人"按钮已移至详情页联系人卡片
   ];
 
   return (
@@ -222,6 +174,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
       columns={columns}
       onRowClick={onSelect}
       rowKey={(row) => row.id}
+      selectedRowKey={selectedCustomerId}
       striped
     />
   );

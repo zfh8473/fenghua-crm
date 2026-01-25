@@ -110,12 +110,11 @@ export const CustomerProductAssociation: React.FC<CustomerProductAssociationProp
         <Button
           type="button"
           size="sm"
-          variant="outline"
+          variant="primary"
           onClick={() => setIsManagementModalOpen(true)}
           title={stats.total === 0 ? '添加关联产品' : '显示关联产品'}
           aria-label={stats.total === 0 ? '添加关联产品' : '显示关联产品'}
-          leftIcon={<HomeModuleIcon name="cube" className="w-4 h-4 flex-shrink-0" />}
-          className="w-full text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
+          className="w-full"
         >
           {stats.total === 0 ? '添加关联产品' : '显示关联产品'}
         </Button>

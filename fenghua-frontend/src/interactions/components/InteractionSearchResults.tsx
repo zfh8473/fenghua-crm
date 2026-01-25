@@ -48,18 +48,35 @@ const getStatusLabel = (status?: string): string => {
 };
 
 /**
- * Get status badge color
+ * Get status color class
  */
-/** 19.3 main-business：状态徽章 uipro-* / semantic-* */
-const getStatusBadgeColor = (status?: string): string => {
-  if (!status) return 'bg-uipro-secondary/15 text-uipro-secondary';
+const getStatusColor = (status?: string): string => {
+  if (!status) return 'bg-gray-100 text-gray-800 border border-gray-200';
   const colorMap: Record<string, string> = {
-    in_progress: 'bg-uipro-cta/15 text-uipro-cta',
-    completed: 'bg-semantic-success/15 text-semantic-success',
-    cancelled: 'bg-semantic-error/15 text-semantic-error',
-    needs_follow_up: 'bg-semantic-warning/15 text-semantic-warning',
+    in_progress: 'bg-blue-100 text-blue-800 border border-blue-200',
+    completed: 'bg-green-100 text-green-800 border border-green-200',
+    cancelled: 'bg-gray-100 text-gray-800 border border-gray-200',
+    needs_follow_up: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
   };
-  return colorMap[status] || 'bg-uipro-secondary/15 text-uipro-secondary';
+  return colorMap[status] || 'bg-gray-100 text-gray-800 border border-gray-200';
+};
+
+/**
+ * Get interaction type color class
+ * Based on Story 19.3: Use uipro-* / semantic-* colors, avoid purple/pink
+ */
+const getInteractionTypeColor = (type: string): string => {
+  const buyerTypes = [
+    'initial_contact', 'product_inquiry', 'quotation', 'quotation_accepted', 'quotation_rejected',
+    'order_signed', 'order_follow_up', 'order_completed',
+  ];
+  const supplierTypes = [
+    'product_inquiry_supplier', 'quotation_received', 'specification_confirmed',
+    'production_progress', 'pre_shipment_inspection', 'shipped',
+  ];
+  if (buyerTypes.includes(type)) return 'bg-uipro-cta/15 text-uipro-cta border border-uipro-cta/25';
+  if (supplierTypes.includes(type)) return 'bg-uipro-secondary/15 text-uipro-secondary border border-uipro-secondary/25';
+  return 'bg-uipro-secondary/15 text-uipro-secondary border border-gray-200';
 };
 
 export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> = ({
@@ -69,135 +86,139 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
   pageSize,
   onPageChange,
   onInteractionClick,
-  loading = false,
+  loading,
 }) => {
   const totalPages = Math.ceil(total / pageSize);
 
-  const handleInteractionClick = (interaction: Interaction) => {
-    if (onInteractionClick) {
-      onInteractionClick(interaction);
-    }
-  };
-
-  /** 19.3 main-business：加载 skeleton，空态无 emoji */
   if (loading) {
     return (
-      <Card variant="default" className="p-monday-8">
-        <div className="space-y-monday-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="p-monday-4 rounded-monday-lg border border-gray-200 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-monday-2" />
-              <div className="h-4 bg-gray-200 rounded w-1/2" />
-            </div>
-          ))}
-        </div>
-      </Card>
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <div className="h-24 bg-gray-100 rounded"></div>
+          </Card>
+        ))}
+      </div>
     );
   }
 
   if (interactions.length === 0) {
     return (
-      <Card variant="default" className="p-monday-8">
-        <div className="text-center py-monday-12">
-          <h3 className="text-monday-xl font-semibold text-uipro-text mb-monday-2">未找到匹配的互动记录</h3>
-          <p className="text-uipro-secondary">请尝试调整搜索条件或筛选器</p>
-        </div>
-      </Card>
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-500">没有找到互动记录</p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-monday-4">
-      {/* Results Summary */}
-      <div className="flex items-center justify-between">
-        <p className="text-monday-sm text-uipro-secondary">
-          找到 <span className="font-semibold text-uipro-text">{total}</span> 条互动记录
-        </p>
-      </div>
+    <div className="space-y-4">
+      {interactions.map((interaction) => (
+        <Card
+          key={interaction.id}
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => onInteractionClick?.(interaction)}
+        >
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusColor(interaction.status)}`}>
+                  {getStatusLabel(interaction.status)}
+                </span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getInteractionTypeColor(interaction.interactionType)}`}>
+                  {getInteractionTypeLabel(interaction.interactionType)}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {formatDate(interaction.interactionDate)}
+                </span>
+              </div>
+              
+              <div className="mb-2">
+                <span className="text-sm text-gray-500">客户：</span>
+                <Link 
+                  to={`/customers/${interaction.customerId}`}
+                  className="text-sm font-medium text-blue-600 hover:underline ml-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {interaction.customerName || '未知客户'}
+                </Link>
+              </div>
 
-      {/* Results List */}
-      <div className="space-y-monday-3">
-        {interactions.map((interaction) => (
-          <Card
-            key={interaction.id}
-            variant="default"
-            className="p-monday-4 hover:shadow-monday-md transition-all duration-200 cursor-pointer"
-            onClick={() => handleInteractionClick(interaction)}
-          >
-            <div className="flex items-start justify-between gap-monday-4">
-              <div className="flex-1 space-y-monday-2">
-                <div className="flex items-center gap-monday-3">
-                  <span className="text-monday-lg font-semibold text-monday-text">
-                    {getInteractionTypeLabel(interaction.interactionType)}
-                  </span>
-                  {interaction.status && (
-                    <span
-                      className={`inline-flex items-center px-monday-2 py-monday-1 rounded-monday-sm text-monday-xs font-medium ${getStatusBadgeColor(
-                        interaction.status
-                      )}`}
-                    >
-                      {getStatusLabel(interaction.status)}
-                    </span>
+              {/* Products Display: Tag Cloud + Collapse */}
+              <div className="mb-2">
+                <span className="text-sm text-gray-500">产品：</span>
+                <div className="inline-flex flex-wrap gap-1 ml-1 align-middle">
+                  {interaction.products && interaction.products.length > 0 ? (
+                    <>
+                      {interaction.products.slice(0, 5).map((product) => (
+                        <Link
+                          key={product.id}
+                          to={`/products?productId=${product.id}`}
+                          className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {product.name}
+                        </Link>
+                      ))}
+                      {interaction.products.length > 5 && (
+                        <span 
+                          className="inline-block px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded cursor-help"
+                          title={interaction.products.slice(5).map(p => p.name).join('\n')}
+                        >
+                          +{interaction.products.length - 5}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    // Fallback for legacy data or if products array is empty but productName exists
+                    interaction.productName ? (
+                      <span className="text-sm text-gray-900">{interaction.productName}</span>
+                    ) : (
+                      <span className="text-sm text-gray-400">无关联产品</span>
+                    )
                   )}
                 </div>
-                <div className="text-monday-sm text-monday-text-secondary">
-                  <span>时间：{formatDate(interaction.interactionDate)}</span>
-                </div>
-                {interaction.description && (
-                  <p className="text-monday-sm text-monday-text line-clamp-2">
-                    {interaction.description}
-                  </p>
-                )}
-                <div className="flex items-center gap-monday-4 text-monday-xs text-monday-text-secondary">
-                  <Link
-                    to={`/customers/${interaction.customerId}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
-                  >
-                    查看客户
-                  </Link>
-                  <Link
-                    to={`/products/${interaction.productId}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
-                  >
-                    查看产品
-                  </Link>
-                  <Link
-                    to={`/interactions/${interaction.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-uipro-cta hover:underline cursor-pointer transition-colors duration-200"
-                  >
-                    查看详情
-                  </Link>
-                </div>
               </div>
+
+              {interaction.personName && (
+                <div className="mb-2">
+                  <span className="text-sm text-gray-500">联系人：</span>
+                  <span className="text-sm text-gray-900 ml-1">{interaction.personName}</span>
+                </div>
+              )}
+
+              {interaction.description && (
+                <p className="text-sm text-gray-600 line-clamp-2 mt-2">
+                  {interaction.description}
+                </p>
+              )}
             </div>
-          </Card>
-        ))}
-      </div>
+            
+            <Button variant="ghost" size="sm">
+              查看详情
+            </Button>
+          </div>
+        </Card>
+      ))}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-monday-2">
+        <div className="flex justify-center gap-2 mt-6">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="cursor-pointer transition-colors duration-200"
+            onClick={() => onPageChange(currentPage - 1)}
           >
             上一页
           </Button>
-          <span className="text-monday-sm text-uipro-secondary">
-            第 {currentPage} 页，共 {totalPages} 页
+          <span className="flex items-center px-4 text-sm text-gray-600">
+            第 {currentPage} 页 / 共 {totalPages} 页
           </span>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="cursor-pointer transition-colors duration-200"
+            onClick={() => onPageChange(currentPage + 1)}
           >
             下一页
           </Button>
@@ -206,4 +227,3 @@ export const InteractionSearchResults: React.FC<InteractionSearchResultsProps> =
     </div>
   );
 };
-

@@ -5,7 +5,7 @@
  * All custom code is proprietary and not open source.
  */
 
-import { Injectable, Logger, UnauthorizedException, ConflictException, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException, ConflictException, ServiceUnavailableException, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Pool } from 'pg';
@@ -56,7 +56,8 @@ export class AuthService implements OnModuleDestroy {
     try {
       this.pgPool = new Pool({
         connectionString: databaseUrl,
-        max: 5, // Connection pool size for auth service
+        max: 5,
+        connectionTimeoutMillis: 15000, // 跨区域（如 SG↔Virginia）时留足建连时间，避免过早超时
       });
       this.logger.log('PostgreSQL connection pool initialized for AuthService (fenghua-crm database)');
     } catch (error) {
@@ -243,12 +244,22 @@ export class AuthService implements OnModuleDestroy {
         roles: roleNames,
       };
     } catch (error) {
-      // Log error without sensitive information (token)
       if (error instanceof UnauthorizedException) {
-        this.logger.warn('Token validation failed', {
-          message: error.message,
-        });
+        this.logger.warn('Token validation failed', { message: error.message });
         throw error;
+      }
+      // 区分 DB/网络类错误：跨区域（如 Railway SG → Neon Virginia）超时、连接重置等
+      // 返回 503 而非 401，避免前端误判为 token 失效并清空登录态
+      const err = error as NodeJS.ErrnoException | undefined;
+      const code = err?.code;
+      const msg = (err?.message || '').toLowerCase();
+      if (
+        code === 'ECONNRESET' || code === 'ETIMEDOUT' || code === 'ENOTFOUND' ||
+        code === 'EPIPE' || code === 'ECONNREFUSED' ||
+        /timeout|connection refused|connect econnrefused|connection.*reset/i.test(msg)
+      ) {
+        this.logger.warn('Token validation failed (DB/network)', { code, message: err?.message });
+        throw new ServiceUnavailableException('服务暂时不可用，请稍后重试');
       }
       this.logger.error('Token validation failed', {
         message: error instanceof Error ? error.message : 'Unknown error',

@@ -192,7 +192,6 @@ export const AnalysisExportDialog: React.FC<AnalysisExportDialogProps> = ({
             variant="primary"
             onClick={handleExport}
             disabled={isExporting}
-            className="!bg-uipro-cta hover:!bg-uipro-cta/90 focus:ring-uipro-cta/50"
           >
             {isExporting ? '导出中...' : '导出'}
           </Button>

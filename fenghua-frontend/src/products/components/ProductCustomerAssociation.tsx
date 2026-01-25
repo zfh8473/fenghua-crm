@@ -130,16 +130,15 @@ export const ProductCustomerAssociation: React.FC<ProductCustomerAssociationProp
           )}
         </div>
 
-        {/* 显示关联客户按钮（与详情页编辑/删除统一：outline、uipro-cta、图标） */}
+        {/* 显示关联客户按钮 - 统一为填充样式（白字+蓝色填充，无图标） */}
         <Button
           type="button"
           size="sm"
-          variant="outline"
+          variant="primary"
           onClick={() => setIsManagementModalOpen(true)}
           title={stats.total === 0 ? '添加关联客户' : '显示关联客户'}
           aria-label={stats.total === 0 ? '添加关联客户' : '显示关联客户'}
-          leftIcon={<HomeModuleIcon name="users" className="w-4 h-4 flex-shrink-0" />}
-          className="w-full text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
+          className="w-full"
         >
           {stats.total === 0 ? '添加关联客户' : '显示关联客户'}
         </Button>

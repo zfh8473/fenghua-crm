@@ -108,9 +108,7 @@ export const getHttpErrorMessage = (status: number, defaultMessage?: string): st
 /**
  * Product creation and association error messages
  */
-export const PRODUCT_CREATE_SUCCESS = '产品创建成功';
-
-/**
+export const PRODUCT_CREATE_SUCCESS = '产品创建成功';/**
  * Product creation with associations success message
  * 
  * @param count - Number of associations created
@@ -136,23 +134,17 @@ export const PRODUCT_CREATE_ASSOCIATIONS_PARTIAL_FAILURE = (
  */
 export const ASSOCIATION_CREATE_FAILED = (error: string): string => `创建关联失败：${error}`;
 
-export const MANAGE_ASSOCIATIONS_IN_DETAIL = '在详情页管理关联';
-
-/**
+export const MANAGE_ASSOCIATIONS_IN_DETAIL = '在详情页管理关联';/**
  * Customer creation and association error messages
  */
-export const CUSTOMER_CREATE_SUCCESS = '客户创建成功';
-
-/**
+export const CUSTOMER_CREATE_SUCCESS = '客户创建成功';/**
  * Customer creation with associations success message
  *
  * @param count - Number of associations created
  * @returns Success message string
  */
 export const CUSTOMER_CREATE_WITH_ASSOCIATIONS_SUCCESS = (count: number): string =>
-  `客户创建成功，已关联 ${count} 个产品`;
-
-/**
+  `客户创建成功，已关联 ${count} 个产品`;/**
  * Customer creation with partial association failures
  *
  * @param successCount - Number of successful associations

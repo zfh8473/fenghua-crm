@@ -124,7 +124,8 @@ export class CustomerProductAssociationService implements OnModuleDestroy {
         p.hs_code,
         COUNT(pci.id) as interaction_count
       FROM product_customer_interactions pci
-      INNER JOIN products p ON p.id = pci.product_id
+      INNER JOIN interaction_products ip ON ip.interaction_id = pci.id
+      INNER JOIN products p ON p.id = ip.product_id
       INNER JOIN companies c ON c.id = pci.customer_id
       WHERE pci.customer_id = $1 
         AND pci.deleted_at IS NULL
@@ -150,7 +151,8 @@ export class CustomerProductAssociationService implements OnModuleDestroy {
       const countQuery = `
         SELECT COUNT(DISTINCT p.id) as total
         FROM product_customer_interactions pci
-        INNER JOIN products p ON p.id = pci.product_id
+        INNER JOIN interaction_products ip ON ip.interaction_id = pci.id
+      INNER JOIN products p ON p.id = ip.product_id
         INNER JOIN companies c ON c.id = pci.customer_id
         WHERE pci.customer_id = $1 
           AND pci.deleted_at IS NULL

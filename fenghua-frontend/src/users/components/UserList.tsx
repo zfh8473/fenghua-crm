@@ -109,23 +109,19 @@ export const UserList: React.FC<UserListProps> = ({
         >
           {/* 19.7 AC2：编辑 outline + uipro-cta，删除 outline + semantic-error；编辑在左、删除在右；统一图标 */}
           <Button
-            variant="outline"
+            variant="primary"
             size="sm"
             onClick={() => onEdit(user)}
             title="编辑"
-            leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
-            className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
           >
             编辑
           </Button>
           <Button
-            variant="outline"
+            variant="danger"
             size="sm"
             onClick={() => onDelete(user)}
             disabled={user.id === currentUserId}
             title={user.id === currentUserId ? '不能删除自己的账户' : '删除'}
-            leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
-            className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
           >
             删除
           </Button>

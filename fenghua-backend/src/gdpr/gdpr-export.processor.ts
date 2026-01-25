@@ -319,10 +319,21 @@ export class GdprExportProcessor extends WorkerHost implements OnModuleDestroy {
       const limitParamIndex = paramIndex;
       const offsetParamIndex = paramIndex + 1;
       const result = await this.pgPool.query(
-        `SELECT pci.*, c.name as customer_name, c.customer_type
+        `SELECT 
+           pci.*, 
+           c.name as customer_name, 
+           c.customer_type,
+           COALESCE(
+             json_agg(jsonb_build_object('id', p.id, 'name', p.name)) 
+             FILTER (WHERE p.id IS NOT NULL), 
+             '[]'::json
+           ) as products
          FROM product_customer_interactions pci
          LEFT JOIN companies c ON pci.customer_id = c.id
+         LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+         LEFT JOIN products p ON p.id = ip.product_id
          ${whereClause}
+         GROUP BY pci.id, c.id
          ORDER BY pci.created_at DESC
          LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}`,
         [...params, limit, offset],
@@ -399,12 +410,13 @@ export class GdprExportProcessor extends WorkerHost implements OnModuleDestroy {
       });
     }
 
-    // 3. Products from user's interactions
+    // 3. Products from user's interactions (via interaction_products table)
     const interactionProducts = await this.pgPool.query(
       `SELECT DISTINCT p.*, 'in_user_interactions' as source
        FROM products p
-       INNER JOIN product_customer_interactions pci ON p.id = pci.product_id
-       WHERE pci.created_by = $1 AND p.deleted_at IS NULL`,
+       INNER JOIN interaction_products ip ON p.id = ip.product_id
+       INNER JOIN product_customer_interactions pci ON pci.id = ip.interaction_id
+       WHERE pci.created_by = $1 AND pci.deleted_at IS NULL AND p.deleted_at IS NULL`,
       [userId],
     );
     interactionProducts.rows.forEach((row) => {

@@ -1,0 +1,15 @@
+feat(story-20-4): 实现客户列表中的联系人管理功能
+
+- 添加 CustomerPersonManagementModal 组件（模态弹窗管理联系人）
+- 提取 ContactMethodIcon 为共享组件
+- 实现快速创建互动记录功能（预填 personId 和联系方式）
+- 实现本地应用协议调用工具（跨平台支持）
+- 集成到 CustomerManagementPage
+- 修复后端编译错误（UpdatePersonDto、UpdateInteractionDto、PeopleController）
+
+相关文件:
+- 前端: CustomerPersonManagementModal, ContactMethodIcon, contact-protocols
+- 后端: UpdatePersonDto, UpdateInteractionDto, PeopleController
+- 文档: 代码审查报告、测试指南、完成报告
+
+Closes: Story 20.4

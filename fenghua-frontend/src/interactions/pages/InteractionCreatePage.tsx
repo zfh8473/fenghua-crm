@@ -19,8 +19,8 @@ export const InteractionCreatePage: React.FC = () => {
   const customerIdFromState = (location.state as { customerId?: string })?.customerId;
   const customerIdFromQuery = searchParams.get('customerId');
   const productIdFromQuery = searchParams.get('productId'); // NEW: 添加 productId 支持
-  const prefillCustomerId = customerIdFromState || customerIdFromQuery || undefined;
-  const prefillProductId = productIdFromQuery || undefined; // NEW: 添加 prefillProductId
+  const initialCustomerId = customerIdFromState || customerIdFromQuery || undefined;
+  const initialProductId = productIdFromQuery || undefined; // NEW: 添加 initialProductId
 
   return (
     <MainLayout title="创建互动记录">
@@ -37,8 +37,8 @@ export const InteractionCreatePage: React.FC = () => {
             创建互动记录
           </h2>
           <InteractionCreateForm
-            prefillCustomerId={prefillCustomerId}
-            prefillProductId={prefillProductId}
+            initialCustomerId={initialCustomerId}
+            initialProductId={initialProductId}
           />
         </div>
       </Card>

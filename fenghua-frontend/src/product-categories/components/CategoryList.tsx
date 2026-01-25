@@ -88,18 +88,17 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                   <td className="p-monday-3">
                     <div className="flex items-center gap-monday-2">
                       <Button
-                        variant="outline"
+                        variant="primary"
                         size="sm"
                         onClick={() => onEdit(category)}
                       >
                         编辑
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="danger"
                         size="sm"
                         onClick={() => onDelete(category)}
                         disabled={category.productCount > 0}
-                        className={category.productCount > 0 ? 'opacity-50 cursor-not-allowed' : 'text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200'}
                       >
                         删除
                       </Button>

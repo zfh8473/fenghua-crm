@@ -28,7 +28,7 @@ export const useInteractionSearch = (options?: UseInteractionSearchOptions) => {
   const [searchParams] = useSearchParams();
   const pageSize = options?.pageSize || 20;
 
-  // Parse filters from URL params
+  // Parse filters from URL params（sortBy/sortOrder 由页面 toolbar 控制，不从这里取以免覆盖父级状态）
   const filtersFromUrl: InteractionSearchFilters = useMemo(() => {
     const q = searchParams.get('q') || '';
     const customerId = searchParams.get('customerId') || undefined;
@@ -39,8 +39,6 @@ export const useInteractionSearch = (options?: UseInteractionSearchOptions) => {
     const createdBy = searchParams.get('createdBy') || undefined;
     const startDate = searchParams.get('startDate') || undefined;
     const endDate = searchParams.get('endDate') || undefined;
-    const sortBy = searchParams.get('sortBy') || 'interactionDate';
-    const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
     const page = parseInt(searchParams.get('page') || '1', 10);
 
     return {
@@ -53,8 +51,6 @@ export const useInteractionSearch = (options?: UseInteractionSearchOptions) => {
       createdBy,
       startDate,
       endDate,
-      sortBy,
-      sortOrder,
       page,
       limit: pageSize,
     };

@@ -440,8 +440,9 @@ export class ProductCustomerAssociationManagementService implements OnModuleDest
         COUNT(DISTINCT pci.id) as interaction_count
       FROM product_customer_associations pca
       INNER JOIN companies c ON c.id = pca.customer_id
+      LEFT JOIN interaction_products ip ON ip.product_id = pca.product_id
       LEFT JOIN product_customer_interactions pci 
-        ON pci.product_id = pca.product_id 
+        ON pci.id = ip.interaction_id 
         AND pci.customer_id = pca.customer_id 
         AND pci.deleted_at IS NULL
       WHERE pca.product_id = $1 
@@ -580,9 +581,10 @@ export class ProductCustomerAssociationManagementService implements OnModuleDest
         COUNT(DISTINCT pci.id) as interaction_count
       FROM product_customer_associations pca
       INNER JOIN products p ON p.id = pca.product_id
+      LEFT JOIN interaction_products ip ON ip.product_id = pca.product_id
       LEFT JOIN product_customer_interactions pci 
-        ON pci.customer_id = pca.customer_id 
-        AND pci.product_id = pca.product_id 
+        ON pci.id = ip.interaction_id 
+        AND pci.customer_id = pca.customer_id 
         AND pci.deleted_at IS NULL
       WHERE pca.customer_id = $1 
         AND pca.deleted_at IS NULL

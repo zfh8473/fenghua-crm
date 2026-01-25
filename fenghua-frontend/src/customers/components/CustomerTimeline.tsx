@@ -20,6 +20,7 @@ import {
 import { PhotoPreview } from '../../attachments/components/PhotoPreview';
 import { Attachment } from '../../attachments/services/attachments.service';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 import { TIMELINE_ERRORS, CUSTOMER_ERRORS, PHOTO_PREVIEW_ERRORS, GENERIC_ERRORS, INTERACTION_EDIT_ERRORS } from '../../common/constants/error-messages';
 import { interactionsService } from '../../interactions/services/interactions.service';
 import { toast } from 'react-toastify';
@@ -274,7 +275,7 @@ const TimelineInteractionCard: React.FC<{
           {interaction.productName && (
             <div className="mb-monday-3">
               <Link
-                to={`/products/${interaction.productId}`}
+                to={`/products?productId=${interaction.productId}`}
                 className="text-monday-sm font-semibold text-primary-blue hover:underline"
               >
                 {interaction.productName}
@@ -382,7 +383,7 @@ const TimelineInteractionCard: React.FC<{
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
+                  variant="primary"
                   onClick={(e) => e.stopPropagation()}
                   className="w-full"
                 >
@@ -393,12 +394,12 @@ const TimelineInteractionCard: React.FC<{
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
+                  variant="danger"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(interaction.id);
                   }}
-                  className="flex-1 text-primary-red hover:text-primary-red/80 hover:border-primary-red"
+                  className="flex-1"
                 >
                   删除
                 </Button>
@@ -845,11 +846,11 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
             <button
               ref={closeButtonRef}
               onClick={handleCloseModal}
-              className="absolute top-monday-4 right-monday-4 z-10 p-monday-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+              className="absolute top-monday-4 right-monday-4 z-10 p-monday-2 bg-black/50 hover:bg-black/70 border border-white/30 rounded text-white transition-colors"
               aria-label="关闭详情"
               tabIndex={0}
             >
-              <span className="text-monday-xl">✕</span>
+              <HomeModuleIcon name="xMark" className="w-5 h-5 text-white" />
             </button>
 
             {/* Modal Content */}
@@ -894,7 +895,7 @@ export const CustomerTimeline: React.FC<CustomerTimelineProps> = ({ customerId }
                     </div>
                     <div className="flex items-center gap-monday-2">
                       <Link
-                        to={`/products/${selectedInteraction.productId}`}
+                        to={`/products?productId=${selectedInteraction.productId}`}
                         className="text-monday-base font-semibold text-primary-blue hover:underline"
                       >
                         {selectedInteraction.productName}

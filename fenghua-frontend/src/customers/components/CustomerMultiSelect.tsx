@@ -186,6 +186,10 @@ export const CustomerMultiSelect: React.FC<CustomerMultiSelectProps> = ({
     setSearchQuery(newValue);
     setIsOpen(true);
     setHighlightedIndex(-1);
+    // If input is cleared, close dropdown
+    if (!newValue.trim()) {
+      setIsOpen(false);
+    }
   };
 
   /**
@@ -194,6 +198,10 @@ export const CustomerMultiSelect: React.FC<CustomerMultiSelectProps> = ({
   const handleInputFocus = () => {
     if (!disabled) {
       setIsOpen(true);
+      // If there's a search query, trigger search immediately
+      if (searchQuery.trim()) {
+        searchCustomers(searchQuery);
+      }
     }
   };
 
@@ -248,14 +256,14 @@ export const CustomerMultiSelect: React.FC<CustomerMultiSelectProps> = ({
       />
 
       {/* Selected customers count */}
-      {selectedCustomers.length > 0 && (
+      {selectedCustomers.length > 0 && selectedCustomers.length > 1 && (
         <div className="mt-monday-2 text-monday-xs text-monday-text-secondary">
           已选择 {selectedCustomers.length} 个客户
         </div>
       )}
 
-      {/* Selected customers tags */}
-      {selectedCustomers.length > 0 && (
+      {/* Selected customers tags - Only show for multi-select (more than 1) */}
+      {selectedCustomers.length > 1 && (
         <div className="mt-monday-2 flex flex-wrap gap-monday-2">
           {selectedCustomers.map((customer) => (
             <div
@@ -283,7 +291,7 @@ export const CustomerMultiSelect: React.FC<CustomerMultiSelectProps> = ({
 
       {/* Dropdown results */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-monday-surface border border-gray-200 rounded-monday-md shadow-monday-lg max-h-60 overflow-auto">
+        <div className="absolute z-[100] w-full mt-1 bg-monday-surface border border-gray-200 rounded-monday-md shadow-monday-lg max-h-60 overflow-auto">
           {loading ? (
             <div className="p-monday-3 text-monday-sm text-monday-text-secondary text-center">
               <span className="animate-spin">⏳</span>
@@ -310,8 +318,8 @@ export const CustomerMultiSelect: React.FC<CustomerMultiSelectProps> = ({
                   aria-selected={index === highlightedIndex}
                   className={`px-monday-3 py-monday-2 cursor-pointer text-monday-sm transition-colors ${
                     index === highlightedIndex
-                      ? 'bg-primary-blue text-white'
-                      : 'text-monday-text hover:bg-monday-bg'
+                      ? 'bg-uipro-cta text-white'
+                      : 'text-monday-text hover:bg-uipro-cta/10'
                   }`}
                   onMouseEnter={() => setHighlightedIndex(index)}
                 >

@@ -8,6 +8,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { CustomerTimeline } from './CustomerTimeline';
+import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 
 interface CustomerTimelineModalProps {
   customerId: string;
@@ -111,15 +112,15 @@ export const CustomerTimelineModal: React.FC<CustomerTimelineModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-monday-4 border-b border-gray-200">
-          <h2 className="text-monday-xl font-semibold text-monday-text">客户时间线</h2>
+          <h2 className="text-monday-xl font-semibold text-uipro-text font-uipro-heading">客户时间线</h2>
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className="p-monday-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-monday-2 hover:bg-gray-100 transition-colors duration-200 cursor-pointer border border-gray-300 rounded"
             aria-label="关闭"
             tabIndex={0}
           >
-            <span className="text-monday-xl">✕</span>
+            <HomeModuleIcon name="xMark" className="w-5 h-5 text-uipro-text" />
           </button>
         </div>
 

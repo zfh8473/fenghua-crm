@@ -18,11 +18,21 @@ export class FileAttachmentDto {
 }
 
 /**
+ * Product summary for interaction response
+ */
+export class ProductSummaryDto {
+  id: string;
+  name: string;
+  status?: string;
+}
+
+/**
  * Interaction response DTO
  */
 export class InteractionResponseDto {
   id: string;
-  productId: string;
+  /** @deprecated Use products array instead */
+  productId?: string;
   customerId: string;
   interactionType: InteractionType;
   interactionDate: Date;
@@ -34,7 +44,17 @@ export class InteractionResponseDto {
   updatedAt?: Date;
   updatedBy?: string;
   attachments?: FileAttachmentDto[];
-  /** All created interaction IDs (when multiple products are selected) */
+  /** @deprecated Legacy field for multi-creation tracking */
   createdInteractionIds?: string[];
+  /** 客户名称（仅搜索接口返回，用于列表展示） */
+  customerName?: string;
+  /** @deprecated Use products array instead */
+  productName?: string;
+  /** 联系人ID（可选） */
+  personId?: string;
+  /** 联系人姓名（可选，用于列表展示） */
+  personName?: string;
+  
+  /** 关联产品列表 */
+  products?: ProductSummaryDto[];
 }
-

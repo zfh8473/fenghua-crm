@@ -5,6 +5,8 @@
  * All custom code is proprietary and not open source.
  */
 
+import { authService } from '../../auth/auth.service';
+
 // Use relative path /api to leverage Vite proxy in development
 // In production, set VITE_API_BASE_URL to the full backend URL
 const API_URL = (import.meta.env?.VITE_API_BASE_URL as string) || (import.meta.env?.VITE_BACKEND_URL as string) || '/api';
@@ -45,290 +47,187 @@ export enum InteractionStatus {
   NEEDS_FOLLOW_UP = 'needs_follow_up' // 需要跟进
 }
 
+export interface ProductSummary {
+  id: string;
+  name: string;
+  status?: string;
+}
+
 export interface Interaction {
   id: string;
-  productId: string;
+  /** @deprecated Use products array instead */
+  productId?: string;
   customerId: string;
   interactionType: InteractionType;
-  interactionDate: Date;
+  interactionDate: string;
   description?: string;
   status?: InteractionStatus;
   additionalInfo?: Record<string, unknown>;
-  createdAt: Date;
+  createdAt: string;
   createdBy: string;
-  updatedAt?: Date;
+  updatedAt?: string;
   updatedBy?: string;
-  /** All created interaction IDs (when multiple products are selected) */
-  createdInteractionIds?: string[];
+  attachments?: any[];
+  customerName?: string;
+  /** @deprecated Use products array instead */
+  productName?: string;
+  personId?: string;
+  personName?: string;
+  
+  /** List of associated products */
+  products?: ProductSummary[];
 }
 
 export interface CreateInteractionDto {
-  productIds: string[]; // Support multiple products
+  productIds: string[];
   customerId: string;
   interactionType: InteractionType;
-  interactionDate: string; // ISO 8601 date string
+  interactionDate: string;
   description?: string;
   status?: InteractionStatus;
   additionalInfo?: Record<string, unknown>;
+  personId?: string;
 }
 
 export interface UpdateInteractionDto {
-  interactionType?: InteractionType; // Allow updating interaction type
+  interactionType?: InteractionType;
   description?: string;
-  interactionDate?: string; // ISO 8601 date string
+  interactionDate?: string;
   status?: InteractionStatus;
   additionalInfo?: Record<string, unknown>;
 }
 
-/**
- * Interaction search filters
- * 
- * Supports multi-select filtering and advanced search options
- */
 export interface InteractionSearchFilters {
-  /** Array of interaction types to filter by (multi-select) */
-  interactionTypes?: InteractionType[];
-  /** Array of interaction statuses to filter by (multi-select) */
-  statuses?: InteractionStatus[];
-  /** Start date for date range filter (ISO 8601 format) */
-  startDate?: string;
-  /** End date for date range filter (ISO 8601 format) */
-  endDate?: string;
-  /** Filter by specific customer ID */
+  search?: string;
   customerId?: string;
-  /** Filter by specific product ID */
   productId?: string;
-  /** Array of product categories to filter by (multi-select) */
+  interactionTypes?: InteractionType[];
+  statuses?: InteractionStatus[];
   categories?: string[];
-  /** Filter by creator user ID */
   createdBy?: string;
-  /** Field to sort by */
-  sortBy?: 'interactionDate' | 'customerName' | 'productName' | 'productHsCode' | 'interactionType';
-  /** Sort order */
-  sortOrder?: 'asc' | 'desc';
-  /** Number of results per page */
+  startDate?: string;
+  endDate?: string;
+  page?: number;
   limit?: number;
-  /** Offset for pagination */
-  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
-export interface FileAttachment {
-  id: string;
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  mimeType?: string;
-}
-
-export interface InteractionWithAttachments extends Interaction {
-  attachments?: FileAttachment[];
+export interface InteractionSearchResults {
+  interactions: Interaction[];
+  total: number;
 }
 
 class InteractionsService {
-  private getAuthToken(): string | null {
-    return localStorage.getItem('fenghua_auth_token');
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const token = this.getAuthToken();
+  private getHeaders() {
+    const token = authService.getToken();
     if (!token) {
       throw new Error('未登录，请先登录');
     }
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    };
+  }
 
-    // Ensure endpoint doesn't start with /api to avoid double /api/api
-    const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.replace(/^\/api/, '') : endpoint;
-    const url = `${API_URL}${cleanEndpoint}`;
-    
-    // Debug log (remove in production)
-    if (import.meta.env.DEV) {
-      console.log('[InteractionsService] Request URL:', url, 'Endpoint:', endpoint, 'API_URL:', API_URL);
-    }
-
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...options.headers,
-      },
+  /**
+   * Create a new interaction record
+   */
+  async createInteraction(data: CreateInteractionDto): Promise<Interaction> {
+    const response = await fetch(`${API_URL}/interactions`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      
-      // Log detailed error information in development
-      if (import.meta.env.DEV) {
-        console.error('[InteractionsService] Request failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: url,
-          errorData: errorData,
-        });
-        // Also log the error data separately for easier debugging
-        console.error('[InteractionsService] Error response data:', JSON.stringify(errorData, null, 2));
-      }
-      
-      // Extract validation errors if present (NestJS ValidationPipe format)
-      let errorMessage: string;
-      
-      // Handle different error response formats
-      if (Array.isArray(errorData.message)) {
-        // ValidationPipe returns array of error objects
-        const messages = errorData.message.map((err: any) => {
-          if (err.constraints) {
-            return Object.values(err.constraints).join(', ');
-          }
-          return err.property ? `${err.property}: ${err.toString()}` : err.toString();
-        });
-        errorMessage = messages.join('; ');
-      } else if (typeof errorData.message === 'string') {
-        // Simple string message
-        errorMessage = errorData.message;
-      } else if (errorData.message && typeof errorData.message === 'object') {
-        // BadRequestException with object format: { message: string, code: string }
-        if (errorData.message.message) {
-          errorMessage = errorData.message.message;
-        } else {
-          errorMessage = JSON.stringify(errorData.message);
-        }
-      } else if (errorData.message) {
-        // Fallback for other message formats
-        errorMessage = JSON.stringify(errorData.message);
-      } else {
-        // No message, use status text
-        errorMessage = `请求失败: ${response.status} ${response.statusText}`;
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    if (response.status === 204) {
-      // No Content response
-      return undefined as T;
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create interaction');
     }
 
     return response.json();
   }
 
   /**
-   * Create a new interaction record
+   * Get interaction by ID
    */
-  async create(data: CreateInteractionDto): Promise<Interaction> {
-    return this.request<Interaction>('/interactions', {
-      method: 'POST',
-      body: JSON.stringify(data),
+  async getInteraction(id: string): Promise<Interaction> {
+    const response = await fetch(`${API_URL}/interactions/${id}`, {
+      headers: this.getHeaders(),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch interaction');
+    }
+
+    return response.json();
   }
 
   /**
-   * Get a single interaction record by ID
+   * Search interactions
    */
-  async getInteraction(id: string): Promise<InteractionWithAttachments> {
-    return this.request<InteractionWithAttachments>(`/interactions/${id}`, {
-      method: 'GET',
+  async searchInteractions(filters: InteractionSearchFilters): Promise<InteractionSearchResults> {
+    const params = new URLSearchParams();
+    
+    if (filters.search) params.append('q', filters.search);
+    if (filters.customerId) params.append('customerId', filters.customerId);
+    if (filters.productId) params.append('productId', filters.productId);
+    if (filters.interactionTypes?.length) params.append('interactionTypes', filters.interactionTypes.join(','));
+    if (filters.statuses?.length) params.append('statuses', filters.statuses.join(','));
+    if (filters.categories?.length) params.append('categories', filters.categories.join(','));
+    if (filters.createdBy) params.append('createdBy', filters.createdBy);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+    const response = await fetch(`${API_URL}/interactions/search?${params.toString()}`, {
+      headers: this.getHeaders(),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to search interactions');
+    }
+
+    return response.json();
   }
 
   /**
-   * Update an interaction record
+   * Update interaction
    */
-  async updateInteraction(
-    id: string,
-    data: UpdateInteractionDto,
-  ): Promise<Interaction> {
-    return this.request<Interaction>(`/interactions/${id}`, {
+  async updateInteraction(id: string, data: UpdateInteractionDto): Promise<Interaction> {
+    const response = await fetch(`${API_URL}/interactions/${id}`, {
       method: 'PATCH',
+      headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update interaction');
+    }
+
+    return response.json();
   }
 
   /**
-   * Delete an interaction record (soft delete)
+   * Delete interaction
    */
   async deleteInteraction(id: string): Promise<void> {
-    return this.request<void>(`/interactions/${id}`, {
+    const response = await fetch(`${API_URL}/interactions/${id}`, {
       method: 'DELETE',
+      headers: this.getHeaders(),
     });
-  }
 
-  /**
-   * Search interaction records with advanced filtering
-   * 
-   * Supports filtering by:
-   * - interactionTypes: Array of interaction types (multi-select)
-   * - statuses: Array of interaction statuses (multi-select)
-   * - categories: Array of product categories (multi-select)
-   * - createdBy: Creator user ID
-   * - customerId: Specific customer
-   * - productId: Specific product
-   * - startDate/endDate: Date range
-   * 
-   * Also supports sorting and pagination.
-   */
-  async searchInteractions(
-    filters: InteractionSearchFilters,
-  ): Promise<{ interactions: Interaction[]; total: number }> {
-    const queryParams = new URLSearchParams();
-    
-    // Multi-select filters (arrays) - only add if array is not empty
-    if (filters.interactionTypes && filters.interactionTypes.length > 0) {
-      filters.interactionTypes.forEach((type) => {
-        if (type && type.trim()) {
-          queryParams.append('interactionTypes', type);
-        }
-      });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to delete interaction');
     }
-    if (filters.statuses && filters.statuses.length > 0) {
-      filters.statuses.forEach((status) => {
-        if (status && status.trim()) {
-          queryParams.append('statuses', status);
-        }
-      });
-    }
-    if (filters.categories && filters.categories.length > 0) {
-      filters.categories.forEach((category) => {
-        if (category && category.trim()) {
-          queryParams.append('categories', category);
-        }
-      });
-    }
-    
-    // Single value filters - only add if value exists and is not empty
-    if (filters.startDate && filters.startDate.trim()) {
-      queryParams.append('startDate', filters.startDate);
-    }
-    if (filters.endDate && filters.endDate.trim()) {
-      queryParams.append('endDate', filters.endDate);
-    }
-    // Only add UUID fields if they are valid (non-empty strings)
-    if (filters.customerId && filters.customerId.trim()) {
-      queryParams.append('customerId', filters.customerId.trim());
-    }
-    if (filters.productId && filters.productId.trim()) {
-      queryParams.append('productId', filters.productId.trim());
-    }
-    if (filters.createdBy && filters.createdBy.trim()) {
-      queryParams.append('createdBy', filters.createdBy.trim());
-    }
-    
-    // Sorting - always include defaults
-    queryParams.append('sortBy', filters.sortBy || 'interactionDate');
-    queryParams.append('sortOrder', filters.sortOrder || 'desc');
-    
-    // Pagination - always include
-    queryParams.append('limit', (filters.limit || 20).toString());
-    queryParams.append('offset', (filters.offset || 0).toString());
-
-    const queryString = queryParams.toString();
-    const endpoint = `/interactions/search${queryString ? `?${queryString}` : ''}`;
-
-    return this.request<{ interactions: Interaction[]; total: number }>(endpoint);
   }
 }
 
 export const interactionsService = new InteractionsService();
-

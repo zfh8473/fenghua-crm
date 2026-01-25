@@ -267,7 +267,6 @@ export function AuditLogsPage() {
               variant="primary"
               onClick={() => handleExport('csv')}
               disabled={isExporting}
-              className="!bg-uipro-cta hover:!bg-uipro-cta/90 cursor-pointer transition-colors duration-200"
             >
               {isExporting ? '导出中...' : '导出 CSV'}
             </Button>

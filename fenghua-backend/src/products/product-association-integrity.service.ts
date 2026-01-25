@@ -103,7 +103,7 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
       const countParams: string[] = [];
 
       if (query?.productId) {
-        totalCountQuery += ' AND pci.product_id = $1';
+        totalCountQuery += ' AND EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $1)';
         countParams.push(query.productId);
       }
       if (query?.customerId) {
@@ -219,7 +219,7 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
       const countParams: string[] = [];
 
       if (query?.productId) {
-        totalCountQuery += ' AND pci.product_id = $1';
+        totalCountQuery += ' AND EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $1)';
         countParams.push(query.productId);
       }
       if (query?.customerId) {
@@ -275,7 +275,7 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
     let paramIndex = 1;
 
     if (query?.productId) {
-      whereClause += ` AND pci.product_id = $${paramIndex}`;
+      whereClause += ` AND EXISTS (SELECT 1 FROM interaction_products ip WHERE ip.interaction_id = pci.id AND ip.product_id = $${paramIndex})`;
       params.push(query.productId);
       paramIndex++;
     }
@@ -292,9 +292,10 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
         name: 'invalid_product_query',
         query: `
           EXPLAIN ANALYZE
-          SELECT pci.id, pci.product_id, pci.customer_id
+          SELECT pci.id, ip.product_id, pci.customer_id
           FROM product_customer_interactions pci
-          LEFT JOIN products p ON p.id = pci.product_id
+          LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+          LEFT JOIN products p ON p.id = ip.product_id
           ${whereClause}
             AND (p.id IS NULL OR p.deleted_at IS NOT NULL)
           LIMIT 1
@@ -304,8 +305,9 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
         name: 'invalid_customer_query',
         query: `
           EXPLAIN ANALYZE
-          SELECT pci.id, pci.product_id, pci.customer_id
+          SELECT DISTINCT pci.id, ip.product_id, pci.customer_id
           FROM product_customer_interactions pci
+          LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
           LEFT JOIN companies c ON c.id = pci.customer_id
           ${whereClause}
             AND (c.id IS NULL OR c.deleted_at IS NOT NULL)
@@ -316,9 +318,10 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
         name: 'inactive_product_query',
         query: `
           EXPLAIN ANALYZE
-          SELECT pci.id, pci.product_id, p.status
+          SELECT pci.id, ip.product_id, p.status
           FROM product_customer_interactions pci
-          INNER JOIN products p ON p.id = pci.product_id
+          INNER JOIN interaction_products ip ON ip.interaction_id = pci.id
+          INNER JOIN products p ON p.id = ip.product_id
           ${whereClause}
             AND p.deleted_at IS NULL
             AND p.status = 'inactive'
@@ -351,11 +354,12 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
 
     // Detect invalid product associations
     const invalidProductQuery = `
-      SELECT pci.id, pci.product_id, pci.customer_id, 'invalid_product' as issue_type
+      SELECT DISTINCT pci.id, ip.product_id, pci.customer_id, 'invalid_product' as issue_type
       FROM product_customer_interactions pci
-      LEFT JOIN products p ON p.id = pci.product_id
+      LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
+      LEFT JOIN products p ON p.id = ip.product_id
       ${whereClause}
-        AND (p.id IS NULL OR p.deleted_at IS NOT NULL)
+        AND (ip.product_id IS NOT NULL AND (p.id IS NULL OR p.deleted_at IS NOT NULL))
     `;
     const invalidProductResult = await this.pgPool.query(invalidProductQuery, params);
     for (const row of invalidProductResult.rows) {
@@ -374,8 +378,9 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
 
     // Detect invalid customer associations
     const invalidCustomerQuery = `
-      SELECT pci.id, pci.product_id, pci.customer_id, 'invalid_customer' as issue_type
+      SELECT DISTINCT pci.id, ip.product_id, pci.customer_id, 'invalid_customer' as issue_type
       FROM product_customer_interactions pci
+      LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
       LEFT JOIN companies c ON c.id = pci.customer_id
       ${whereClause}
         AND (c.id IS NULL OR c.deleted_at IS NOT NULL)
@@ -397,9 +402,10 @@ export class ProductAssociationIntegrityService implements OnModuleDestroy {
 
     // Detect inactive product associations (warning level)
     const inactiveProductQuery = `
-      SELECT pci.id, pci.product_id, p.status, 'inactive_product' as issue_type
+      SELECT DISTINCT pci.id, ip.product_id, p.status, 'inactive_product' as issue_type
       FROM product_customer_interactions pci
-      INNER JOIN products p ON p.id = pci.product_id
+      INNER JOIN interaction_products ip ON ip.interaction_id = pci.id
+      INNER JOIN products p ON p.id = ip.product_id
       ${whereClause}
         AND p.deleted_at IS NULL
         AND p.status = 'inactive'

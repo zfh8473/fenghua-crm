@@ -12,6 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../auth/AuthContext';
 import { isAdmin, isDirector, isFrontendSpecialist, isBackendSpecialist } from '../../common/constants/roles';
 import { CustomerProductAssociation } from './CustomerProductAssociation';
+import { CustomerPersonAssociation } from './CustomerPersonAssociation';
 import { CustomerTimelineSummary } from './CustomerTimelineSummary';
 import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
 
@@ -59,9 +60,10 @@ export const CustomerDetailPanel: React.FC<CustomerDetailPanelProps> = ({
   return (
     <div className="space-y-monday-4">
       {/* Customer Header（19.3 main-business：uipro-* 徽章、标题） */}
+      {/* 优化：编辑/删除按钮移至头部，与客户名称分两行显示，避免长名称挤压按钮 */}
       <div>
         <h3 className="text-monday-xl font-bold text-gray-900 mb-monday-2 font-uipro-heading">{customer.name}</h3>
-        <div className="flex items-center gap-monday-2">
+        <div className="flex items-center gap-monday-2 mb-monday-3">
           <span className={`px-monday-3 py-monday-1 rounded-full text-monday-xs font-semibold transition-colors duration-200 ${
             customer.customerType === 'BUYER'
               ? 'bg-uipro-cta/15 text-uipro-cta'
@@ -75,6 +77,29 @@ export const CustomerDetailPanel: React.FC<CustomerDetailPanelProps> = ({
             </span>
           )}
         </div>
+        {/* Edit/Delete Buttons - 单独一行，统一为填充样式（白字+颜色填充，无图标） */}
+        {canEdit && onEdit && onDelete ? (
+          <div className="flex gap-monday-2">
+            <Button
+              onClick={handleEdit}
+              variant="primary"
+              size="sm"
+              title="编辑"
+              aria-label="编辑客户"
+            >
+              编辑
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="danger"
+              size="sm"
+              title="删除"
+              aria-label="删除客户"
+            >
+              删除
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {/* Basic Information（19.3：信息分组、uipro-text） */}
@@ -141,6 +166,9 @@ export const CustomerDetailPanel: React.FC<CustomerDetailPanelProps> = ({
         </div>
       </Card>
 
+      {/* 联系人卡片（类似关联的产品卡片） */}
+      <CustomerPersonAssociation customerId={customer.id} customer={customer} />
+
       {/* Business Information */}
       <Card variant="outlined" className="p-monday-4 transition-colors duration-200">
         <h4 className="text-monday-base font-semibold text-gray-900 mb-monday-3 font-uipro-heading">业务信息</h4>
@@ -176,34 +204,6 @@ export const CustomerDetailPanel: React.FC<CustomerDetailPanelProps> = ({
 
       {/* 时间线视图 */}
       <CustomerTimelineSummary customerId={customer.id} />
-
-      {/* Edit/Delete Buttons（与 CustomerList 统一：outline、uipro-cta/semantic-error、pencilSquare/trash 图标、居中） */}
-      {canEdit && onEdit && onDelete ? (
-        <div className="flex justify-center gap-monday-2 mt-monday-4">
-          <Button
-            onClick={handleEdit}
-            variant="outline"
-            size="sm"
-            title="编辑"
-            leftIcon={<HomeModuleIcon name="pencilSquare" className="w-4 h-4 flex-shrink-0" />}
-            aria-label="编辑客户"
-            className="text-uipro-cta hover:bg-uipro-cta/10 cursor-pointer transition-colors duration-200"
-          >
-            编辑
-          </Button>
-          <Button
-            onClick={handleDelete}
-            variant="outline"
-            size="sm"
-            title="删除"
-            leftIcon={<HomeModuleIcon name="trash" className="w-4 h-4 flex-shrink-0" />}
-            aria-label="删除客户"
-            className="text-semantic-error hover:bg-semantic-error/10 cursor-pointer transition-colors duration-200"
-          >
-            删除
-          </Button>
-        </div>
-      ) : null}
     </div>
   );
 };

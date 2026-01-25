@@ -17,7 +17,7 @@ import { ProductBusinessProcessPage } from './products/ProductBusinessProcessPag
 import { ProductIntegrityValidationPage } from './products/ProductIntegrityValidationPage'
 import { CustomerManagementPage } from './customers/CustomerManagementPage'
 import { CustomerProductInteractionHistoryPage } from './customers/CustomerProductInteractionHistoryPage'
-// import { PersonManagementPage } from './people/PersonManagementPage' // Temporarily commented out - file not found
+import { PersonManagementPage } from './people/PersonManagementPage'
 import { InteractionsPage } from './interactions/pages/InteractionsPage'
 import { InteractionCreatePage } from './interactions/pages/InteractionCreatePage'
 import { InteractionEditPage } from './interactions/pages/InteractionEditPage'
@@ -383,11 +383,7 @@ function App() {
         path="/people"
         element={
           <ProtectedRoute>
-            {/* <PersonManagementPage /> */} {/* Temporarily commented out - file not found */}
-            <Card variant="default" className="p-monday-8">
-              <h2 className="text-monday-2xl font-semibold mb-monday-4">联系人管理</h2>
-              <p className="text-monday-text-secondary">联系人管理功能正在开发中...</p>
-            </Card>
+            <PersonManagementPage />
           </ProtectedRoute>
         }
       />

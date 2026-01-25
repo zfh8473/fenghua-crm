@@ -36,9 +36,10 @@ export interface Column<T> {
   key: string;
   
   /**
-   * Header text
+   * Header text or React node
+   * Can be a string for simple text headers, or a ReactNode for custom headers (e.g., checkboxes, icons)
    */
-  header: string;
+  header: string | React.ReactNode;
   
   /**
    * Custom render function for cell content
@@ -91,6 +92,11 @@ export interface TableProps<T> {
   rowKey?: (row: T, index: number) => string | number;
   
   /**
+   * Key of the currently selected row (for highlighting)
+   */
+  selectedRowKey?: string | number | null;
+  
+  /**
    * Additional CSS classes
    */
   className?: string;
@@ -113,6 +119,7 @@ export function Table<T extends Record<string, any>>({
   onRowClick,
   sortable = false,
   rowKey,
+  selectedRowKey,
   className = '',
   'aria-label': ariaLabel,
   striped = false,
@@ -221,17 +228,25 @@ export function Table<T extends Record<string, any>>({
                   ? `${row[columns[0].key]}-${rowIndex}`
                   : rowIndex;
                 
+                // Check if this row is selected
+                const isSelected = selectedRowKey !== undefined && selectedRowKey !== null && String(uniqueKey) === String(selectedRowKey);
+                
                 return (
                   <tr
                     key={uniqueKey}
-                    className={`border-b border-gray-200 hover:bg-monday-bg transition-colors duration-200 ${
-                      onRowClick ? 'cursor-pointer' : ''
-                    } ${striped && rowIndex % 2 === 1 ? 'bg-gray-50' : ''}`}
+                    className={`border-b border-gray-200 transition-colors duration-200 ${
+                      isSelected 
+                        ? 'bg-blue-50 hover:bg-blue-100' // 选中状态：浅蓝色背景
+                        : striped && rowIndex % 2 === 1 
+                        ? 'bg-gray-50 hover:bg-monday-bg' 
+                        : 'hover:bg-monday-bg'
+                    } ${onRowClick ? 'cursor-pointer' : ''}`}
                     onClick={() => handleRowClick(row)}
                     onKeyDown={(e) => handleKeyDown(e, row)}
                     tabIndex={onRowClick ? 0 : undefined}
                     role={onRowClick ? 'button' : undefined}
                     aria-label={onRowClick ? `Row ${rowIndex + 1}` : undefined}
+                    aria-selected={isSelected}
                   >
                 {columns.map((column) => (
                   <td

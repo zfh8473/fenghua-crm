@@ -25,6 +25,17 @@ export const InteractionsPage: React.FC = () => {
   const userIsAdmin = isAdmin(currentUser?.role);
   const userIsDirector = isDirector(currentUser?.role);
 
+  const interactionPageSize = 20;
+  const interactionPage = parseInt(searchParams.get('page') || '1', 10);
+
+  /** 排序默认：占位「排序字段」「排序方向」；空值时 API 使用 interactionDate、desc */
+  const [sortBy, setSortBy] = useState<InteractionSearchFilters['sortBy'] | ''>(
+    () => (searchParams.get('sortBy') as InteractionSearchFilters['sortBy']) || ''
+  );
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | ''>(
+    () => (searchParams.get('sortOrder') as 'asc' | 'desc') || ''
+  );
+
   // Parse initial filters from URL
   const initialFilters: InteractionSearchFilters = {
     search: searchParams.get('q') || '',
@@ -36,14 +47,11 @@ export const InteractionsPage: React.FC = () => {
     createdBy: searchParams.get('createdBy')?.trim() || undefined,
     startDate: searchParams.get('startDate') || undefined,
     endDate: searchParams.get('endDate') || undefined,
-    sortBy: (searchParams.get('sortBy') as InteractionSearchFilters['sortBy']) || 'interactionDate',
-    sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
-    limit: 20,
+    sortBy: sortBy || undefined,
+    sortOrder: sortOrder || undefined,
+    limit: interactionPageSize,
     offset: 0,
   };
-
-  const [interactionPage, setInteractionPage] = useState(1);
-  const interactionPageSize = 20;
 
   // Use the search hook
   const {
@@ -108,19 +116,19 @@ export const InteractionsPage: React.FC = () => {
     } else {
       params.delete('endDate');
     }
-    if (filters.sortBy && filters.sortBy !== 'interactionDate') {
+    if (filters.sortBy && filters.sortBy.trim()) {
       params.set('sortBy', filters.sortBy);
     } else {
       params.delete('sortBy');
     }
-    if (filters.sortOrder && filters.sortOrder !== 'desc') {
+    if (filters.sortOrder && filters.sortOrder.trim()) {
       params.set('sortOrder', filters.sortOrder);
     } else {
       params.delete('sortOrder');
     }
+    params.set('page', '1');
 
     setSearchParams(params, { replace: true });
-    setInteractionPage(1); // Reset to first page on new search
   }, [searchParams, setSearchParams]);
 
   // Handle interaction click - navigate to detail page (not edit page)
@@ -128,33 +136,77 @@ export const InteractionsPage: React.FC = () => {
     navigate(`/interactions/${interaction.id}`);
   }, [navigate]);
 
-  /** 19.7 AC3：撤掉「仅含批量导入、记录新互动」的独立卡片，将两按钮并入 MainLayout 标题区 toolbar；两按钮统一尺寸 */
-  const btnClass = '!bg-uipro-cta hover:!bg-uipro-cta/90 font-semibold whitespace-nowrap cursor-pointer transition-colors duration-200 w-[8.5rem]';
+  const handlePageChange = useCallback(
+    (p: number) => {
+      setSearchParams((prev) => {
+        const n = new URLSearchParams(prev);
+        n.set('page', String(p));
+        return n;
+      }, { replace: true });
+    },
+    [setSearchParams]
+  );
+
+  /** 排序控件样式与产品管理页下拉一致 */
+  const selectClass =
+    'px-monday-4 py-monday-3 text-monday-base text-uipro-text bg-monday-surface border border-gray-200 rounded-monday-md focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200 font-semibold cursor-pointer';
+
+  /** 排序默认：互动时间、降序；排序置于批量导入左侧 */
   const headerToolbar = (
-    <div className="flex items-center gap-monday-3 flex-shrink-0 flex-wrap justify-end">
-      {(userIsAdmin || userIsDirector) && (
-        <Link to="/interactions/import">
-          <Button variant="primary" size="md" className={btnClass}>
-            批量导入
+    <div className="flex items-center gap-monday-3 flex-shrink-0 flex-wrap">
+      {/* 排序字段、排序方向：占位为默认，空值时 API 使用 interactionDate、desc */}
+      <div className="flex items-center gap-monday-2">
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy((e.target.value || '') as InteractionSearchFilters['sortBy'] | '')}
+          className={selectClass}
+          aria-label="排序字段"
+        >
+          <option value="">排序字段</option>
+          <option value="interactionDate">互动时间</option>
+          <option value="customerName">客户名称</option>
+          <option value="productName">产品名称</option>
+          <option value="productHsCode">产品HS编码</option>
+          <option value="interactionType">互动类型</option>
+        </select>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder((e.target.value || '') as 'asc' | 'desc' | '')}
+          className={selectClass}
+          aria-label="排序方向"
+        >
+          <option value="">排序方向</option>
+          <option value="desc">降序</option>
+          <option value="asc">升序</option>
+        </select>
+      </div>
+      <div className="flex items-center gap-monday-3 ml-auto">
+        {(userIsAdmin || userIsDirector) && (
+          <Link to="/interactions/import">
+            <Button variant="primary" size="md" className="whitespace-nowrap w-[8.5rem]">
+              批量导入
+            </Button>
+          </Link>
+        )}
+        <Link to="/interactions/create">
+          <Button variant="primary" size="md" className="whitespace-nowrap w-[8.5rem]">
+            记录新互动
           </Button>
         </Link>
-      )}
-      <Link to="/interactions/create">
-        <Button variant="primary" size="md" className={btnClass}>
-          记录新互动
-        </Button>
-      </Link>
+      </div>
     </div>
   );
 
   return (
     <MainLayout title="互动记录" toolbar={headerToolbar}>
       <div className="space-y-monday-6">
-        {/* 筛选区：单独卡片，位于标题区之下（AC3） */}
-        <Card variant="default" className="p-monday-6">
+        {/* 筛选区：单独卡片，排序已移至 toolbar；8 个搜索条件两行排布 */}
+        <Card variant="default" className="p-monday-4">
           <InteractionSearch
             onSearch={handleSearch}
             initialFilters={currentFilters}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
             loading={isLoading}
             userRole={currentUser?.role}
           />
@@ -173,7 +225,7 @@ export const InteractionsPage: React.FC = () => {
           total={total}
           currentPage={interactionPage}
           pageSize={interactionPageSize}
-          onPageChange={setInteractionPage}
+          onPageChange={handlePageChange}
           onInteractionClick={handleInteractionClick}
           loading={isLoading}
         />
