@@ -113,7 +113,7 @@ export const CustomerManagementPage: React.FC = () => {
       !selectedCustomer
     ) {
       // First, try to find the customer in the current list
-      let customerToSelect = customers.find(c => c.id === customerIdFromUrl);
+      const customerToSelect = customers.find(c => c.id === customerIdFromUrl);
       
       // If customer is not in current list, load it separately
       if (!customerToSelect) {

@@ -14,7 +14,7 @@ import { customersService } from '../customers.service';
 import { ContactMethodIcon } from '../../people/components/ContactMethodIcon';
 import { PersonCreateForm } from '../../people/components/PersonCreateForm';
 import { PersonEditForm } from '../../people/components/PersonEditForm';
-import { InteractionCreateForm } from '../../interactions/components/InteractionCreateForm'; // Story 20.4: For quick interaction creation
+import { PrepareInteractionForm } from '../../interactions/components/PrepareInteractionForm';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -112,19 +112,27 @@ const PersonCard: React.FC<{
             )}
           </div>
           
-          {/* Job title */}
-          {person.jobTitle && (
-            <p className="text-monday-sm text-uipro-secondary mb-monday-1 font-uipro-body">
-              {person.jobTitle}
-            </p>
-          )}
-          
-          {/* Department (tag style) - using uipro-cta color */}
-          {person.department && (
-            <span className="inline-flex items-center px-monday-2 py-monday-0.5 rounded-monday-sm text-monday-xs font-medium bg-uipro-cta/10 text-uipro-cta border border-uipro-cta/20">
-              {person.department}
-            </span>
-          )}
+          {/* Job title and Department - Story 20.9: Always reserve space for consistent card height */}
+          <div className="flex items-center gap-monday-2 flex-wrap mb-monday-1 min-h-[20px]">
+            {person.jobTitle ? (
+              <span className="text-monday-sm text-uipro-secondary font-uipro-body">
+                {person.jobTitle}
+              </span>
+            ) : (
+              <span className="text-monday-sm text-transparent font-uipro-body select-none pointer-events-none">
+                占位
+              </span>
+            )}
+            {person.department ? (
+              <span className="inline-flex items-center px-monday-2 py-monday-0.5 rounded-monday-sm text-monday-xs font-medium bg-uipro-cta/10 text-uipro-cta border border-uipro-cta/20">
+                {person.department}
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-monday-2 py-monday-0.5 rounded-monday-sm text-monday-xs font-medium text-transparent border-transparent select-none pointer-events-none">
+                占位
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -433,7 +441,8 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
 
   const { 
     data: batchStats, 
-    isLoading: isLoadingStats 
+    isLoading: isLoadingStats,
+    refetch: refetchStats
   } = useQuery({
     queryKey: ['personInteractionStatsBatch', personIdsKey],
     queryFn: async () => {
@@ -441,7 +450,7 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
       return await peopleService.getMultiplePersonInteractionStats(personIds);
     },
     enabled: isOpen && personIds.length > 0 && viewMode === 'list',
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 0, // Story 20.9: No cache to ensure fresh data after interaction creation
   });
 
   // Create person mutation
@@ -592,7 +601,15 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
             </button>
             <span className="text-uipro-secondary" aria-hidden="true">/</span>
             {customerData && (
-              <span className="text-uipro-text font-medium">{customerData.name}</span>
+              <>
+                <span className="text-uipro-text font-medium">{customerData.name}</span>
+                {viewMode === 'interaction' && (
+                  <>
+                    <span className="text-uipro-secondary" aria-hidden="true">/</span>
+                    <span className="text-uipro-text font-medium">准备互动</span>
+                  </>
+                )}
+              </>
             )}
           </div>
 
@@ -619,6 +636,36 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
                   onClick={() => {
                     setViewMode('list');
                     setSelectedPerson(null);
+                  }}
+                >
+                  返回列表
+                </Button>
+              )}
+              {viewMode === 'interaction' && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    // Story 20.9: Return to list view and clear selected contact method
+                    // Error handling: If viewMode is invalid, fallback to 'list'
+                    try {
+                      setViewMode('list');
+                      setSelectedContactMethod(null);
+                    } catch (error) {
+                      // Fallback to 'list' view if state update fails
+                      console.error('Error returning to list view:', error);
+                      setViewMode('list');
+                    }
+                  }}
+                  aria-label="返回联系人列表"
+                  onKeyDown={(e) => {
+                    // Keyboard support: Enter or Space key activates the button
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setViewMode('list');
+                      setSelectedContactMethod(null);
+                    }
                   }}
                 >
                   返回列表
@@ -850,14 +897,15 @@ export const CustomerPersonManagementModal: React.FC<CustomerPersonManagementMod
           {/* Story 20.4: Interaction Form View */}
           {viewMode === 'interaction' && selectedContactMethod && (
             <div className="flex-1 overflow-y-auto p-monday-4">
-              <InteractionCreateForm
+              <PrepareInteractionForm
                 initialCustomerId={customerId}
                 initialPersonId={selectedContactMethod.person.id}
                 initialContactMethod={selectedContactMethod.method}
                 onSuccess={() => {
-                  // Refresh people list and interaction stats, then return to list view
                   queryClient.invalidateQueries({ queryKey: ['people', customerId] });
                   queryClient.invalidateQueries({ queryKey: ['personInteractionStatsBatch'] });
+                  queryClient.invalidateQueries({ queryKey: ['personInteractionStats'] });
+                  refetchStats();
                   setViewMode('list');
                   setSelectedContactMethod(null);
                 }}

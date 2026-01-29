@@ -78,6 +78,9 @@ export interface Interaction {
   products?: ProductSummary[];
 }
 
+/** Alias for Interaction when attachments are present (e.g. detail page) */
+export type InteractionWithAttachments = Interaction;
+
 export interface CreateInteractionDto {
   productIds: string[];
   customerId: string;
@@ -95,6 +98,8 @@ export interface UpdateInteractionDto {
   interactionDate?: string;
   status?: InteractionStatus;
   additionalInfo?: Record<string, unknown>;
+  personId?: string;
+  productIds?: string[];
 }
 
 export interface InteractionSearchFilters {

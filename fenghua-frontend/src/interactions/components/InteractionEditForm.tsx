@@ -16,13 +16,15 @@ import {
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../auth/AuthContext';
-import { isAdmin, isDirector } from '../../common/constants/roles';
+import { isAdmin, isDirector, isFrontendSpecialist } from '../../common/constants/roles';
 import { Customer } from '../../customers/customers.service';
 import { customersService } from '../../customers/customers.service';
 import { Product } from '../../products/products.service';
 import { productsService } from '../../products/products.service';
+import { ProductMultiSelect } from '../../products/components/ProductMultiSelect';
 import { Person, peopleService } from '../../people/people.service'; // Story 20.5: Person type and service
-import { PersonSelect } from '../../people/components/PersonSelect'; // Story 20.5: Person selection component
+import { PersonSelect } from '../../people/components/PersonSelect';
+import { SelectedPersonCard } from '../../people/components/SelectedPersonCard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -101,8 +103,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  /** Story 20.5: Selected person (contact) for interaction */
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [existingAttachments, setExistingAttachments] = useState<Attachment[]>([]);
   const [newAttachments, setNewAttachments] = useState<Attachment[]>([]);
@@ -110,7 +111,13 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
 
   const isBackendSpecialist = user?.role === 'BACKEND_SPECIALIST';
   const statusOptions = isBackendSpecialist ? STATUS_OPTIONS_BACKEND : STATUS_OPTIONS_FRONTEND;
-  const interactionTypeOptions = isBackendSpecialist ? INTERACTION_TYPE_OPTIONS_BACKEND : INTERACTION_TYPE_OPTIONS_FRONTEND;
+  /** 互动类型：按截图顺序，采购商 8 项 + 供应商 6 项；非专家角色显示全部 14 项 */
+  const interactionTypeOptions =
+    isBackendSpecialist
+      ? INTERACTION_TYPE_OPTIONS_BACKEND
+      : isFrontendSpecialist(user?.role)
+        ? INTERACTION_TYPE_OPTIONS_FRONTEND
+        : [...INTERACTION_TYPE_OPTIONS_FRONTEND, ...INTERACTION_TYPE_OPTIONS_BACKEND];
 
   // Fetch interaction data
   const {
@@ -122,6 +129,14 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
     queryFn: () => interactionsService.getInteraction(interactionId),
     enabled: !!interactionId,
   });
+
+  // 客户关联产品（与创建页同一数据源，供 ProductMultiSelect 使用）
+  const { data: customerProductsData } = useQuery({
+    queryKey: ['customer-products', interaction?.customerId],
+    queryFn: () => productsService.getCustomerProducts(interaction!.customerId),
+    enabled: !!interaction?.customerId,
+  });
+  const customerProducts = customerProductsData?.products ?? [];
 
   // Load customer and product data when interaction is loaded
   useEffect(() => {
@@ -137,23 +152,24 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
           toast.error('加载客户信息失败');
         });
 
-      // Story 20.8: Load products (multi-product support)
-      // Note: Products are now loaded from interaction.products array
-      // For legacy data, fallback to productId if products array is empty
+      // 加载关联产品（与创建页一致：按 id 拉取完整 Product）
       if (interaction.products && interaction.products.length > 0) {
-        // Products are already included in interaction response
-        // No need to fetch separately
+        Promise.all(interaction.products.map((p) => productsService.getProduct(p.id)))
+          .then(setSelectedProducts)
+          .catch((err) => {
+            console.error('Failed to load products', err);
+            toast.error('加载关联产品失败');
+          });
       } else if (interaction.productId) {
-        // Fallback for legacy data
         productsService
           .getProduct(interaction.productId)
-          .then((product) => {
-            setSelectedProduct(product);
-          })
-          .catch((error) => {
-            console.error('Failed to load product', error);
+          .then((p) => setSelectedProducts([p]))
+          .catch((err) => {
+            console.error('Failed to load product', err);
             toast.error('加载产品信息失败');
           });
+      } else {
+        setSelectedProducts([]);
       }
 
       // Story 20.5: Load person if personId exists
@@ -314,9 +330,14 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       }
       payload.personId = selectedPerson.id;
     } else {
-      // If person selection is cleared, set personId to undefined (backend will handle as null)
       payload.personId = undefined;
     }
+
+    if (selectedProducts.length === 0) {
+      toast.error('请至少选择一个关联产品');
+      return;
+    }
+    payload.productIds = selectedProducts.map((p) => p.id);
 
     await updateMutation.mutateAsync(payload);
   };
@@ -397,9 +418,9 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-monday-6">
-      {/* Customer field (read-only) */}
-      <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+      {/* Customer field (read-only)，宽度与关联产品一致 */}
+      <div className="max-w-xl">
+        <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
           客户 <span className="text-semantic-error">*</span>
         </label>
         <Input
@@ -409,9 +430,9 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
         />
       </div>
 
-      {/* Story 20.5: Person Selection */}
-      <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+      {/* Story 20.5: Person Selection + 选中后下方显示联系人卡片，宽度与关联产品一致 */}
+      <div className="max-w-xl space-y-monday-2">
+        <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
           关联联系人（可选）
         </label>
         {!selectedCustomer ? (
@@ -420,11 +441,16 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
               加载客户信息中...
             </p>
           </div>
+        ) : selectedPerson ? (
+          /* 选中后只显示卡片，不显示中间输入框 */
+          <SelectedPersonCard
+            person={selectedPerson}
+            onRemove={() => setSelectedPerson(null)}
+          />
         ) : (
           <PersonSelect
-            selectedPerson={selectedPerson}
+            selectedPerson={null}
             onChange={(person) => {
-              // Story 20.5: Validate person belongs to current customer
               if (person && person.companyId !== interaction.customerId) {
                 toast.error('该联系人不属于当前客户');
                 return;
@@ -438,43 +464,31 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
         )}
       </div>
 
-      {/* Story 20.8: Products field (read-only, multi-product support) */}
-      <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+      {/* 关联产品：错误提示在标签下方 */}
+      <div className="space-y-monday-2">
+        <label className="block text-monday-base font-semibold text-uipro-text mb-monday-2">
           关联产品 <span className="text-semantic-error">*</span>
         </label>
-        {interaction.products && interaction.products.length > 0 ? (
-          <div className="space-y-2">
-            {interaction.products.map((product) => (
-              <Input
-                key={product.id}
-                value={product.name}
-                disabled
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            ))}
-          </div>
-        ) : selectedProduct ? (
-          <Input
-            value={selectedProduct.name}
-            disabled
-            className="bg-gray-50 cursor-not-allowed"
-          />
-        ) : (
-          <Input
-            value="加载中..."
-            disabled
-            className="bg-gray-50 cursor-not-allowed"
-          />
+        {selectedProducts.length === 0 && (
+          <p className="text-monday-sm text-semantic-error mb-monday-1" role="alert">
+            请至少选择一个产品
+          </p>
         )}
-        <p className="mt-1 text-xs text-gray-500">
-          注意：产品关联暂不支持在编辑时修改，如需修改请删除后重新创建
-        </p>
+        <ProductMultiSelect
+          selectedProducts={selectedProducts}
+          onChange={setSelectedProducts}
+          allowedProducts={customerProducts}
+          disabled={!interaction?.customerId}
+          placeholder={!interaction?.customerId ? '加载中...' : '搜索产品名称、HS编码或类别...'}
+          error={selectedProducts.length === 0}
+          label=""
+          required={true}
+        />
       </div>
 
       {/* Interaction type field (editable) - Radio buttons */}
       <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+        <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
           互动类型 <span className="text-semantic-error">*</span>
         </label>
         <div className="flex flex-wrap gap-2">
@@ -546,9 +560,9 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
         )}
       </div>
 
-      {/* Interaction date field */}
-      <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+      {/* 互动时间：宽度与客户控件一致 */}
+      <div className="max-w-xl">
+        <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
           互动时间 <span className="text-semantic-error">*</span>
         </label>
         <Input
@@ -576,7 +590,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
 
       {/* Description field */}
       <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+        <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
           互动描述
         </label>
         <textarea
@@ -610,7 +624,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
 
       {/* Status field */}
       <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+        <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
           状态
         </label>
         <select
@@ -628,7 +642,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
       {/* Existing attachments */}
       {existingAttachments.length > 0 && (
         <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
             现有附件
           </label>
           <div className="space-y-monday-2">
@@ -655,7 +669,7 @@ export const InteractionEditForm: React.FC<InteractionEditFormProps> = ({
 
       {/* New attachments upload */}
       <div>
-        <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+        <label className="block text-monday-base font-semibold text-monday-text mb-monday-2">
           添加附件
         </label>
         <FileUpload

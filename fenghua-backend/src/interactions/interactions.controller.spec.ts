@@ -11,12 +11,33 @@ import { CreateInteractionDto, FrontendInteractionType, BackendInteractionType, 
 import { InteractionResponseDto } from './dto/interaction-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ExecutionContext } from '@nestjs/common';
+import { AuditService } from '../audit/audit.service';
+import { AuthService } from '../auth/auth.service';
 
 describe('InteractionsController', () => {
   let controller: InteractionsController;
   let interactionsService: jest.Mocked<InteractionsService>;
 
   beforeEach(async () => {
+    // Mock AuditService
+    const mockAuditService = {
+      log: jest.fn().mockResolvedValue(undefined),
+      logRoleChange: jest.fn().mockResolvedValue(undefined),
+      getUserAuditLogs: jest.fn().mockResolvedValue([]),
+      getAuditLogsByAction: jest.fn().mockResolvedValue([]),
+      getAuditLogs: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, limit: 50, totalPages: 0 }),
+      cleanupOldLogs: jest.fn().mockResolvedValue(0),
+    };
+
+    // Mock AuthService (for interceptors)
+    const mockAuthService = {
+      validateToken: jest.fn().mockResolvedValue({
+        id: 'test-user-id',
+        email: 'test@example.com',
+        role: 'FRONTEND_SPECIALIST',
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [InteractionsController],
       providers: [
@@ -25,6 +46,14 @@ describe('InteractionsController', () => {
           useValue: {
             create: jest.fn(),
           },
+        },
+        {
+          provide: AuditService,
+          useValue: mockAuditService,
+        },
+        {
+          provide: AuthService,
+          useValue: mockAuthService,
         },
       ],
     })
@@ -76,6 +105,25 @@ describe('InteractionsController', () => {
     });
 
     it('should create an interaction record for BACKEND_SPECIALIST', async () => {
+      // Mock AuditService
+      const mockAuditService = {
+        log: jest.fn().mockResolvedValue(undefined),
+        logRoleChange: jest.fn().mockResolvedValue(undefined),
+        getUserAuditLogs: jest.fn().mockResolvedValue([]),
+        getAuditLogsByAction: jest.fn().mockResolvedValue([]),
+        getAuditLogs: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, limit: 50, totalPages: 0 }),
+        cleanupOldLogs: jest.fn().mockResolvedValue(0),
+      };
+
+      // Mock AuthService
+      const mockAuthService = {
+        validateToken: jest.fn().mockResolvedValue({
+          id: 'test-user-id',
+          email: 'test@example.com',
+          role: 'BACKEND_SPECIALIST',
+        }),
+      };
+
       // Override guard to set backend specialist role
       const module: TestingModule = await Test.createTestingModule({
         controllers: [InteractionsController],
@@ -85,6 +133,14 @@ describe('InteractionsController', () => {
             useValue: {
               create: jest.fn(),
             },
+          },
+          {
+            provide: AuditService,
+            useValue: mockAuditService,
+          },
+          {
+            provide: AuthService,
+            useValue: mockAuthService,
           },
         ],
       })

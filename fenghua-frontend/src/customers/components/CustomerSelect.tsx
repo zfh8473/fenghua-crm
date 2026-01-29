@@ -21,6 +21,8 @@ interface CustomerSelectProps {
   errorMessage?: string;
   /** Customer IDs to exclude from search results */
   excludeIds?: string[];
+  /** 控件尺寸，compact 时使用 sm 约三分之一高度 */
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const CustomerSelect: React.FC<CustomerSelectProps> = ({
@@ -32,6 +34,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
   error = false,
   errorMessage,
   excludeIds = [],
+  size = 'md',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -230,6 +233,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
         error={error}
         errorMessage={errorMessage || searchError}
         disabled={disabled}
+        size={size}
         rightIcon={
           loading ? (
             <span className="text-monday-text-secondary animate-spin">⏳</span>

@@ -125,7 +125,7 @@ export const PersonManagementPage: React.FC = () => {
       !selectedPerson
     ) {
       // First, try to find the person in the current list
-      let personToSelect = people.find(p => p.id === personIdFromUrl);
+      const personToSelect = people.find(p => p.id === personIdFromUrl);
       
       // If person is not in current list, load it separately
       if (!personToSelect) {

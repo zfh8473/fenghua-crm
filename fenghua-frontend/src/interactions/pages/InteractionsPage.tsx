@@ -7,6 +7,7 @@
 
 import { useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { MainLayout } from '../../components/layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -14,9 +15,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { isAdmin, isDirector } from '../../common/constants/roles';
 import { InteractionSearch } from '../components/InteractionSearch';
-import { InteractionSearchResults } from '../components/InteractionSearchResults';
+import { InteractionCard } from '../components/InteractionCard';
+import { EmptyState } from '../components/EmptyState';
 import { useInteractionSearch } from '../hooks/useInteractionSearch';
-import { InteractionSearchFilters } from '../services/interactions.service';
+import { InteractionSearchFilters, Interaction, InteractionType, InteractionStatus } from '../services/interactions.service';
+import { getUsers } from '../../users/users.service';
 
 export const InteractionsPage: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -27,6 +30,13 @@ export const InteractionsPage: React.FC = () => {
 
   const interactionPageSize = 20;
   const interactionPage = parseInt(searchParams.get('page') || '1', 10);
+
+  // Load users once at page level (performance optimization)
+  const { data: usersData = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => getUsers(),
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
   /** 排序默认：占位「排序字段」「排序方向」；空值时 API 使用 interactionDate、desc */
   const [sortBy, setSortBy] = useState<InteractionSearchFilters['sortBy'] | ''>(
@@ -39,8 +49,8 @@ export const InteractionsPage: React.FC = () => {
   // Parse initial filters from URL
   const initialFilters: InteractionSearchFilters = {
     search: searchParams.get('q') || '',
-    interactionTypes: searchParams.get('interactionTypes')?.split(',').filter(Boolean) as any[] || [],
-    statuses: searchParams.get('statuses')?.split(',').filter(Boolean) as any[] || [],
+    interactionTypes: (searchParams.get('interactionTypes')?.split(',').filter(Boolean) as InteractionType[]) || [],
+    statuses: (searchParams.get('statuses')?.split(',').filter(Boolean) as InteractionStatus[]) || [],
     categories: searchParams.get('categories')?.split(',').filter(Boolean) || [],
     customerId: searchParams.get('customerId')?.trim() || undefined,
     productId: searchParams.get('productId')?.trim() || undefined,
@@ -60,7 +70,6 @@ export const InteractionsPage: React.FC = () => {
     isLoading,
     error,
     filters: currentFilters,
-    hasActiveFilters,
   } = useInteractionSearch({
     initialFilters: { ...initialFilters, page: interactionPage, limit: interactionPageSize },
     pageSize: interactionPageSize,
@@ -132,7 +141,7 @@ export const InteractionsPage: React.FC = () => {
   }, [searchParams, setSearchParams]);
 
   // Handle interaction click - navigate to detail page (not edit page)
-  const handleInteractionClick = useCallback((interaction: any) => {
+  const handleInteractionClick = useCallback((interaction: Interaction) => {
     navigate(`/interactions/${interaction.id}`);
   }, [navigate]);
 
@@ -154,6 +163,11 @@ export const InteractionsPage: React.FC = () => {
   /** 排序默认：互动时间、降序；排序置于批量导入左侧 */
   const headerToolbar = (
     <div className="flex items-center gap-monday-3 flex-shrink-0 flex-wrap">
+      {/* Total count */}
+      <span className="text-monday-sm text-uipro-secondary">
+        共 <span className="font-semibold text-uipro-text">{total}</span> 条记录
+      </span>
+      
       {/* 排序字段、排序方向：占位为默认，空值时 API 使用 interactionDate、desc */}
       <div className="flex items-center gap-monday-2">
         <select
@@ -220,15 +234,64 @@ export const InteractionsPage: React.FC = () => {
         )}
 
         {/* Search Results */}
-        <InteractionSearchResults
-          interactions={interactions}
-          total={total}
-          currentPage={interactionPage}
-          pageSize={interactionPageSize}
-          onPageChange={handlePageChange}
-          onInteractionClick={handleInteractionClick}
-          loading={isLoading}
-        />
+        {isLoading ? (
+          <div className="space-y-monday-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} variant="default" className="animate-pulse">
+                <div className="h-32 bg-gray-100 rounded"></div>
+              </Card>
+            ))}
+          </div>
+        ) : interactions.length === 0 ? (
+          <EmptyState
+            searchQuery={currentFilters.search}
+            onClearSearch={() => handleSearch({ ...currentFilters, search: '' })}
+          />
+        ) : (
+          <>
+            {/* Two-column grid layout for better information density */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-monday-4">
+              {interactions.map((interaction) => (
+                <InteractionCard
+                  key={interaction.id}
+                  interaction={interaction}
+                  onInteractionClick={handleInteractionClick}
+                  users={usersData}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {Math.ceil(total / interactionPageSize) > 1 && (
+              <div className="flex items-center justify-between mt-monday-6">
+                <div className="text-monday-sm text-uipro-secondary">
+                  显示 {(interactionPage - 1) * interactionPageSize + 1}-{Math.min(interactionPage * interactionPageSize, total)} 条，共 {total} 条
+                </div>
+                <div className="flex gap-monday-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={interactionPage === 1}
+                    onClick={() => handlePageChange(interactionPage - 1)}
+                  >
+                    上一页
+                  </Button>
+                  <span className="flex items-center px-monday-4 text-monday-sm text-uipro-secondary">
+                    第 {interactionPage} 页 / 共 {Math.ceil(total / interactionPageSize)} 页
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={interactionPage >= Math.ceil(total / interactionPageSize)}
+                    onClick={() => handlePageChange(interactionPage + 1)}
+                  >
+                    下一页
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </MainLayout>
   );

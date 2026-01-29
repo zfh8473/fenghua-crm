@@ -107,7 +107,7 @@ export const ProductManagementPage: React.FC = () => {
       !selectedProduct
     ) {
       // First, try to find the product in the current list
-      let productToSelect = products.find(p => p.id === productIdFromUrl);
+      const productToSelect = products.find(p => p.id === productIdFromUrl);
       
       // If product is not in current list, load it separately
       if (!productToSelect) {

@@ -126,6 +126,14 @@ describe('InteractionsService', () => {
       description: 'Test interaction',
     };
 
+    const createDtoMultipleProducts: CreateInteractionDto = {
+      productIds: ['product-id-1', 'product-id-2'],
+      customerId: 'customer-id',
+      interactionType: FrontendInteractionType.INITIAL_CONTACT,
+      interactionDate: '2025-01-03T10:00:00Z',
+      description: 'Test interaction with multiple products',
+    };
+
     const mockUser = {
       id: 'user-id',
       email: 'test@example.com',
@@ -146,6 +154,8 @@ describe('InteractionsService', () => {
 
     it('should create an interaction record successfully', async () => {
       authService.validateToken.mockResolvedValueOnce(mockUser);
+      productsService.findOne.mockResolvedValueOnce(mockProduct as any);
+      companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
       // Mock batch product query
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
@@ -158,12 +168,6 @@ describe('InteractionsService', () => {
         }) // Batch product validation query
         .mockResolvedValueOnce({
           rows: [{
-            id: 'customer-id',
-            customer_type: 'BUYER',
-          }],
-        }) // Customer validation query
-        .mockResolvedValueOnce({
-          rows: [{
             id: 'association-id',
           }],
         }) // Association validation query
@@ -172,6 +176,7 @@ describe('InteractionsService', () => {
             id: 'interaction-id',
             product_id: 'product-id',
             customer_id: 'customer-id',
+            person_id: null, // Story 20.5: Include person_id in response
             interaction_type: FrontendInteractionType.INITIAL_CONTACT,
             interaction_date: new Date('2025-01-03T10:00:00Z'),
             description: 'Test interaction',
@@ -180,7 +185,8 @@ describe('InteractionsService', () => {
             created_at: new Date(),
             created_by: 'user-id',
           }],
-        }) // INSERT interaction
+        }) // INSERT interaction (single record)
+        .mockResolvedValueOnce({}) // INSERT interaction_products associations
         .mockResolvedValueOnce({}); // COMMIT
 
       const result = await service.create(createDto, 'token');
@@ -224,7 +230,15 @@ describe('InteractionsService', () => {
       productsService.findOne.mockResolvedValueOnce(mockProduct as any);
       companiesService.findOne.mockResolvedValueOnce({ ...mockCustomer, customerType: 'SUPPLIER' } as any);
 
-      mockClient.query.mockResolvedValueOnce({}); // BEGIN
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }); // Batch product validation query
 
       await expect(service.create(createDto, 'token')).rejects.toThrow(ForbiddenException);
       expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
@@ -236,7 +250,15 @@ describe('InteractionsService', () => {
       productsService.findOne.mockResolvedValueOnce(mockProduct as any);
       companiesService.findOne.mockResolvedValueOnce({ ...mockCustomer, customerType: 'BUYER' } as any);
 
-      mockClient.query.mockResolvedValueOnce({}); // BEGIN
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }); // Batch product validation query
 
       await expect(service.create(createDto, 'token')).rejects.toThrow(ForbiddenException);
       expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
@@ -258,6 +280,16 @@ describe('InteractionsService', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
           rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }) // Batch product validation query
+        .mockResolvedValueOnce({
+          rows: [{ id: 'association-id' }], // Association check
+        })
+        .mockResolvedValueOnce({
+          rows: [{
             id: 'interaction-id',
             product_id: 'product-id',
             customer_id: 'customer-id',
@@ -269,7 +301,8 @@ describe('InteractionsService', () => {
             created_at: new Date(),
             created_by: 'user-id',
           }],
-        }) // INSERT
+        }) // INSERT interaction (single record)
+        .mockResolvedValueOnce({}) // INSERT interaction_products associations
         .mockResolvedValueOnce({}); // COMMIT
 
       const result = await service.create(backendCreateDto, 'token');
@@ -278,7 +311,6 @@ describe('InteractionsService', () => {
       expect(result.id).toBe('interaction-id');
       expect(result.interactionType).toBe(BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER);
       expect(authService.validateToken).toHaveBeenCalledWith('token');
-      expect(productsService.findOne).toHaveBeenCalledWith('product-id', 'token');
       expect(companiesService.findOne).toHaveBeenCalledWith('customer-id', 'token');
       expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
       expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
@@ -307,6 +339,16 @@ describe('InteractionsService', () => {
 
         mockClient.query
           .mockResolvedValueOnce({}) // BEGIN
+          .mockResolvedValueOnce({
+            rows: [{
+              id: 'product-id',
+              name: 'Test Product',
+              status: 'active',
+            }],
+          }) // Batch product validation query
+          .mockResolvedValueOnce({
+            rows: [{ id: 'association-id' }], // Association check
+          })
           .mockResolvedValueOnce({
             rows: [{
               id: 'interaction-id',
@@ -353,6 +395,16 @@ describe('InteractionsService', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
           rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }) // Batch product validation query
+        .mockResolvedValueOnce({
+          rows: [{ id: 'association-id' }], // Association check
+        })
+        .mockResolvedValueOnce({
+          rows: [{
             id: 'interaction-id',
             product_id: 'product-id',
             customer_id: 'customer-id',
@@ -364,7 +416,8 @@ describe('InteractionsService', () => {
             created_at: new Date(),
             created_by: 'user-id',
           }],
-        }) // INSERT
+        }) // INSERT interaction (single record)
+        .mockResolvedValueOnce({}) // INSERT interaction_products associations
         .mockResolvedValueOnce({}); // COMMIT
 
       await service.create(backendCreateDto, 'token');
@@ -380,7 +433,12 @@ describe('InteractionsService', () => {
           entityId: 'interaction-id',
           userId: 'user-id',
           operatorId: 'user-id',
-          metadata: { interactionType: BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER },
+          metadata: expect.objectContaining({
+            interactionType: BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER,
+            productIds: ['product-id'], // Story 20.8: Changed to array
+            customerId: 'customer-id',
+            totalProducts: 1,
+          }),
         })
       );
     });
@@ -407,9 +465,20 @@ describe('InteractionsService', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
           rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }) // Batch product validation query
+        .mockResolvedValueOnce({
+          rows: [{ id: 'association-id' }], // Association check
+        })
+        .mockResolvedValueOnce({
+          rows: [{
             id: 'interaction-id',
             product_id: 'product-id',
             customer_id: 'customer-id',
+            person_id: null, // Story 20.5: Include person_id in response
             interaction_type: FrontendInteractionType.INITIAL_CONTACT,
             interaction_date: new Date('2025-01-03T10:00:00Z'),
             description: 'Test interaction',
@@ -418,7 +487,8 @@ describe('InteractionsService', () => {
             created_at: new Date(),
             created_by: 'user-id',
           }],
-        }) // INSERT
+        }) // INSERT interaction (single record)
+        .mockResolvedValueOnce({}) // INSERT interaction_products associations
         .mockResolvedValueOnce({}); // COMMIT
 
       await service.create(createDto, 'token');
@@ -462,9 +532,20 @@ describe('InteractionsService', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
           rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }) // Batch product validation query
+        .mockResolvedValueOnce({
+          rows: [{ id: 'association-id' }], // Association check
+        })
+        .mockResolvedValueOnce({
+          rows: [{
             id: 'interaction-id',
             product_id: 'product-id',
             customer_id: 'customer-id',
+            person_id: null, // Story 20.5: Include person_id in response
             interaction_type: FrontendInteractionType.INITIAL_CONTACT,
             interaction_date: new Date('2025-01-03T10:00:00Z'),
             description: 'Test interaction',
@@ -473,7 +554,8 @@ describe('InteractionsService', () => {
             created_at: new Date(),
             created_by: 'user-id',
           }],
-        }) // INSERT
+        }) // INSERT interaction (single record)
+        .mockResolvedValueOnce({}) // INSERT interaction_products associations
         .mockResolvedValueOnce({}); // COMMIT
 
       const result = await service.create(createDto, 'token');
@@ -494,9 +576,20 @@ describe('InteractionsService', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
           rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }) // Batch product validation query
+        .mockResolvedValueOnce({
+          rows: [{ id: 'association-id' }], // Association check
+        })
+        .mockResolvedValueOnce({
+          rows: [{
             id: 'interaction-id',
             product_id: 'product-id',
             customer_id: 'customer-id',
+            person_id: null, // Story 20.5: Include person_id in response
             interaction_type: FrontendInteractionType.INITIAL_CONTACT,
             interaction_date: new Date('2025-01-03T10:00:00Z'),
             description: 'Test interaction',
@@ -505,7 +598,8 @@ describe('InteractionsService', () => {
             created_at: new Date(),
             created_by: 'user-id',
           }],
-        }) // INSERT
+        }) // INSERT interaction (single record)
+        .mockResolvedValueOnce({}) // INSERT interaction_products associations
         .mockResolvedValueOnce({}); // COMMIT
 
       const result = await service.create(createDto, 'token');
@@ -546,23 +640,33 @@ describe('InteractionsService', () => {
       productsService.findOne.mockResolvedValueOnce(mockProduct as any);
       companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
 
-      mockClient.query
-        .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({
-          rows: [{
-            id: 'interaction-id',
-            product_id: 'product-id',
-            customer_id: 'customer-id',
-            interaction_type: FrontendInteractionType.INITIAL_CONTACT,
-            interaction_date: new Date('2025-01-03T10:00:00Z'),
-            description: 'Test interaction with status',
-            status: InteractionStatus.IN_PROGRESS,
-            additional_info: null,
-            created_at: new Date(),
-            created_by: 'user-id',
-          }],
-        }) // INSERT
-        .mockResolvedValueOnce({}); // COMMIT
+        mockClient.query
+          .mockResolvedValueOnce({}) // BEGIN
+          .mockResolvedValueOnce({
+            rows: [{
+              id: 'product-id',
+              name: 'Test Product',
+              status: 'active',
+            }],
+          }) // Batch product validation query
+          .mockResolvedValueOnce({
+            rows: [{ id: 'association-id' }], // Association check
+          })
+          .mockResolvedValueOnce({
+            rows: [{
+              id: 'interaction-id',
+              product_id: 'product-id',
+              customer_id: 'customer-id',
+              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
+              interaction_date: new Date('2025-01-03T10:00:00Z'),
+              description: 'Test interaction with status',
+              status: InteractionStatus.IN_PROGRESS,
+              additional_info: null,
+              created_at: new Date(),
+              created_by: 'user-id',
+            }],
+          }) // INSERT
+          .mockResolvedValueOnce({}); // COMMIT
 
       const result = await service.create(createDtoWithStatus, 'token');
 
@@ -593,6 +697,16 @@ describe('InteractionsService', () => {
 
         mockClient.query
           .mockResolvedValueOnce({}) // BEGIN
+          .mockResolvedValueOnce({
+            rows: [{
+              id: 'product-id',
+              name: 'Test Product',
+              status: 'active',
+            }],
+          }) // Batch product validation query
+          .mockResolvedValueOnce({
+            rows: [{ id: 'association-id' }], // Association check
+          })
           .mockResolvedValueOnce({
             rows: [{
               id: 'interaction-id',
@@ -631,6 +745,16 @@ describe('InteractionsService', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
           rows: [{
+            id: 'product-id',
+            name: 'Test Product',
+            status: 'active',
+          }],
+        }) // Batch product validation query
+        .mockResolvedValueOnce({
+          rows: [{ id: 'association-id' }], // Association check
+        })
+        .mockResolvedValueOnce({
+          rows: [{
             id: 'interaction-id',
             product_id: 'product-id',
             customer_id: 'customer-id',
@@ -642,7 +766,8 @@ describe('InteractionsService', () => {
             created_at: new Date(),
             created_by: 'user-id',
           }],
-        }) // INSERT
+        }) // INSERT interaction (single record)
+        .mockResolvedValueOnce({}) // INSERT interaction_products associations
         .mockResolvedValueOnce({}); // COMMIT
 
       const result = await service.create(createDtoWithLongDescription, 'token');
@@ -652,16 +777,76 @@ describe('InteractionsService', () => {
       expect(result.description.length).toBe(5000);
     });
 
-    // Task 6: Test automatic association creation
-    describe('automatic association creation', () => {
-      it('should automatically create association when interaction is created and association does not exist', async () => {
+    // Story 20.8: Test multi-product association (1:N model)
+    describe('multi-product association (Story 20.8)', () => {
+      it('should create a single interaction record with multiple product associations', async () => {
         authService.validateToken.mockResolvedValueOnce(mockUser);
         productsService.findOne.mockResolvedValueOnce(mockProduct as any);
         companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
-        associationService.createAssociationInTransaction.mockResolvedValueOnce('association-id');
         
         mockClient.query
           .mockResolvedValueOnce({}) // BEGIN
+          .mockResolvedValueOnce({
+            rows: [
+              { id: 'product-id-1', name: 'Test Product 1', status: 'active' },
+              { id: 'product-id-2', name: 'Test Product 2', status: 'active' },
+            ],
+          }) // Batch product validation query
+          .mockResolvedValueOnce({
+            rows: [{ id: 'association-id-1' }],
+          }) // Association check for product 1
+          .mockResolvedValueOnce({
+            rows: [{ id: 'association-id-2' }],
+          }) // Association check for product 2
+          .mockResolvedValueOnce({
+            rows: [{
+              id: 'interaction-id',
+              product_id: 'product-id-1', // First product for backward compatibility
+              customer_id: 'customer-id',
+              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
+              interaction_date: new Date('2025-01-03T10:00:00Z'),
+              description: 'Test interaction with multiple products',
+              status: null,
+              additional_info: null,
+              created_at: new Date(),
+              created_by: 'user-id',
+            }],
+          }) // INSERT interaction (single record)
+          .mockResolvedValueOnce({}) // INSERT interaction_products associations
+          .mockResolvedValueOnce({}); // COMMIT
+
+        const result = await service.create(createDtoMultipleProducts, 'token');
+
+        expect(result).toBeDefined();
+        expect(result.id).toBe('interaction-id');
+        expect(result.createdInteractionIds).toEqual(['interaction-id']); // Single interaction ID
+        
+        // Verify that interaction_products insert was called with both product IDs
+        const insertCalls = mockClient.query.mock.calls.filter(call => 
+          call[0] && typeof call[0] === 'string' && call[0].includes('INSERT INTO interaction_products')
+        );
+        expect(insertCalls.length).toBe(1);
+        expect(insertCalls[0][1]).toContain('product-id-1');
+        expect(insertCalls[0][1]).toContain('product-id-2');
+      });
+
+      it('should create a single interaction record with single product association', async () => {
+        authService.validateToken.mockResolvedValueOnce(mockUser);
+        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
+        companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
+        
+        mockClient.query
+          .mockResolvedValueOnce({}) // BEGIN
+          .mockResolvedValueOnce({
+            rows: [{
+              id: 'product-id',
+              name: 'Test Product',
+              status: 'active',
+            }],
+          }) // Batch product validation query
+          .mockResolvedValueOnce({
+            rows: [{ id: 'association-id' }],
+          }) // Association check
           .mockResolvedValueOnce({
             rows: [{
               id: 'interaction-id',
@@ -675,308 +860,21 @@ describe('InteractionsService', () => {
               created_at: new Date(),
               created_by: 'user-id',
             }],
-          }) // INSERT interaction
+          }) // INSERT interaction (single record)
+          .mockResolvedValueOnce({}) // INSERT interaction_products associations
           .mockResolvedValueOnce({}); // COMMIT
 
         const result = await service.create(createDto, 'token');
 
         expect(result).toBeDefined();
-        expect(associationService.createAssociationInTransaction).toHaveBeenCalledWith(
-          mockClient,
-          'product-id',
-          'customer-id',
-          AssociationType.POTENTIAL_BUYER,
-          'user-id',
+        expect(result.id).toBe('interaction-id');
+        expect(result.createdInteractionIds).toEqual(['interaction-id']); // Single interaction ID
+        
+        // Verify that interaction_products insert was called
+        const insertCalls = mockClient.query.mock.calls.filter(call => 
+          call[0] && typeof call[0] === 'string' && call[0].includes('INSERT INTO interaction_products')
         );
-        // Wait for setImmediate to execute
-        await new Promise((resolve) => setImmediate(resolve));
-        expect(auditService.log).toHaveBeenCalled();
-      });
-
-      it('should set association type to POTENTIAL_BUYER for BUYER customer', async () => {
-        const buyerCustomer = { ...mockCustomer, customerType: 'BUYER' };
-        authService.validateToken.mockResolvedValueOnce(mockUser);
-        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
-        companiesService.findOne.mockResolvedValueOnce(buyerCustomer as any);
-        associationService.createAssociationInTransaction.mockResolvedValueOnce('association-id');
-        
-        mockClient.query
-          .mockResolvedValueOnce({}) // BEGIN
-          .mockResolvedValueOnce({
-            rows: [{
-              id: 'interaction-id',
-              product_id: 'product-id',
-              customer_id: 'customer-id',
-              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
-              interaction_date: new Date('2025-01-03T10:00:00Z'),
-              description: 'Test interaction',
-              status: null,
-              additional_info: null,
-              created_at: new Date(),
-              created_by: 'user-id',
-            }],
-          }) // INSERT interaction
-          .mockResolvedValueOnce({}); // COMMIT
-
-        await service.create(createDto, 'token');
-
-        expect(associationService.createAssociationInTransaction).toHaveBeenCalledWith(
-          mockClient,
-          'product-id',
-          'customer-id',
-          AssociationType.POTENTIAL_BUYER,
-          'user-id',
-        );
-      });
-
-      it('should set association type to POTENTIAL_SUPPLIER for SUPPLIER customer', async () => {
-        const supplierCustomer = { ...mockCustomer, customerType: 'SUPPLIER' };
-        const supplierUser = { ...mockUser, role: 'BACKEND_SPECIALIST' };
-        authService.validateToken.mockResolvedValueOnce(supplierUser);
-        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
-        companiesService.findOne.mockResolvedValueOnce(supplierCustomer as any);
-        associationService.createAssociationInTransaction.mockResolvedValueOnce('association-id');
-        
-        mockClient.query
-          .mockResolvedValueOnce({}) // BEGIN
-          .mockResolvedValueOnce({
-            rows: [{
-              id: 'interaction-id',
-              product_id: 'product-id',
-              customer_id: 'customer-id',
-              interaction_type: BackendInteractionType.PRODUCTION_PROGRESS,
-              interaction_date: new Date('2025-01-03T10:00:00Z'),
-              description: 'Test interaction',
-              status: null,
-              additional_info: null,
-              created_at: new Date(),
-              created_by: 'user-id',
-            }],
-          }) // INSERT interaction
-          .mockResolvedValueOnce({}); // COMMIT
-
-        const supplierDto: CreateInteractionDto = {
-          ...createDto,
-          interactionType: BackendInteractionType.PRODUCTION_PROGRESS,
-        };
-
-        await service.create(supplierDto, 'token');
-
-        expect(associationService.createAssociationInTransaction).toHaveBeenCalledWith(
-          mockClient,
-          'product-id',
-          'customer-id',
-          AssociationType.POTENTIAL_SUPPLIER,
-          'user-id',
-        );
-      });
-
-      it('should not create duplicate association if association already exists', async () => {
-        authService.validateToken.mockResolvedValueOnce(mockUser);
-        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
-        companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
-        // Return null to indicate association already exists
-        associationService.createAssociationInTransaction.mockResolvedValueOnce(null);
-        
-        mockClient.query
-          .mockResolvedValueOnce({}) // BEGIN
-          .mockResolvedValueOnce({
-            rows: [{
-              id: 'interaction-id',
-              product_id: 'product-id',
-              customer_id: 'customer-id',
-              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
-              interaction_date: new Date('2025-01-03T10:00:00Z'),
-              description: 'Test interaction',
-              status: null,
-              additional_info: null,
-              created_at: new Date(),
-              created_by: 'user-id',
-            }],
-          }) // INSERT interaction
-          .mockResolvedValueOnce({}); // COMMIT
-
-        const result = await service.create(createDto, 'token');
-
-        expect(result).toBeDefined();
-        expect(associationService.createAssociationInTransaction).toHaveBeenCalled();
-        // Wait for setImmediate to execute
-        await new Promise((resolve) => setImmediate(resolve));
-        // Audit log should be called for interaction creation, but not for association creation
-        // (since association already exists)
-        expect(auditService.log).toHaveBeenCalled();
-        // Verify that association audit log was NOT called when association already exists
-        const auditCalls = (auditService.log as jest.Mock).mock.calls;
-        const associationAuditCall = auditCalls.find(
-          (call) => call[0].action === 'ASSOCIATION_CREATED',
-        );
-        expect(associationAuditCall).toBeUndefined();
-      });
-
-      it('should not record audit log when association already exists (returns null)', async () => {
-        authService.validateToken.mockResolvedValueOnce(mockUser);
-        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
-        companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
-        // Return null to indicate association already exists
-        associationService.createAssociationInTransaction.mockResolvedValueOnce(null);
-        
-        mockClient.query
-          .mockResolvedValueOnce({}) // BEGIN
-          .mockResolvedValueOnce({
-            rows: [{
-              id: 'interaction-id',
-              product_id: 'product-id',
-              customer_id: 'customer-id',
-              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
-              interaction_date: new Date('2025-01-03T10:00:00Z'),
-              description: 'Test interaction',
-              status: null,
-              additional_info: null,
-              created_at: new Date(),
-              created_by: 'user-id',
-            }],
-          }) // INSERT interaction
-          .mockResolvedValueOnce({}); // COMMIT
-
-        await service.create(createDto, 'token');
-
-        // Wait for setImmediate to execute
-        await new Promise((resolve) => setImmediate(resolve));
-        
-        // Verify interaction audit log was called
-        expect(auditService.log).toHaveBeenCalledWith(
-          expect.objectContaining({ action: 'INTERACTION_CREATED' })
-        );
-        
-        // Verify association audit log was NOT called
-        const auditCalls = (auditService.log as jest.Mock).mock.calls;
-        const associationAuditCall = auditCalls.find(
-          (call) => call[0].action === 'ASSOCIATION_CREATED',
-        );
-        expect(associationAuditCall).toBeUndefined();
-      });
-
-      it('should rollback transaction if association creation fails', async () => {
-        authService.validateToken.mockResolvedValueOnce(mockUser);
-        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
-        companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
-        // Simulate association creation failure
-        associationService.createAssociationInTransaction.mockRejectedValueOnce(
-          new Error('Association creation failed'),
-        );
-        
-        mockClient.query
-          .mockResolvedValueOnce({}) // BEGIN
-          .mockResolvedValueOnce({
-            rows: [{
-              id: 'interaction-id',
-              product_id: 'product-id',
-              customer_id: 'customer-id',
-              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
-              interaction_date: new Date('2025-01-03T10:00:00Z'),
-              description: 'Test interaction',
-              status: null,
-              additional_info: null,
-              created_at: new Date(),
-              created_by: 'user-id',
-            }],
-          }) // INSERT interaction
-          .mockResolvedValueOnce({}); // ROLLBACK
-
-        await expect(service.create(createDto, 'token')).rejects.toThrow();
-
-        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
-        // Interaction should not be committed
-        expect(mockClient.query).not.toHaveBeenCalledWith('COMMIT');
-      });
-
-      it('should handle invalid customer type gracefully (role validation already ensures valid type)', async () => {
-        // Note: Customer type validation is now handled by role-based validation (step 3)
-        // which ensures customerType is either 'BUYER' or 'SUPPLIER' before reaching association creation
-        // This test verifies that if somehow an invalid type gets through, the code handles it
-        // In practice, this should not happen due to role validation, but we test the defensive code
-        const directorUser = { ...mockUser, role: 'DIRECTOR' };
-        const invalidCustomer = { ...mockCustomer, customerType: 'INVALID_TYPE' };
-        authService.validateToken.mockResolvedValueOnce(directorUser);
-        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
-        companiesService.findOne.mockResolvedValueOnce(invalidCustomer as any);
-        // Since customerType is invalid, associationType will be null, and association creation should handle it
-        associationService.createAssociationInTransaction.mockResolvedValueOnce(null);
-        
-        mockClient.query
-          .mockResolvedValueOnce({}) // BEGIN
-          .mockResolvedValueOnce({
-            rows: [{
-              id: 'interaction-id',
-              product_id: 'product-id',
-              customer_id: 'customer-id',
-              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
-              interaction_date: new Date('2025-01-03T10:00:00Z'),
-              description: 'Test interaction',
-              status: null,
-              additional_info: null,
-              created_at: new Date(),
-              created_by: 'user-id',
-            }],
-          }) // INSERT interaction
-          .mockResolvedValueOnce({}); // COMMIT
-
-        // The code should still work because associationType will be determined correctly
-        // even if customerType is unexpected (though this shouldn't happen in practice)
-        const result = await service.create(createDto, 'token');
-        expect(result).toBeDefined();
-        // Association creation should be skipped (returns null) but interaction should succeed
-        expect(associationService.createAssociationInTransaction).toHaveBeenCalled();
-      });
-
-      it('should record audit log for association creation after transaction commits', async () => {
-        authService.validateToken.mockResolvedValueOnce(mockUser);
-        productsService.findOne.mockResolvedValueOnce(mockProduct as any);
-        companiesService.findOne.mockResolvedValueOnce(mockCustomer as any);
-        associationService.createAssociationInTransaction.mockResolvedValueOnce('association-id');
-        
-        mockClient.query
-          .mockResolvedValueOnce({}) // BEGIN
-          .mockResolvedValueOnce({
-            rows: [{
-              id: 'interaction-id',
-              product_id: 'product-id',
-              customer_id: 'customer-id',
-              interaction_type: FrontendInteractionType.INITIAL_CONTACT,
-              interaction_date: new Date('2025-01-03T10:00:00Z'),
-              description: 'Test interaction',
-              status: null,
-              additional_info: null,
-              created_at: new Date(),
-              created_by: 'user-id',
-            }],
-          }) // INSERT interaction
-          .mockResolvedValueOnce({}); // COMMIT
-
-        await service.create(createDto, 'token');
-
-        // Wait for setImmediate to execute
-        await new Promise((resolve) => setImmediate(resolve));
-
-        // Verify audit log was called for association creation
-        const auditCalls = (auditService.log as jest.Mock).mock.calls;
-        const associationAuditCall = auditCalls.find(
-          (call) => call[0].action === 'ASSOCIATION_CREATED',
-        );
-        
-        expect(associationAuditCall).toBeDefined();
-        expect(associationAuditCall[0]).toMatchObject({
-          action: 'ASSOCIATION_CREATED',
-          entityType: 'PRODUCT_CUSTOMER_ASSOCIATION',
-          entityId: 'association-id',
-          userId: 'user-id',
-          operatorId: 'user-id',
-          metadata: {
-            productId: 'product-id',
-            customerId: 'customer-id',
-            associationType: AssociationType.POTENTIAL_BUYER,
-          },
-        });
+        expect(insertCalls.length).toBe(1);
       });
     });
   });

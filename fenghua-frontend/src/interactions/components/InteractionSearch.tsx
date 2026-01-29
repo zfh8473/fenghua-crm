@@ -18,6 +18,7 @@ import {
   FrontendInteractionType,
   BackendInteractionType,
   InteractionStatus,
+  InteractionType,
 } from '../services/interactions.service';
 import { getInteractionTypeLabel } from '../constants/interaction-types';
 import { categoriesService, Category } from '../../product-categories/categories.service';
@@ -73,6 +74,11 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   loading = false,
   userRole,
 }) => {
+  // Quick search state
+  const [quickSearch, setQuickSearch] = useState(initialFilters.search || '');
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  
+  // Advanced filter states
   const [interactionTypes, setInteractionTypes] = useState<string[]>(
     initialFilters.interactionTypes || []
   );
@@ -85,6 +91,7 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const quickSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const onSearchRef = useRef(onSearch);
 
   // Load categories
@@ -103,6 +110,13 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   useEffect(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
+
+  // Initialize quickSearch from initialFilters
+  useEffect(() => {
+    if (initialFilters.search) {
+      setQuickSearch(initialFilters.search);
+    }
+  }, [initialFilters.search]);
 
   // Load customer and product from initialFilters if provided
   useEffect(() => {
@@ -146,8 +160,13 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   const buildFilters = useCallback((): InteractionSearchFilters => {
     const filters: InteractionSearchFilters = {};
 
+    // Quick search
+    if (quickSearch && quickSearch.trim()) {
+      filters.search = quickSearch.trim();
+    }
+
     if (interactionTypes.length > 0) {
-      filters.interactionTypes = interactionTypes as any[];
+      filters.interactionTypes = interactionTypes as InteractionType[];
     }
     if (statuses.length > 0) {
       filters.statuses = statuses as InteractionStatus[];
@@ -177,6 +196,7 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
     filters.sortOrder = (sortOrder && String(sortOrder).trim()) ? (sortOrder as 'asc' | 'desc') : undefined;
     return filters;
   }, [
+    quickSearch,
     interactionTypes,
     statuses,
     startDate,
@@ -189,7 +209,25 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
     sortOrder,
   ]);
 
-  // Debounced search - trigger onSearch when filters change
+  // Debounced quick search - 300ms debounce
+  useEffect(() => {
+    if (quickSearchTimeoutRef.current) {
+      clearTimeout(quickSearchTimeoutRef.current);
+    }
+
+    quickSearchTimeoutRef.current = setTimeout(() => {
+      onSearchRef.current(buildFilters());
+    }, 300); // 300ms debounce for quick search
+
+    return () => {
+      if (quickSearchTimeoutRef.current) {
+        clearTimeout(quickSearchTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickSearch]); // buildFilters is stable due to useCallback, but we only depend on quickSearch here
+
+  // Debounced search - trigger onSearch when advanced filters change - 300ms debounce
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -197,16 +235,18 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
 
     searchTimeoutRef.current = setTimeout(() => {
       onSearchRef.current(buildFilters());
-    }, 500); // 500ms debounce
+    }, 300); // 300ms debounce (unified from 500ms)
 
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [buildFilters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interactionTypes, statuses, startDate, endDate, selectedCustomer, selectedProduct, categories, selectedUser, sortBy, sortOrder]); // buildFilters is stable due to useCallback
 
   const handleClear = () => {
+    setQuickSearch('');
     setInteractionTypes([]);
     setStatuses([]);
     setStartDate('');
@@ -219,6 +259,7 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
   };
 
   const hasActiveFilters =
+    quickSearch.trim() ||
     interactionTypes.length > 0 ||
     statuses.length > 0 ||
     startDate ||
@@ -240,10 +281,100 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
     label: user.email,
   }));
 
+  // Search icon SVG (Heroicons style)
+  const searchIcon = (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="1.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className="w-5 h-5"
+    >
+      <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  );
+
+  // Filter icon SVG (Heroicons style)
+  const filterIcon = (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="1.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className="w-5 h-5"
+    >
+      <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+    </svg>
+  );
+
+  // Chevron down icon SVG (Heroicons style)
+  const chevronDownIcon = (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="1.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className="w-5 h-5 transition-transform duration-200"
+      style={{ transform: isAdvancedFiltersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+    >
+      <path d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+
   return (
     <div className="space-y-monday-3">
-      {/* 8 个搜索条件：两行排布（每行 4 个），排序已移至页面 toolbar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-monday-3">
+      {/* Quick search row */}
+      <div className="flex items-center gap-monday-3">
+        <div className="flex-1">
+          <Input
+            type="text"
+            value={quickSearch}
+            onChange={(e) => setQuickSearch(e.target.value)}
+            placeholder="快速搜索客户、产品或互动内容..."
+            leftIcon={searchIcon}
+            disabled={loading}
+            className="w-full"
+          />
+        </div>
+        <Button
+          variant="ghost"
+          size="md"
+          onClick={() => setIsAdvancedFiltersOpen(!isAdvancedFiltersOpen)}
+          disabled={loading}
+          className="flex items-center gap-monday-2 whitespace-nowrap"
+        >
+          {filterIcon}
+          <span>高级筛选</span>
+          {chevronDownIcon}
+        </Button>
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={handleClear}
+            disabled={loading}
+            className="text-uipro-secondary hover:text-uipro-text whitespace-nowrap"
+          >
+            重置
+          </Button>
+        )}
+      </div>
+
+      {/* Advanced filters (collapsible) */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isAdvancedFiltersOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="pt-monday-3 border-t border-gray-200">
+          {/* 8 个搜索条件：两行排布（每行 4 个），排序已移至页面 toolbar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-monday-3">
         {/* Interaction Types Multi-Select */}
         <div>
           <MultiSelect
@@ -282,10 +413,11 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
 
         {/* Date Range */}
         <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          <label htmlFor="start-date" className="block text-monday-sm font-medium text-monday-text mb-monday-2">
             开始日期
           </label>
           <Input
+            id="start-date"
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -295,10 +427,11 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
         </div>
 
         <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          <label htmlFor="end-date" className="block text-monday-sm font-medium text-monday-text mb-monday-2">
             结束日期
           </label>
           <Input
+            id="end-date"
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
@@ -309,10 +442,11 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
 
         {/* Customer Select */}
         <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          <label htmlFor="customer-select" className="block text-monday-sm font-medium text-monday-text mb-monday-2">
             客户
           </label>
           <CustomerSelect
+            id="customer-select"
             selectedCustomer={selectedCustomer}
             onChange={setSelectedCustomer}
             userRole={userRole}
@@ -323,10 +457,11 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
 
         {/* Product Select */}
         <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          <label htmlFor="product-select" className="block text-monday-sm font-medium text-monday-text mb-monday-2">
             产品
           </label>
           <ProductSelect
+            id="product-select"
             selectedProduct={selectedProduct}
             onChange={setSelectedProduct}
             placeholder="选择产品..."
@@ -336,7 +471,7 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
 
         {/* Creator Select (simplified - using MultiSelect for now) */}
         <div>
-          <label className="block text-monday-sm font-medium text-monday-text mb-monday-2">
+          <label htmlFor="creator-select" className="block text-monday-sm font-medium text-monday-text mb-monday-2">
             创建者
           </label>
           <MultiSelect
@@ -355,24 +490,31 @@ export const InteractionSearch: React.FC<InteractionSearchProps> = ({
           />
         </div>
       </div>
-
-      {hasActiveFilters && (
-        <div className="flex items-center gap-monday-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClear}
-            disabled={loading}
-            className="text-monday-text-secondary hover:text-monday-text"
-          >
-            清除所有筛选
-          </Button>
         </div>
-      )}
+      </div>
 
       {loading && (
-        <div className="flex items-center gap-monday-2 text-monday-sm text-monday-text-secondary">
-          <span className="animate-spin">⏳</span>
+        <div className="flex items-center gap-monday-2 text-monday-sm text-uipro-secondary">
+          <svg
+            className="animate-spin h-4 w-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
           <span>正在搜索...</span>
         </div>
       )}

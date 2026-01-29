@@ -101,7 +101,7 @@ export const CommentList: React.FC<CommentListProps> = ({
 
       return merged;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     // Note: Empty dependency array is intentional - setState functions (setComments, setTotal, etc.)
     // are stable and don't need to be in dependencies. The callback only uses these stable functions.
   }, []);

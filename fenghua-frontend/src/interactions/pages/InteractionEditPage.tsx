@@ -114,9 +114,6 @@ export const InteractionEditPage: React.FC = () => {
         {/* Edit Form */}
         <Card variant="default" className="w-full">
           <div className="p-monday-6">
-            <h2 className="text-monday-2xl font-semibold text-monday-text mb-monday-6">
-              编辑互动记录
-            </h2>
             <InteractionEditForm
               interactionId={id}
               onSuccess={() => navigate(-1)}

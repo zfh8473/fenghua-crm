@@ -243,57 +243,66 @@ export class InteractionsService implements OnModuleDestroy {
         }
       }
 
-      // 5. Create interaction records for all products (within transaction)
+      // 5. Create a single interaction record (Story 20.8: 1:N model - one interaction, multiple products)
+      // Story 20.5: Include person_id in INSERT to associate interaction with contact person
       const insertQuery = `
         INSERT INTO product_customer_interactions 
-          (product_id, customer_id, interaction_type, interaction_date, description, status, additional_info, created_by, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING id, product_id, customer_id, interaction_type, interaction_date, description, status, additional_info, created_at, created_by
+          (product_id, customer_id, person_id, interaction_type, interaction_date, description, status, additional_info, created_by, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING id, product_id, customer_id, person_id, interaction_type, interaction_date, description, status, additional_info, created_at, created_by
       `;
       
-      const interactions = [];
-      for (const productId of productIds) {
-        const result = await client.query(insertQuery, [
-          productId,
-          createDto.customerId,
-          createDto.interactionType,
-          new Date(createDto.interactionDate),
-          createDto.description || null,
-          createDto.status || null,
-          createDto.additionalInfo ? JSON.stringify(createDto.additionalInfo) : null,
-          user.id,
-          new Date(),
-        ]);
-        interactions.push(result.rows[0]);
-      }
+      // Create single interaction record (product_id can be null for 1:N model)
+      // Use first product_id for backward compatibility, but this will be deprecated
+      // Story 20.5: Include person_id to enable contact person statistics and detail page display
+      const result = await client.query(insertQuery, [
+        productIds[0], // Keep first product_id for backward compatibility (will be nullable in future)
+        createDto.customerId,
+        createDto.personId || null, // Story 20.5: Include person ID (nullable)
+        createDto.interactionType,
+        new Date(createDto.interactionDate),
+        createDto.description || null,
+        createDto.status || null,
+        createDto.additionalInfo ? JSON.stringify(createDto.additionalInfo) : null,
+        user.id,
+        new Date(),
+      ]);
+      
+      const interaction = result.rows[0];
+      const interactionId = interaction.id;
 
-      // Use the first interaction record as the primary return value (for backward compatibility)
-      const interaction = interactions[0];
-      // Collect all created interaction IDs for attachment linking
-      const createdInteractionIds = interactions.map((i) => i.id);
+      // 6. Create product associations in interaction_products table (Story 20.8: 1:N model)
+      if (productIds.length > 0) {
+        const insertValues = productIds
+          .map((productId, index) => `($1, $${index + 2}, NOW())`)
+          .join(', ');
+        const insertAssociationsQuery = `
+          INSERT INTO interaction_products (interaction_id, product_id, created_at)
+          VALUES ${insertValues}
+        `;
+        await client.query(insertAssociationsQuery, [interactionId, ...productIds]);
+      }
 
       await client.query('COMMIT');
 
-      // 6. Record audit logs for all created interactions (non-blocking, async execution)
+      // 7. Record audit log for interaction creation (non-blocking, async execution)
       setImmediate(async () => {
         try {
-          // Log interaction creation for each interaction record
-          for (const createdInteraction of interactions) {
-            await this.auditService.log({
-              action: 'INTERACTION_CREATED',
-              entityType: 'INTERACTION',
-              entityId: createdInteraction.id,
-              userId: user.id,
-              operatorId: user.id,
-              timestamp: new Date(),
-              metadata: {
-                interactionType: createDto.interactionType,
-                productId: createdInteraction.product_id,
-                customerId: createdInteraction.customer_id,
-                totalCreated: interactions.length,
-              },
-            });
-          }
+          // Log single interaction creation with all associated products
+          await this.auditService.log({
+            action: 'INTERACTION_CREATED',
+            entityType: 'INTERACTION',
+            entityId: interaction.id,
+            userId: user.id,
+            operatorId: user.id,
+            timestamp: new Date(),
+            metadata: {
+              interactionType: createDto.interactionType,
+              productIds: productIds, // All associated products
+              customerId: interaction.customer_id,
+              totalProducts: productIds.length,
+            },
+          });
         } catch (error) {
           this.logger.warn('Failed to log interaction creation', error);
         }
@@ -301,7 +310,7 @@ export class InteractionsService implements OnModuleDestroy {
 
       return {
         id: interaction.id,
-        productId: interaction.product_id,
+        productId: interaction.product_id, // Keep for backward compatibility (first product)
         customerId: interaction.customer_id,
         interactionType: interaction.interaction_type,
         interactionDate: interaction.interaction_date,
@@ -314,8 +323,8 @@ export class InteractionsService implements OnModuleDestroy {
           : undefined,
         createdAt: interaction.created_at,
         createdBy: interaction.created_by,
-        // Add all created interaction IDs for attachment linking
-        createdInteractionIds,
+        // Story 20.8: Return single interaction ID (all products are associated via interaction_products table)
+        createdInteractionIds: [interaction.id],
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -773,10 +782,11 @@ export class InteractionsService implements OnModuleDestroy {
       FROM product_customer_interactions pci
       INNER JOIN companies c ON c.id = pci.customer_id
       LEFT JOIN users u ON u.id = pci.created_by
+      LEFT JOIN people pe ON pe.id = pci.person_id AND pe.deleted_at IS NULL
       LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
       LEFT JOIN products p ON p.id = ip.product_id
       ${whereClause}
-      GROUP BY pci.id, c.id, c.name, u.email, u.first_name, u.last_name, pci.person_id
+      GROUP BY pci.id, c.id, c.name, u.email, u.first_name, u.last_name, pci.person_id, pe.first_name, pe.last_name, pe.email
       ORDER BY pci.interaction_date DESC, pci.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -803,6 +813,7 @@ export class InteractionsService implements OnModuleDestroy {
       updatedAt: row.updated_at,
       updatedBy: row.updated_by,
       personId: row.person_id,
+      personName: row.person_name || undefined,
       products: row.products || [],
     }));
 
@@ -987,6 +998,7 @@ export class InteractionsService implements OnModuleDestroy {
         pci.updated_at,
         pci.updated_by,
         pci.person_id,
+        COALESCE(pe.first_name || ' ' || pe.last_name, pe.email, NULL) as person_name,
         c.name as customer_name,
         c.customer_type,
         u.email as creator_email,
@@ -1005,10 +1017,11 @@ export class InteractionsService implements OnModuleDestroy {
       FROM product_customer_interactions pci
       INNER JOIN companies c ON c.id = pci.customer_id
       LEFT JOIN users u ON u.id = pci.created_by
+      LEFT JOIN people pe ON pe.id = pci.person_id AND pe.deleted_at IS NULL
       LEFT JOIN interaction_products ip ON ip.interaction_id = pci.id
       LEFT JOIN products p ON p.id = ip.product_id
       ${whereClause}
-      GROUP BY pci.id, c.id, c.name, c.customer_type, u.email, u.first_name, u.last_name, pci.person_id
+      GROUP BY pci.id, c.id, c.name, c.customer_type, u.email, u.first_name, u.last_name, pci.person_id, pe.first_name, pe.last_name, pe.email
       ${orderByClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -1035,6 +1048,7 @@ export class InteractionsService implements OnModuleDestroy {
       updatedAt: row.updated_at,
       updatedBy: row.updated_by,
       personId: row.person_id,
+      personName: row.person_name || undefined,
       products: row.products || [],
     }));
 
@@ -1200,6 +1214,13 @@ export class InteractionsService implements OnModuleDestroy {
         paramIndex++;
       }
 
+      // Story 20.5: Update person_id if provided
+      if (updateDto.personId !== undefined) {
+        updateFields.push(`person_id = $${paramIndex}`);
+        updateValues.push(updateDto.personId || null);
+        paramIndex++;
+      }
+
       // Always update updated_by and updated_at
       updateFields.push(`updated_by = $${paramIndex}`);
       updateValues.push(user.id);
@@ -1223,7 +1244,7 @@ export class InteractionsService implements OnModuleDestroy {
         UPDATE product_customer_interactions
         SET ${updateFields.join(', ')}
         WHERE id = $${paramIndex}
-        RETURNING id, product_id, customer_id, interaction_type, interaction_date,
+        RETURNING id, product_id, customer_id, person_id, interaction_type, interaction_date,
                   description, status, additional_info, created_at, created_by,
                   updated_at, updated_by
       `;

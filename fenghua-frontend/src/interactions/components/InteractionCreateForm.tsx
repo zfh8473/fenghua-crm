@@ -16,10 +16,10 @@ import {
   interactionsService,
   InteractionType, // Story 20.4: For type recommendation
 } from '../services/interactions.service';
-import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../auth/AuthContext';
 import { CustomerSelect } from '../../customers/components/CustomerSelect';
+import { SelectedCustomerCard } from '../../customers/components/SelectedCustomerCard';
 import { Customer } from '../../customers/customers.service';
 import { customersService } from '../../customers/customers.service';
 import { Product } from '../../products/products.service';
@@ -29,45 +29,22 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FileUpload } from '../../attachments/components/FileUpload';
-import { Attachment, linkAttachmentToInteraction, updateAttachmentMetadata } from '../../attachments/services/attachments.service';
-import { useMediaQuery } from '../hooks/useMediaQuery';
-import { useSwipeable } from 'react-swipeable';
-import { peopleService, Person } from '../../people/people.service'; // Story 20.4: For person validation, Story 20.5: Person type
-import { generateProtocol, openContactProtocol, ContactMethodType } from '../../people/utils/contact-protocols'; // Story 20.4: For contact protocol
-import { PersonSelect } from '../../people/components/PersonSelect'; // Story 20.5: Person selection component
-import { getPrimaryContactMethod } from '../../people/utils/person-utils'; // Story 20.5: Person utility functions
-import { ContactMethodIcon } from '../../people/components/ContactMethodIcon'; // For displaying contact method in interaction form
+import { Attachment, linkAttachmentToInteraction } from '../../attachments/services/attachments.service';
+import { peopleService, Person } from '../../people/people.service';
+import { ContactMethodType } from '../../people/utils/contact-protocols';
+import { PersonSelect } from '../../people/components/PersonSelect';
+import { SelectedPersonCard } from '../../people/components/SelectedPersonCard';
+import { InteractionRecordFields } from './InteractionRecordFields';
 
 /**
- * Get contact method value from person
+ * 仅用于「创建互动记录」路径（独立页 / 从客户/产品页跳转）。
+ * 准备互动路径请使用 PrepareInteractionForm。
  */
-const getContactMethodValue = (person: Person, method: ContactMethodType): string | null => {
-  switch (method) {
-    case 'phone':
-      return person.phone || null;
-    case 'mobile':
-      return person.mobile || null;
-    case 'email':
-      return person.email || null;
-    case 'whatsapp':
-      return person.whatsapp || null;
-    case 'wechat':
-      return person.wechat || null;
-    case 'linkedin':
-      return person.linkedinUrl || null;
-    case 'facebook':
-      return person.facebook || null;
-    default:
-      return null;
-  }
-};
-
-interface InteractionCreateFormProps {
+export interface InteractionCreateFormProps {
   initialCustomerId?: string;
   initialProductId?: string;
-  initialPersonId?: string; // Story 20.5: Support pre-selecting a person
-  initialContactMethod?: ContactMethodType; // Support pre-selecting a contact method
+  initialPersonId?: string;
+  initialContactMethod?: ContactMethodType;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -88,31 +65,38 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
     []
   );
   const [uploadedFiles, setUploadedFiles] = useState<Attachment[]>([]);
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null); // Story 20.5: Selected person state
-  const [selectedContactMethod, setSelectedContactMethod] = useState<ContactMethodType | null>(
-    initialContactMethod || null
-  ); // Store the selected contact method
-  const [createInteractionRecord, setCreateInteractionRecord] = useState(false); // Default to false - user must explicitly check to create record
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    getValues,
     formState: { errors, isSubmitting },
     reset,
+    clearErrors,
   } = useForm<CreateInteractionDto>({
     defaultValues: {
       interactionType: undefined,
       interactionDate: new Date().toISOString().slice(0, 16),
-      status: InteractionStatus.COMPLETED, // Default to completed as most interactions are logged after the fact
+      status: InteractionStatus.IN_PROGRESS, // Story 20.9: Default to "进行中" (in progress)
       description: '',
       personId: initialPersonId, // Story 20.5: Set initial person ID
     },
+    mode: 'onSubmit', // Only validate on submit, not on change/blur
   });
 
   // Watch interaction type for dynamic validation or UI changes
   const interactionType = watch('interactionType');
+
+  // Clear interactionType error when value is selected
+  // This fixes the issue where validation error persists even after selecting a type
+  useEffect(() => {
+    if (interactionType && errors.interactionType) {
+      clearErrors('interactionType');
+    }
+  }, [interactionType, errors.interactionType, clearErrors]);
 
   // Fetch initial customer if ID provided
   useEffect(() => {
@@ -129,6 +113,8 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
     if (initialPersonId) {
       peopleService.getPerson(initialPersonId).then((person) => {
         setSelectedPerson(person);
+        // Story 20.9: Ensure personId is set in form even when UI is hidden
+        setValue('personId', person.id);
         // If customer is not set yet, set it from person's company
         if (!selectedCustomer && person.company) {
           // We need to fetch full customer object to ensure compatibility
@@ -217,8 +203,14 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
     onSuccess: () => {
       toast.success('互动记录创建成功');
       queryClient.invalidateQueries({ queryKey: ['interactions'] });
-      // Also invalidate stats queries (Story 20.7)
+      // Story 20.9: Invalidate person interaction stats to refresh contact frequency display
+      // Invalidate all person stats queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['personInteractionStatsBatch'] });
+      queryClient.invalidateQueries({ queryKey: ['personInteractionStats'] });
+      // Also invalidate people list to refresh stats when modal is reopened
+      if (selectedPerson?.id) {
+        queryClient.invalidateQueries({ queryKey: ['people'] });
+      }
       
       if (onSuccess) {
         onSuccess();
@@ -236,14 +228,16 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       toast.error('请选择客户');
       return;
     }
+    if (!selectedPerson) {
+      toast.error('请选择联系人');
+      return;
+    }
 
-    // Story 20.6: If "Create Interaction Record" is unchecked, just open protocol
-    if (!createInteractionRecord) {
-      if (selectedPerson) {
-        handleStartInteraction(selectedPerson);
-      } else {
-        toast.error('请先选择联系人以开始互动');
-      }
+    // 创建页始终创建互动记录
+    // This fixes the intermittent issue where interactionType appears selected but validation fails
+    const currentInteractionType = getValues('interactionType') || watch('interactionType');
+    if (!currentInteractionType) {
+      toast.error('请选择互动类型');
       return;
     }
 
@@ -253,54 +247,22 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       return;
     }
 
+    // Story 20.9: Set interaction date to current time and status to "进行中" when creating interaction record
+    let interactionDate = data.interactionDate || new Date().toISOString().slice(0, 16);
+    if (interactionDate && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(interactionDate)) {
+      interactionDate = interactionDate + ':00';
+    }
     const payload: CreateInteractionDto = {
       ...data,
+      interactionType: currentInteractionType,
+      interactionDate,
+      status: InteractionStatus.IN_PROGRESS,
       customerId: selectedCustomer.id,
       productIds: selectedProducts.map(p => p.id),
       personId: selectedPerson?.id, // Story 20.5: Include person ID
     };
 
     createMutation.mutate(payload);
-    
-    // Story 20.6: If person selected, also try to open protocol
-    if (selectedPerson) {
-      // We don't block submission, just try to open protocol
-      handleStartInteraction(selectedPerson);
-    }
-  };
-
-  // Handle person selection (Story 20.5)
-  const handlePersonSelect = (personId: string) => {
-    setValue('personId', personId);
-    // Find full person object for protocol handling
-    if (selectedCustomer?.id) {
-      peopleService.getPeople({ companyId: selectedCustomer.id }).then(res => {
-        const person = res.people.find(p => p.id === personId);
-        if (person) {
-          setSelectedPerson(person);
-        }
-      });
-    }
-  };
-
-  // Handle start interaction (Story 20.4 & 20.6)
-  const handleStartInteraction = (person: Person) => {
-    // Use selected contact method if available, otherwise fall back to primary contact method
-    const method = selectedContactMethod || getPrimaryContactMethod(person);
-    if (!method) {
-      toast.warning('该联系人没有可用的联系方式');
-      return;
-    }
-
-    const value = getContactMethodValue(person, method);
-    if (!value) {
-      toast.warning('联系方式值为空');
-      return;
-    }
-
-    const protocolUrl = generateProtocol(method, value);
-    openContactProtocol(protocolUrl);
-    toast.info(`正在尝试通过 ${method} 联系 ${person.firstName}${person.lastName}...`);
   };
 
   // Filter interaction types based on user role (Story 20.4)
@@ -314,198 +276,135 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
     return [...Object.values(FrontendInteractionType), ...Object.values(BackendInteractionType)];
   }, [user?.role]);
 
-  // Story 20.6: Dynamic button text
-  const buttonText = createInteractionRecord ? '创建互动记录并开始互动' : '开始互动';
+  // Story 20.9: Create interaction type options array for radio buttons
+  const interactionTypeOptions = useMemo(() => {
+    return availableInteractionTypes.map((type) => ({
+      value: type,
+      label: getInteractionTypeLabel(type),
+    }));
+  }, [availableInteractionTypes]);
+
+  // Story 20.9: Color mapping function for interaction types (matching edit form)
+  const getInteractionTypeColorClasses = (value: string): string => {
+    const colorMap: Record<string, string> = {
+      // 采购商类型 - 从冷到暖（蓝色 → 绿色 → 黄色）
+      [FrontendInteractionType.INITIAL_CONTACT]: 'bg-blue-600 text-white border-blue-600',        // 最冷 - 深蓝
+      [FrontendInteractionType.PRODUCT_INQUIRY]: 'bg-blue-500 text-white border-blue-500',      // 蓝色
+      [FrontendInteractionType.QUOTATION]: 'bg-cyan-500 text-white border-cyan-500',           // 青色
+      [FrontendInteractionType.QUOTATION_ACCEPTED]: 'bg-teal-500 text-white border-teal-500',  // 青绿色
+      [FrontendInteractionType.QUOTATION_REJECTED]: 'bg-semantic-error text-white border-semantic-error',
+      [FrontendInteractionType.ORDER_SIGNED]: 'bg-green-500 text-white border-green-500',     // 绿色
+      [FrontendInteractionType.ORDER_FOLLOW_UP]: 'bg-lime-500 text-white border-lime-500',    // 黄绿色（进度跟进）
+      [FrontendInteractionType.ORDER_COMPLETED]: 'bg-emerald-500 text-white border-emerald-500', // 翠绿
+      // 供应商类型 - 继续从暖到更暖（黄色 → 橙色 → 红色）
+      [BackendInteractionType.PRODUCT_INQUIRY_SUPPLIER]: 'bg-yellow-500 text-gray-800 border-yellow-500', // 黄色（文字用深色）
+      [BackendInteractionType.QUOTATION_RECEIVED]: 'bg-amber-500 text-white border-amber-500',  // 琥珀
+      [BackendInteractionType.SPECIFICATION_CONFIRMED]: 'bg-orange-500 text-white border-orange-500', // 橙色
+      [BackendInteractionType.PRODUCTION_PROGRESS]: 'bg-orange-600 text-white border-orange-600', // 深橙
+      [BackendInteractionType.PRE_SHIPMENT_INSPECTION]: 'bg-semantic-error text-white border-semantic-error',
+      [BackendInteractionType.SHIPPED]: 'bg-semantic-error text-white border-semantic-error',
+    };
+    return colorMap[value] || 'bg-gray-500 text-white border-gray-500';
+  };
+
+  const buttonText = '创建互动记录';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Story 20.6: Create Record Checkbox (Moved to top) */}
-      <div className="flex items-center gap-monday-2 p-monday-4 bg-monday-bg-secondary rounded-monday-lg border border-gray-200">
-        <input
-          type="checkbox"
-          id="createRecord"
-          className="w-4 h-4 text-uipro-cta rounded border-gray-300 focus:ring-uipro-cta cursor-pointer transition-colors duration-200"
-          checked={createInteractionRecord}
-          onChange={(e) => setCreateInteractionRecord(e.target.checked)}
-        />
-        <label htmlFor="createRecord" className="text-monday-sm font-medium text-uipro-text cursor-pointer">
-          创建互动记录
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 font-uipro-body">
+      {/* 创建路径：客户与联系人选择，客户选中后仅显示卡片（与联系人一致） */}
+      <div className="space-y-monday-2 max-w-xl">
+        <label className="block text-monday-base font-semibold text-uipro-text mb-monday-2">
+          客户 <span className="text-semantic-error">*</span>
         </label>
-        <span className="text-monday-xs text-monday-text-placeholder ml-monday-2">（建议每次联系勾选）</span>
-      </div>
-
-      {/* Customer Selection - Hidden when pre-filled, but data still submitted */}
-      {!initialCustomerId && (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            客户 <span className="text-red-500">*</span>
-          </label>
-          <CustomerSelect
-            value={selectedCustomer}
-            onChange={(customer) => {
-              setSelectedCustomer(customer);
-              setValue('customerId', customer.id);
-              setSelectedProducts([]); // Reset products when customer changes
-              setSelectedPerson(null); // Reset person when customer changes
+        {selectedCustomer ? (
+          <SelectedCustomerCard
+            customer={selectedCustomer}
+            onRemove={() => {
+              setSelectedCustomer(null);
+              setValue('customerId', undefined);
+              setSelectedProducts([]);
+              setSelectedPerson(null);
               setValue('personId', undefined);
             }}
-            error={!selectedCustomer && errors.customerId?.message}
           />
-        </div>
-      )}
+        ) : (
+          <CustomerSelect
+            selectedCustomer={null}
+            onChange={(customer) => {
+              setSelectedCustomer(customer);
+              setValue('customerId', customer?.id);
+              setSelectedProducts([]);
+              setSelectedPerson(null);
+              setValue('personId', undefined);
+            }}
+            error={!!errors.customerId?.message}
+          />
+        )}
+      </div>
 
-      {/* Person Selection (Story 20.5) */}
       {selectedCustomer && (
-        <div className="space-y-monday-2">
-          <label className="block text-monday-sm font-medium text-uipro-text">
-            关联联系人
-          </label>
-          {initialPersonId && selectedPerson ? (
-             // Read-only view if pre-selected via contact button
-             <div className="flex items-center justify-between p-monday-3 bg-monday-bg-secondary border border-gray-200 rounded-monday-md">
-               <div className="flex items-center gap-monday-2">
-                 <span className="font-medium text-uipro-text">
-                   {selectedPerson.firstName} {selectedPerson.lastName}
-                 </span>
-                 <span className="text-monday-text-secondary text-monday-sm">
-                   {selectedPerson.jobTitle}
-                 </span>
-               </div>
-               {/* Display selected contact method icon, or primary if none selected */}
-               {(selectedContactMethod || getPrimaryContactMethod(selectedPerson)) && (
-                 <div className="flex items-center gap-monday-1 text-uipro-cta bg-uipro-cta/10 px-monday-2 py-monday-1 rounded text-monday-xs">
-                   <ContactMethodIcon 
-                     type={selectedContactMethod || getPrimaryContactMethod(selectedPerson)!} 
-                     hasValue={true}
-                   />
-                   <span>{selectedContactMethod || getPrimaryContactMethod(selectedPerson)}</span>
-                 </div>
-               )}
-             </div>
-          ) : (
-            <PersonSelect
-              customerId={selectedCustomer.id}
-              value={selectedPerson?.id}
-              onChange={handlePersonSelect}
-              placeholder="选择联系人（可选）"
-            />
-          )}
-        </div>
-      )}
-
-      {/* Product Selection - Only show when createInteractionRecord is checked */}
-      {createInteractionRecord && (
-        <div className="space-y-monday-2">
-          <label className="block text-monday-sm font-medium text-uipro-text mb-monday-2">
-            产品 <span className="text-semantic-error">*</span>
-          </label>
-          {isLoadingCustomerProducts ? (
-            <div className="p-monday-4 bg-monday-bg-secondary rounded-monday-md text-center">
-              <div className="flex items-center justify-center gap-monday-2">
-                <span className="text-monday-sm text-monday-text-secondary animate-pulse">⏳</span>
-                <p className="text-monday-sm text-monday-text-secondary">加载关联产品中...</p>
-              </div>
-            </div>
-          ) : (
-            <ProductMultiSelect
-              selectedProducts={selectedProducts || []}
-              onChange={setSelectedProducts}
-              allowedProducts={selectedCustomer ? customerProducts : undefined}
-              disabled={!selectedCustomer}
-              placeholder={!selectedCustomer ? '请先选择客户' : '选择关联产品...'}
-              error={selectedCustomer && selectedProducts.length === 0}
-              errorMessage={selectedCustomer && selectedProducts.length === 0 ? '请至少选择一个产品' : undefined}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Interaction Details - Only show if createRecord is checked */}
-      {createInteractionRecord && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-monday-6">
-            {/* Interaction Type */}
-            <div>
-              <label className="block text-monday-sm font-medium text-uipro-text mb-monday-2">
-                互动类型 <span className="text-semantic-error">*</span>
-              </label>
-              <select
-                {...register('interactionType', { required: '请选择互动类型' })}
-                className="w-full rounded-monday-md border border-gray-200 px-monday-3 py-monday-2 text-monday-sm bg-monday-surface text-uipro-text focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200 cursor-pointer"
-              >
-                <option value="">请选择...</option>
-                {availableInteractionTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {getInteractionTypeLabel(type)}
-                  </option>
-                ))}
-              </select>
-              {errors.interactionType && (
-                <p className="mt-monday-1 text-monday-sm text-semantic-error" role="alert">
-                  {errors.interactionType.message}
-                </p>
-              )}
-            </div>
-
-            {/* Interaction Date */}
-            <Input
-              label="互动时间"
-              type="datetime-local"
-              required
-              {...register('interactionDate', { required: '请选择互动时间' })}
-              error={!!errors.interactionDate}
-              errorMessage={errors.interactionDate?.message}
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-monday-sm font-medium text-uipro-text mb-monday-2">
-              状态
+          <input type="hidden" {...register('personId')} value={selectedPerson?.id || initialPersonId || ''} />
+          <div className="space-y-monday-2 max-w-xl">
+            <label className="block text-monday-base font-semibold text-uipro-text mb-monday-2">
+              联系人 <span className="text-semantic-error">*</span>
             </label>
-            <select
-              {...register('status')}
-              className="w-full rounded-monday-md border border-gray-200 px-monday-3 py-monday-2 text-monday-sm bg-monday-surface text-uipro-text focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200 cursor-pointer"
-            >
-              <option value={InteractionStatus.COMPLETED}>已完成</option>
-              <option value={InteractionStatus.IN_PROGRESS}>进行中</option>
-              <option value={InteractionStatus.NEEDS_FOLLOW_UP}>需要跟进</option>
-              <option value={InteractionStatus.CANCELLED}>已取消</option>
-            </select>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-monday-2">
-            <label className="block text-monday-sm font-medium text-uipro-text">
-              互动描述
-            </label>
-            <textarea
-              className="w-full min-h-[100px] rounded-monday-md border border-gray-200 px-monday-3 py-monday-2 text-monday-sm bg-monday-surface text-uipro-text placeholder:text-monday-text-placeholder focus:outline-none focus:ring-2 focus:ring-uipro-cta/50 focus:border-uipro-cta transition-colors duration-200"
-              placeholder="请输入互动详情..."
-              {...register('description')}
-            />
-          </div>
-
-          {/* Attachments */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              附件
-            </label>
-            <FileUpload
-              onUploadComplete={(file) => setUploadedFiles(prev => [...prev, file])}
-              onRemove={(fileId) => setUploadedFiles(prev => prev.filter(f => f.id !== fileId))}
-              files={uploadedFiles}
-            />
+            {selectedPerson ? (
+              /* 选中后只显示卡片，不显示中间输入框 */
+              <SelectedPersonCard
+                person={selectedPerson}
+                onRemove={() => {
+                  setSelectedPerson(null);
+                  setValue('personId', undefined);
+                }}
+              />
+            ) : (
+              <PersonSelect
+                selectedPerson={null}
+                onChange={(p) => {
+                  setSelectedPerson(p);
+                  setValue('personId', p?.id);
+                }}
+                companyId={selectedCustomer.id}
+                placeholder="搜索联系人（姓名、邮箱、职位）..."
+                error={!!errors.personId?.message}
+              />
+            )}
           </div>
         </>
       )}
 
+      <InteractionRecordFields
+        createInteractionRecord={true}
+        setCreateInteractionRecord={() => {}}
+        selectedCustomer={selectedCustomer}
+        customerProducts={customerProducts}
+        isLoadingCustomerProducts={isLoadingCustomerProducts}
+        selectedProducts={selectedProducts}
+        setSelectedProducts={setSelectedProducts}
+        register={register}
+        watch={watch}
+        setValue={setValue}
+        errors={errors}
+        interactionTypeOptions={interactionTypeOptions}
+        getInteractionTypeColorClasses={getInteractionTypeColorClasses}
+        showAttachments={true}
+        showCreateRecordCheckbox={false}
+        showInteractionDate={true}
+        uploadedFiles={uploadedFiles}
+        onUploadComplete={(file) => setUploadedFiles((prev) => [...prev, file])}
+        onRemove={(fileId) => setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))}
+        isSubmitting={isSubmitting}
+      />
+
       {/* Actions */}
-      <div className="flex justify-end gap-4 pt-4 border-t">
+      {/* Story 20.9: Aligned with design system - responsive button layout */}
+      <div className="flex flex-col sm:flex-row justify-end gap-monday-3 pt-monday-4 border-t border-gray-200">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel || (() => navigate('/interactions'))}
+          className="w-full sm:w-auto transition-all duration-200 hover:border-uipro-cta hover:text-uipro-cta"
         >
           取消
         </Button>
@@ -513,6 +412,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
           type="submit"
           disabled={isSubmitting}
           isLoading={isSubmitting}
+          className="w-full sm:w-auto transition-all duration-200"
         >
           {buttonText}
         </Button>
