@@ -37,6 +37,8 @@ export interface UpdateUserData {
   role?: 'ADMIN' | 'DIRECTOR' | 'FRONTEND_SPECIALIST' | 'BACKEND_SPECIALIST';
   department?: string;
   phone?: string;
+  /** 新密码（留空则不修改）；仅编辑时可选传入 */
+  password?: string;
 }
 
 /**
@@ -136,12 +138,25 @@ export async function createUser(data: CreateUserData): Promise<User> {
 }
 
 /**
- * Update a user
+ * Update a user.
+ * 仅发送后端 UpdateUserDto 允许的字段；password 仅在有意修改时传入（留空则不修改）。
  */
 export async function updateUser(id: string, data: UpdateUserData): Promise<User> {
   const token = getToken();
   if (!token) {
     throw new Error('未登录');
+  }
+
+  const payload: UpdateUserData = {
+    email: data.email,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    role: data.role,
+    department: data.department,
+    phone: data.phone,
+  };
+  if (data.password != null && String(data.password).trim() !== '') {
+    payload.password = data.password;
   }
 
   const response = await fetch(`${API_BASE_URL}/users/${id}`, {
@@ -150,7 +165,7 @@ export async function updateUser(id: string, data: UpdateUserData): Promise<User
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

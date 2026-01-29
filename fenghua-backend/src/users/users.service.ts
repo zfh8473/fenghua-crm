@@ -366,6 +366,13 @@ export class UsersService implements OnModuleDestroy {
         paramIndex++;
       }
 
+      if (updateUserDto.password !== undefined && updateUserDto.password.trim() !== '') {
+        const passwordHash = await bcrypt.hash(updateUserDto.password, 10);
+        updateFields.push(`password_hash = $${paramIndex}`);
+        updateValues.push(passwordHash);
+        paramIndex++;
+      }
+
       if (updateFields.length > 0) {
         updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
         updateValues.push(id);

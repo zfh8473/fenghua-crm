@@ -1,8 +1,9 @@
-import { IsEmail, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsEnum, MinLength } from 'class-validator';
 import { UserRole } from './create-user.dto';
 
 /**
- * DTO for updating an existing user
+ * DTO for updating an existing user.
+ * password 为可选：提供时更新密码（留空则不修改）。
  */
 export class UpdateUserDto {
   @IsEmail({}, { message: '请输入有效的邮箱地址' })
@@ -28,5 +29,11 @@ export class UpdateUserDto {
   @IsString({ message: '联系方式必须是字符串' })
   @IsOptional()
   phone?: string;
+
+  /** 新密码（留空则不修改）；若提供则至少 6 位 */
+  @IsString()
+  @IsOptional()
+  @MinLength(6, { message: '密码长度不能少于6个字符' })
+  password?: string;
 }
 

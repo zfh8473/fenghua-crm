@@ -82,11 +82,19 @@ export const UserForm: React.FC<UserFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      // Remove password if editing and password is empty
-      const submitData = isEditing && 'password' in formData && !formData.password
-        ? { ...formData, password: undefined }
+      // 编辑时只提交后端允许的字段；新密码仅在有填写时提交（留空则不修改）
+      const submitData: CreateUserData | UpdateUserData = isEditing
+        ? {
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            role: formData.role,
+            department: formData.department,
+            phone: formData.phone,
+            ...(formData.password && formData.password.trim() ? { password: formData.password } : {}),
+          }
         : formData;
-      
+
       await onSubmit(submitData);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '操作失败';
