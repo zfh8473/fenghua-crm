@@ -219,23 +219,39 @@ export const PrepareInteractionForm: React.FC<PrepareInteractionFormProps> = ({
         </p>
       </div>
 
-      <InteractionRecordFields
-        createInteractionRecord={createInteractionRecord}
-        setCreateInteractionRecord={setCreateInteractionRecord}
-        selectedCustomer={customer}
-        customerProducts={customerProducts}
-        isLoadingCustomerProducts={isLoadingCustomerProducts}
-        selectedProducts={selectedProducts}
-        setSelectedProducts={setSelectedProducts}
-        register={register}
-        watch={watch}
-        setValue={setValue}
-        errors={errors}
-        interactionTypeOptions={interactionTypeOptions}
-        getInteractionTypeColorClasses={getInteractionTypeColorClasses}
-        showAttachments={false}
-        isSubmitting={isSubmitting}
-      />
+      {/* 未勾选「创建互动记录」时只显示勾选框，不显示关联产品/互动类型/互动描述 */}
+      <div className="flex items-center gap-2 mb-monday-4">
+        <input
+          type="checkbox"
+          id="prepare-createInteractionRecord"
+          checked={createInteractionRecord}
+          onChange={(e) => setCreateInteractionRecord(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-uipro-cta focus:ring-uipro-cta"
+        />
+        <label htmlFor="prepare-createInteractionRecord" className="text-monday-sm font-medium text-uipro-text">
+          创建互动记录
+        </label>
+      </div>
+      {createInteractionRecord && (
+        <InteractionRecordFields
+          createInteractionRecord={createInteractionRecord}
+          setCreateInteractionRecord={setCreateInteractionRecord}
+          selectedCustomer={customer}
+          customerProducts={customerProducts}
+          isLoadingCustomerProducts={isLoadingCustomerProducts}
+          selectedProducts={selectedProducts}
+          setSelectedProducts={setSelectedProducts}
+          register={register}
+          watch={watch}
+          setValue={setValue}
+          errors={errors}
+          interactionTypeOptions={interactionTypeOptions}
+          getInteractionTypeColorClasses={getInteractionTypeColorClasses}
+          showAttachments={false}
+          showCreateRecordCheckbox={false}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row justify-end gap-monday-3 pt-monday-4 border-t border-gray-200">
         <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">

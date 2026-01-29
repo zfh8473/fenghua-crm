@@ -53,7 +53,12 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   className = '' 
 }) => {
   return (
-    <div className={`flex items-center gap-monday-2 ${className}`}>
+    <div
+      className={`flex items-center gap-monday-2 ${className}`}
+      onClick={(e) => e.stopPropagation()}
+      role="group"
+      aria-label="操作按钮"
+    >
       {/* View button - More prominent with primary color and background */}
       <Link
         to={`/interactions/${interactionId}`}
