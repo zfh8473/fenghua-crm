@@ -228,10 +228,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
       toast.error('请选择客户');
       return;
     }
-    if (!selectedPerson) {
-      toast.error('请选择联系人');
-      return;
-    }
+    // 联系人为可选，不校验
 
     // 创建页始终创建互动记录
     // This fixes the intermittent issue where interactionType appears selected but validation fails
@@ -347,7 +344,7 @@ export const InteractionCreateForm: React.FC<InteractionCreateFormProps> = ({
           <input type="hidden" {...register('personId')} value={selectedPerson?.id || initialPersonId || ''} />
           <div className="space-y-monday-2 max-w-xl">
             <label className="block text-monday-base font-semibold text-uipro-text mb-monday-2">
-              联系人 <span className="text-semantic-error">*</span>
+              联系人（可选）
             </label>
             {selectedPerson ? (
               /* 选中后只显示卡片，不显示中间输入框 */
