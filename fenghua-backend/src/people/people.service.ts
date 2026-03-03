@@ -293,6 +293,12 @@ export class PeopleService implements OnModuleDestroy {
         paramIndex++;
       }
 
+      if (query.email) {
+        whereClause += ` AND p.email = $${paramIndex}`;
+        params.push(query.email);
+        paramIndex++;
+      }
+
       // 5. Get total count
       const countResult = await this.pgPool.query(
         `SELECT COUNT(*) as total

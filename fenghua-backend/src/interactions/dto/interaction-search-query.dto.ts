@@ -186,5 +186,12 @@ export class InteractionSearchQueryDto {
   @IsInt()
   @Min(0)
   offset?: number = 0;
+
+  /**
+   * Filter by source email Message-ID (exact match, for dedup check)
+   */
+  @IsOptional()
+  @IsString()
+  sourceEmailMessageId?: string;
 }
 

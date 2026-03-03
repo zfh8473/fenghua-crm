@@ -3,7 +3,7 @@
  * All custom code is proprietary and not open source.
  */
 
-import { IsOptional, IsUUID, IsBoolean, IsInt, Min, Max, IsString } from 'class-validator';
+import { IsOptional, IsUUID, IsBoolean, IsInt, Min, Max, IsString, IsEmail } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -17,6 +17,10 @@ export class PersonQueryDto {
   @IsOptional()
   @IsString()
   search?: string; // General search (searches name, email, job_title, department)
+
+  @IsOptional()
+  @IsEmail()
+  email?: string; // Exact email match (for n8n contact lookup by sender address)
 
   @IsOptional()
   @Type(() => Boolean)

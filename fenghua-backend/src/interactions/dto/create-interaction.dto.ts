@@ -14,6 +14,7 @@ import {
   IsEnum,
   IsArray,
   ArrayMinSize,
+  MaxLength,
 } from 'class-validator';
 
 /**
@@ -111,5 +112,10 @@ export class CreateInteractionDto {
   @IsOptional()
   @IsUUID('4', { message: '联系人ID必须是有效的UUID' })
   personId?: string; // Optional reference to specific contact person
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  sourceEmailMessageId?: string; // Email Message-ID for dedup (n8n integration)
 }
 

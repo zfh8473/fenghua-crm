@@ -9,6 +9,7 @@ import {
   Injectable,
   Logger,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   UnauthorizedException,
   NotFoundException,
@@ -118,6 +119,17 @@ export class InteractionsService implements OnModuleDestroy {
   ): Promise<InteractionResponseDto> {
     if (!this.pgPool) {
       throw new BadRequestException('数据库连接未初始化');
+    }
+
+    // Dedup check: if sourceEmailMessageId provided, reject duplicate emails
+    if (createDto.sourceEmailMessageId) {
+      const dupCheck = await this.pgPool.query(
+        'SELECT id FROM product_customer_interactions WHERE source_email_message_id = $1 AND deleted_at IS NULL LIMIT 1',
+        [createDto.sourceEmailMessageId],
+      );
+      if (dupCheck.rows.length > 0) {
+        throw new ConflictException('邮件已处理，跳过重复创建');
+      }
     }
 
     // Use database transaction to ensure data consistency
@@ -246,12 +258,12 @@ export class InteractionsService implements OnModuleDestroy {
       // 5. Create a single interaction record (Story 20.8: 1:N model - one interaction, multiple products)
       // Story 20.5: Include person_id in INSERT to associate interaction with contact person
       const insertQuery = `
-        INSERT INTO product_customer_interactions 
-          (product_id, customer_id, person_id, interaction_type, interaction_date, description, status, additional_info, created_by, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, product_id, customer_id, person_id, interaction_type, interaction_date, description, status, additional_info, created_at, created_by
+        INSERT INTO product_customer_interactions
+          (product_id, customer_id, person_id, interaction_type, interaction_date, description, status, additional_info, created_by, created_at, source_email_message_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING id, product_id, customer_id, person_id, interaction_type, interaction_date, description, status, additional_info, created_at, created_by, source_email_message_id
       `;
-      
+
       // Create single interaction record (product_id can be null for 1:N model)
       // Use first product_id for backward compatibility, but this will be deprecated
       // Story 20.5: Include person_id to enable contact person statistics and detail page display
@@ -266,6 +278,7 @@ export class InteractionsService implements OnModuleDestroy {
         createDto.additionalInfo ? JSON.stringify(createDto.additionalInfo) : null,
         user.id,
         new Date(),
+        createDto.sourceEmailMessageId || null,
       ]);
       
       const interaction = result.rows[0];
@@ -938,6 +951,13 @@ export class InteractionsService implements OnModuleDestroy {
     if (searchDto.createdBy) {
       whereConditions.push(`pci.created_by = $${paramIndex}`);
       params.push(searchDto.createdBy);
+      paramIndex++;
+    }
+
+    // Source email Message-ID filter (exact match, for dedup check)
+    if (searchDto.sourceEmailMessageId) {
+      whereConditions.push(`pci.source_email_message_id = $${paramIndex}`);
+      params.push(searchDto.sourceEmailMessageId);
       paramIndex++;
     }
 

@@ -1,0 +1,404 @@
+{
+  "name": "Outlook 邮件 → CRM 互动记录",
+  "nodes": [
+    {
+      "parameters": {
+        "protocol": "IMAP",
+        "host": "outlook.office365.com",
+        "port": 993,
+        "ssl": true,
+        "mailbox": "INBOX",
+        "action": "getAll",
+        "downloadAttachments": false,
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "node-01-email-trigger",
+      "name": "Email Trigger (IMAP)",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "credentials": {
+        "imap": {
+          "id": "FILL_IN_IMAP_CREDENTIAL_ID",
+          "name": "Outlook IMAP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://localhost:3001/interactions/search?sourceEmailMessageId={{ encodeURIComponent($json.messageId) }}&limit=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "node-02-dedup-check",
+      "name": "去重检查",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FILL_IN_API_KEY_CREDENTIAL_ID",
+          "name": "CRM API Key"
+        }
+      },
+      "notes": "Header: X-API-Key: fh_live_xxx"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-total-gt-0",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-03-if-duplicate",
+      "name": "已处理过？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [710, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://localhost:3001/people?email={{ encodeURIComponent($('Email Trigger (IMAP)').item.json.from.address) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "node-04-find-contact",
+      "name": "查找联系人",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [940, 420],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FILL_IN_API_KEY_CREDENTIAL_ID",
+          "name": "CRM API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-contact-found",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-05-if-contact-found",
+      "name": "联系人在 CRM 中？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1170, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "FILL_IN_ANTHROPIC_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 500,\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"你是一个 CRM 邮件分析助手。分析以下商务邮件，提取结构化信息。\\n\\n邮件主题：{{ $('Email Trigger (IMAP)').item.json.subject }}\\n发件人：{{ $('Email Trigger (IMAP)').item.json.from.text }}\\n邮件正文：{{ $('Email Trigger (IMAP)').item.json.text.substring(0, 2000) }}\\n\\n请以纯 JSON 格式返回（不要 markdown 代码块）：\\n{\\\"interactionType\\\":\\\"从以下枚举中选一个：initial_contact|product_inquiry|quotation|quotation_accepted|quotation_rejected|order_signed|order_follow_up|order_completed|product_inquiry_supplier|quotation_received|specification_confirmed|production_progress|pre_shipment_inspection|shipped\\\",\\\"summary\\\":\\\"不超过100字的中文摘要\\\",\\\"keywords\\\":[\\\"产品关键词1\\\"],\\\"isRelevant\\\":true}\"\n  }]\n}",
+        "options": {}
+      },
+      "id": "node-06-claude-parse",
+      "name": "Claude AI 解析",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1400, 540]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-is-relevant",
+              "leftValue": "={{ JSON.parse($json.content[0].text).isRelevant }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-07-if-relevant",
+      "name": "是业务邮件？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1630, 540]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://localhost:3001/products?search={{ encodeURIComponent(JSON.parse($('Claude AI 解析').item.json.content[0].text).keywords[0] ?? '') }}&limit=5",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "node-08-match-product",
+      "name": "匹配产品（可选）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1860, 660],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FILL_IN_API_KEY_CREDENTIAL_ID",
+          "name": "CRM API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/interactions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"productIds\": [\"{{ $('匹配产品（可选）').item.json.products?.[0]?.id ?? 'FILL_IN_DEFAULT_PRODUCT_UUID' }}\"],\n  \"customerId\": \"{{ $('查找联系人').item.json.people[0].company.id }}\",\n  \"personId\": \"{{ $('查找联系人').item.json.people[0].id }}\",\n  \"interactionType\": \"{{ JSON.parse($('Claude AI 解析').item.json.content[0].text).interactionType }}\",\n  \"interactionDate\": \"{{ $('Email Trigger (IMAP)').item.json.date }}\",\n  \"description\": \"{{ JSON.parse($('Claude AI 解析').item.json.content[0].text).summary }}\",\n  \"sourceEmailMessageId\": \"{{ $('Email Trigger (IMAP)').item.json.messageId }}\",\n  \"status\": \"in_progress\"\n}",
+        "options": {}
+      },
+      "id": "node-09-create-interaction",
+      "name": "创建互动记录",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2090, 660],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FILL_IN_API_KEY_CREDENTIAL_ID",
+          "name": "CRM API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "result",
+              "value": "已跳过 — 邮件重复，Message-ID 已处理过"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-stop-duplicate",
+      "name": "Stop: 重复邮件",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [940, 180]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "result",
+              "value": "已跳过 — 发件人邮箱不在 CRM 联系人中"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-stop-unknown-sender",
+      "name": "Stop: 未知发件人",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "result",
+              "value": "已跳过 — Claude 判断为非业务邮件"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-stop-not-relevant",
+      "name": "Stop: 非业务邮件",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1860, 420]
+    }
+  ],
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "去重检查",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "去重检查": {
+      "main": [
+        [
+          {
+            "node": "已处理过？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "已处理过？": {
+      "main": [
+        [
+          {
+            "node": "Stop: 重复邮件",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "查找联系人",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查找联系人": {
+      "main": [
+        [
+          {
+            "node": "联系人在 CRM 中？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "联系人在 CRM 中？": {
+      "main": [
+        [
+          {
+            "node": "Stop: 未知发件人",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Claude AI 解析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude AI 解析": {
+      "main": [
+        [
+          {
+            "node": "是业务邮件？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是业务邮件？": {
+      "main": [
+        [
+          {
+            "node": "Stop: 非业务邮件",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "匹配产品（可选）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "匹配产品（可选）": {
+      "main": [
+        [
+          {
+            "node": "创建互动记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "meta": {
+    "instanceId": "fenghua-crm-n8n"
+  },
+  "pinData": {}
+}
