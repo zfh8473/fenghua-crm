@@ -1,22 +1,11 @@
 /**
  * Token Decorator
- * Extracts JWT token from Authorization header
+ * Extracts JWT token from Authorization header.
  * All custom code is proprietary and not open source.
  */
 
 import { createParamDecorator, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 
-/**
- * Decorator to extract JWT token from Authorization header
- * 
- * @example
- * ```typescript
- * @Get()
- * async findAll(@Token() token: string): Promise<UserResponseDto[]> {
- *   return this.usersService.findAll(token);
- * }
- * ```
- */
 export const Token = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): string => {
     const request = ctx.switchToHttp().getRequest();
@@ -35,4 +24,3 @@ export const Token = createParamDecorator(
     return token;
   },
 );
-
