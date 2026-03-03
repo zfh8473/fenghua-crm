@@ -26,6 +26,7 @@ import { EncryptionModule } from './encryption/encryption.module';
 import { SecurityModule } from './security/security.module';
 import { GdprModule } from './gdpr/gdpr.module';
 import { DataRetentionModule } from './data-retention/data-retention.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
 // Note: ProductCustomerAssociationManagementModule is now deprecated
 // ProductCustomerAssociationManagementController is in ProductsModule
 // CustomerProductAssociationManagementController is in CompaniesModule
@@ -63,6 +64,7 @@ import { DataRetentionModule } from './data-retention/data-retention.module';
     SecurityModule, // For HTTPS redirect and security headers (HSTS, etc.)
     GdprModule, // For GDPR data export requests
     DataRetentionModule, // For data retention policy and automatic cleanup
+    ApiKeysModule, // For external automation tool API keys (n8n, etc.)
     // Note: ProductCustomerAssociationManagementModule is deprecated, controllers are in ProductsModule and CompaniesModule
   ],
 })
