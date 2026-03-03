@@ -57,7 +57,7 @@ export const LoginPage: React.FC = () => {
           <p className="text-monday-base text-uipro-secondary">登录您的账户以继续</p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-linear-4">
+        <form onSubmit={handleSubmit} className="space-y-monday-4">
           {error && (
             <div className="p-monday-3 bg-semantic-error/10 border border-semantic-error rounded-monday-md flex items-center gap-monday-2 text-semantic-error text-monday-sm" role="alert">
               <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">

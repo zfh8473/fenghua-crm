@@ -19,6 +19,7 @@ import { CustomerPersonManagementModal } from './components/CustomerPersonManage
 import { MainLayout } from '../components/layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 import { isFrontendSpecialist, isBackendSpecialist, isDirector, isAdmin } from '../common/constants/roles';
 import { getErrorMessage } from '../utils/error-handling';
 
@@ -373,10 +374,13 @@ export const CustomerManagementPage: React.FC = () => {
               <>
                 <h2 className="text-monday-2xl font-bold text-uipro-text mb-monday-6 tracking-tight font-uipro-heading">搜索结果</h2>
                 {customers.length === 0 ? (
-                  <div className="text-center p-monday-12">
-                    <p className="text-monday-lg font-semibold text-uipro-text mb-monday-2">未找到匹配的客户</p>
-                    <p className="text-monday-sm text-uipro-secondary">尝试使用不同的搜索关键词</p>
-                  </div>
+                  <EmptyState
+                    icon="users"
+                    title="未找到匹配的客户"
+                    description={`没有找到与 "${searchFilters.search || ''}" 匹配的客户`}
+                    suggestions={['检查拼写是否正确', '尝试使用更通用的关键词', '使用客户名称或编号搜索']}
+                    secondaryAction={searchFilters.search ? { label: '清除搜索条件', onClick: () => handleSearch({}) } : undefined}
+                  />
                 ) : (
                   <CustomerSearchResults
                     customers={customers}

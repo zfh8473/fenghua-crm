@@ -19,3 +19,6 @@ export type { CardProps } from './Card';
 export { Table } from './Table';
 export type { TableProps, Column } from './Table';
 
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+

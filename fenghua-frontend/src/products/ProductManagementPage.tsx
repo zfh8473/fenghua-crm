@@ -301,8 +301,8 @@ export const ProductManagementPage: React.FC = () => {
   if (!canAccessProducts) {
     return (
       <MainLayout title="产品管理">
-        <Card variant="default" className="p-linear-8 text-center">
-          <p className="text-semantic-error text-linear-lg">您没有权限访问此页面</p>
+        <Card variant="default" className="p-monday-8 text-center">
+          <p className="text-semantic-error text-monday-lg">您没有权限访问此页面</p>
         </Card>
       </MainLayout>
     );
@@ -310,8 +310,8 @@ export const ProductManagementPage: React.FC = () => {
 
   // Toolbar component - Linear style, all in one line, wrapped in card
   const toolbar = viewMode === 'list' ? (
-    <Card variant="default" className="w-full p-linear-4">
-      <div className="flex items-center gap-linear-3 flex-wrap sm:flex-nowrap">
+    <Card variant="default" className="w-full p-monday-4">
+      <div className="flex items-center gap-monday-3 flex-wrap sm:flex-nowrap">
         <Input
           type="text"
           placeholder="搜索产品名称或HS编码..."
@@ -383,20 +383,20 @@ export const ProductManagementPage: React.FC = () => {
       onCloseDetailPanel={handleCloseDetailPanel}
     >
       {viewMode === 'list' ? (
-        <div className="space-y-linear-4">
+        <div className="space-y-monday-4">
           {/* Toolbar Card */}
           {toolbar}
 
           {/* Product List Card */}
           <Card variant="default" className="w-full">
             {successMessage && (
-              <div className="mb-linear-4 p-linear-4 bg-primary-green/20 border border-primary-green rounded-linear-md text-primary-green text-linear-sm" role="alert">
+              <div className="mb-monday-4 p-monday-4 bg-primary-green/20 border border-primary-green rounded-monday-md text-primary-green text-monday-sm" role="alert">
                 {successMessage}
               </div>
             )}
 
             {error && (
-              <div className="mb-linear-4 p-linear-4 bg-primary-red/20 border border-primary-red rounded-linear-md text-primary-red text-linear-sm" role="alert">
+              <div className="mb-monday-4 p-monday-4 bg-primary-red/20 border border-primary-red rounded-monday-md text-primary-red text-monday-sm" role="alert">
                 {error}
               </div>
             )}
@@ -458,7 +458,7 @@ export const ProductManagementPage: React.FC = () => {
 
       {deleteConfirm.show && deleteConfirm.product && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-linear-4 z-50" 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-monday-4 z-50"
           onClick={cancelDelete}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
@@ -469,11 +469,11 @@ export const ProductManagementPage: React.FC = () => {
           tabIndex={-1}
         >
           <Card variant="elevated" className="max-w-md w-full" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
-            <h3 id="delete-confirm-title" className="text-linear-xl font-semibold text-linear-text mb-linear-4">确认删除</h3>
-            <p className="text-linear-base text-linear-text mb-linear-6">
+            <h3 id="delete-confirm-title" className="text-monday-xl font-semibold text-monday-text mb-monday-4">确认删除</h3>
+            <p className="text-monday-base text-monday-text mb-monday-6">
               确定要删除产品 <strong>{deleteConfirm.product.name}</strong> 吗？此操作无法撤销。
             </p>
-            <div className="flex justify-end gap-linear-3">
+            <div className="flex justify-end gap-monday-3">
               <Button onClick={cancelDelete} variant="outline">
                 取消
               </Button>

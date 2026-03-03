@@ -8,6 +8,7 @@
 import { Product } from '../products.service';
 import { Table, Column } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../auth/AuthContext';
 import { isAdmin } from '../../common/constants/roles';
 import { HomeModuleIcon } from '../../components/icons/HomeModuleIcons';
@@ -101,35 +102,26 @@ export const ProductList: React.FC<ProductListProps> = ({
   if (products.length === 0) {
     if (searchQuery) {
       return (
-        <div className="flex flex-col items-center justify-center py-monday-12 px-monday-4">
-          <div className="text-center max-w-md">
-            <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-2">未找到匹配的产品</h3>
-            <p className="text-monday-sm text-uipro-secondary mb-monday-4">
-              没有找到与 &quot;<span className="font-semibold text-uipro-text">{searchQuery}</span>&quot; 匹配的产品
-            </p>
-            <div className="bg-monday-surface rounded-monday-md p-monday-3 border border-gray-200">
-              <p className="text-monday-xs font-semibold text-uipro-text mb-monday-1">搜索建议：</p>
-              <ul className="text-monday-xs text-uipro-secondary space-y-monday-0.5 text-left list-disc list-inside">
-                <li>检查拼写是否正确</li>
-                <li>尝试使用更通用的关键词</li>
-                <li>使用产品名称或HS编码搜索</li>
-                <li>尝试选择不同的产品类别</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        <EmptyState
+          icon="cube"
+          title="未找到匹配的产品"
+          description={`没有找到与 "${searchQuery}" 匹配的产品`}
+          suggestions={[
+            '检查拼写是否正确',
+            '尝试使用更通用的关键词',
+            '使用产品名称或HS编码搜索',
+            '尝试选择不同的产品类别',
+          ]}
+        />
       );
     }
 
     return (
-      <div className="w-full">
-        <div className="rounded-monday-lg overflow-hidden bg-monday-surface border border-gray-200">
-          <div className="text-center p-monday-12">
-            <h3 className="text-monday-lg font-semibold text-uipro-text mb-monday-2">暂无产品</h3>
-            <p className="text-monday-sm text-uipro-secondary">点击「创建新产品」按钮添加第一个产品</p>
-          </div>
-        </div>
-      </div>
+      <EmptyState
+        icon="cube"
+        title="暂无产品"
+        description="点击「创建新产品」按钮添加第一个产品"
+      />
     );
   }
 

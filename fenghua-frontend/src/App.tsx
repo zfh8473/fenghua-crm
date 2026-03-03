@@ -56,49 +56,71 @@ function HomePage() {
     return roleMap[role] || role
   }
 
-  /** 19.4 login-nav-layout：emoji → iconName，供 HomeModuleIcon 渲染 SVG */
-  const quickAccessModules = [
-    { path: '/users', label: '用户管理', iconName: 'users', adminOnly: true },
-    { path: '/products', label: '产品管理', iconName: 'cube', adminOnly: true },
-    { path: '/product-categories', label: '类别管理', iconName: 'tag', adminOnly: true },
-    { path: '/customers', label: '客户管理', iconName: 'briefcase', adminOnly: false },
-    { path: '/people', label: '联系人管理', iconName: 'user', adminOnly: false },
-    { path: '/interactions', label: '互动记录', iconName: 'chat', adminOnly: false },
-    { path: '/customers/import', label: '客户批量导入', iconName: 'arrowDownTray', adminOnly: true },
-    { path: '/products/import', label: '产品批量导入', iconName: 'arrowDownTray', adminOnly: true },
-    { path: '/interactions/import', label: '互动记录批量导入', iconName: 'arrowDownTray', adminOnly: true },
-    { path: '/export', label: '数据导出', iconName: 'arrowUpTray', adminOnly: true },
-    { path: '/gdpr/export', label: 'GDPR 数据导出', iconName: 'clipboard', adminOnly: false },
-    { path: '/gdpr/deletion', label: 'GDPR 数据删除', iconName: 'trash', adminOnly: false },
-    { path: '/settings', label: '系统设置', iconName: 'cog', adminOnly: true },
-    { path: '/monitoring', label: '系统监控', iconName: 'chartBar', adminOnly: true },
-    { path: '/logs', label: '系统日志', iconName: 'documentText', adminOnly: true },
-    { path: '/error-logs', label: '错误日志', iconName: 'exclamationTriangle', adminOnly: true },
-    { path: '/audit-logs', label: '审计日志', iconName: 'magnifyingGlass', adminOnly: true },
-    { path: '/backup', label: '数据备份', iconName: 'circleStack', adminOnly: true },
-    { path: '/restore', label: '数据恢复', iconName: 'arrowPath', adminOnly: true },
-  ]
+  const getUserDisplayName = (): string => {
+    if (!user) return '用户'
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`
+    if (user.firstName) return user.firstName
+    if (user.lastName) return user.lastName
+    return user.email?.split('@')[0] || '用户'
+  }
 
-  const visibleModules = quickAccessModules.filter(
-    (m) => !m.adminOnly || isAdmin
-  )
+  const moduleGroups = [
+    {
+      category: '核心功能',
+      modules: [
+        { path: '/customers', label: '客户管理', iconName: 'briefcase' },
+        { path: '/people', label: '联系人管理', iconName: 'user' },
+        { path: '/interactions', label: '互动记录', iconName: 'chat' },
+        { path: '/products', label: '产品管理', iconName: 'cube' },
+        { path: '/product-categories', label: '类别管理', iconName: 'tag' },
+      ],
+      adminOnly: false,
+    },
+    {
+      category: '数据管理',
+      modules: [
+        { path: '/customers/import', label: '客户批量导入', iconName: 'arrowDownTray' },
+        { path: '/products/import', label: '产品批量导入', iconName: 'arrowDownTray' },
+        { path: '/interactions/import', label: '互动记录批量导入', iconName: 'arrowDownTray' },
+        { path: '/export', label: '数据导出', iconName: 'arrowUpTray' },
+        { path: '/gdpr/export', label: 'GDPR 数据导出', iconName: 'clipboard' },
+        { path: '/gdpr/deletion', label: 'GDPR 数据删除', iconName: 'trash' },
+      ],
+      adminOnly: true,
+    },
+    {
+      category: '系统管理',
+      modules: [
+        { path: '/users', label: '用户管理', iconName: 'users' },
+        { path: '/settings', label: '系统设置', iconName: 'cog' },
+        { path: '/monitoring', label: '系统监控', iconName: 'chartBar' },
+        { path: '/logs', label: '系统日志', iconName: 'documentText' },
+        { path: '/error-logs', label: '错误日志', iconName: 'exclamationTriangle' },
+        { path: '/audit-logs', label: '审计日志', iconName: 'magnifyingGlass' },
+        { path: '/backup', label: '数据备份', iconName: 'circleStack' },
+        { path: '/restore', label: '数据恢复', iconName: 'arrowPath' },
+      ],
+      adminOnly: true,
+    },
+  ].filter((group) => !group.adminOnly || isAdmin)
+
+  const displayName = getUserDisplayName()
 
   return (
     <MainLayout title="">
       <div className="space-y-monday-6">
-        {/* 19.4：去紫/粉；头像、角色 uipro-cta；无 emoji 装饰 */}
         <Card variant="default" className="w-full overflow-hidden">
           <div className="relative bg-gradient-to-br from-uipro-cta/5 via-white to-uipro-bg p-monday-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-monday-6">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-monday-4 mb-monday-4">
                   <div className="w-14 h-14 rounded-full bg-uipro-cta flex items-center justify-center text-white text-monday-2xl font-semibold shadow-monday-md flex-shrink-0">
-                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    {displayName.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-monday-sm text-uipro-secondary font-medium mb-monday-1">欢迎回来</p>
                     <h1 className="text-monday-2xl font-semibold text-uipro-text font-uipro-heading tracking-tight leading-tight truncate">
-                      {user?.email?.split('@')[0] || '用户'}
+                      {displayName}
                     </h1>
                   </div>
                 </div>
@@ -113,39 +135,45 @@ function HomePage() {
           </div>
         </Card>
 
-        <Card variant="default" className="w-full p-monday-6">
-          <h2 className="text-monday-2xl font-bold text-uipro-text font-uipro-heading mb-monday-6 tracking-tight">快速访问</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-monday-4">
-            {visibleModules.map((module) => (
-              <Link
-                key={module.path}
-                to={module.path}
-                className="group block cursor-pointer transition-colors duration-200"
-              >
-                <Card
-                  variant="default"
-                  hoverable
-                  className="p-monday-5 h-full transition-all duration-200 hover:shadow-monday-md border border-gray-200 hover:border-uipro-cta/30"
-                >
-                  <div className="flex items-center gap-monday-4">
-                    <div className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
-                      <HomeModuleIcon name={module.iconName} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-monday-base font-semibold text-uipro-text mb-monday-1 group-hover:text-uipro-cta transition-colors duration-200 tracking-tight truncate">
-                        {module.label}
-                      </h3>
-                      <p className="text-monday-sm text-uipro-secondary font-normal">点击进入</p>
-                    </div>
-                    <div className="text-uipro-secondary group-hover:text-uipro-cta transition-colors duration-200 flex-shrink-0 text-monday-lg">
-                      →
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </Card>
+        <div className="space-y-monday-6">
+          {moduleGroups.map((group) => (
+            <div key={group.category}>
+              <h3 className="text-monday-sm font-semibold text-gray-400 uppercase tracking-wider mb-monday-3">
+                {group.category}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-monday-4">
+                {group.modules.map((module) => (
+                  <Link
+                    key={module.path}
+                    to={module.path}
+                    className="group block cursor-pointer transition-colors duration-200"
+                  >
+                    <Card
+                      variant="default"
+                      hoverable
+                      className="p-monday-5 h-full transition-all duration-200 hover:shadow-monday-md border border-gray-200 hover:border-uipro-cta/30"
+                    >
+                      <div className="flex items-center gap-monday-4">
+                        <div className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
+                          <HomeModuleIcon name={module.iconName} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-monday-base font-semibold text-uipro-text mb-monday-1 group-hover:text-uipro-cta transition-colors duration-200 tracking-tight truncate">
+                            {module.label}
+                          </h3>
+                          <p className="text-monday-sm text-uipro-secondary font-normal">点击进入</p>
+                        </div>
+                        <div className="text-uipro-secondary group-hover:text-uipro-cta transition-colors duration-200 flex-shrink-0 text-monday-lg">
+                          →
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </MainLayout>
   )

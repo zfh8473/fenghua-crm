@@ -72,9 +72,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Variant classes - unified filled button style (white text on colored background)
     // Based on ui-ux-pro-max design system: Trust & Authority style
     const variantClasses = {
-      primary: 'bg-[#0369A1] text-white hover:bg-[#025a8a] border border-[#0369A1] shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
-      danger: 'bg-[#A00030] text-white hover:bg-[#8B0028] border border-[#A00030] shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3', // 浅酒红色（Lighter Burgundy），降低视觉冲击力
-      success: 'bg-[#10B981] text-white hover:bg-[#059669] border border-[#10B981] shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3', // 清新的绿色
+      primary: 'bg-uipro-cta text-white hover:bg-uipro-cta/90 border border-uipro-cta shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
+      danger: 'bg-semantic-danger text-white hover:bg-semantic-danger/90 border border-semantic-danger shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
+      success: 'bg-semantic-success text-white hover:bg-semantic-success/90 border border-semantic-success shadow-monday-sm hover:shadow-monday-md px-monday-6 py-monday-3',
       secondary: 'border border-primary-blue text-primary-blue bg-transparent hover:bg-primary-blue/10 px-monday-6 py-monday-3',
       outline: 'border border-gray-300 text-monday-text bg-transparent hover:bg-monday-bg px-monday-6 py-monday-3',
       ghost: 'border border-transparent text-monday-text bg-transparent hover:bg-monday-bg hover:border-gray-200 px-monday-4 py-monday-2',

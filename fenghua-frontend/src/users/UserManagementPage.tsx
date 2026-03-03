@@ -107,7 +107,7 @@ export const UserManagementPage: React.FC = () => {
     return (
       <MainLayout title="用户管理">
         <Card variant="default" className="max-w-7xl mx-auto">
-          <div className="p-linear-4 bg-semantic-error/10 border border-semantic-error rounded-linear-md text-semantic-error text-linear-base" role="alert">
+          <div className="p-monday-4 bg-semantic-error/10 border border-semantic-error rounded-monday-md text-semantic-error text-monday-base" role="alert">
             只有管理员可以访问此页面
           </div>
         </Card>
@@ -117,8 +117,8 @@ export const UserManagementPage: React.FC = () => {
 
   // Toolbar component - Linear style, all in one line, wrapped in card
   const toolbar = viewMode === 'list' ? (
-    <Card variant="default" className="w-full p-linear-4">
-      <div className="flex items-center gap-linear-3 flex-wrap sm:flex-nowrap">
+    <Card variant="default" className="w-full p-monday-4">
+      <div className="flex items-center gap-monday-3 flex-wrap sm:flex-nowrap">
         <Input
           type="text"
           placeholder="搜索用户..."
@@ -154,26 +154,26 @@ export const UserManagementPage: React.FC = () => {
       title=""
     >
       {viewMode === 'list' ? (
-        <div className="space-y-linear-4">
+        <div className="space-y-monday-4">
           {/* Toolbar Card */}
           {toolbar}
 
           {/* User List Card */}
           <Card variant="default" className="w-full">
             {successMessage && (
-              <div className="mb-linear-4 p-linear-4 bg-semantic-success/10 border border-semantic-success rounded-linear-md text-semantic-success text-linear-sm" role="alert">
+              <div className="mb-monday-4 p-monday-4 bg-semantic-success/10 border border-semantic-success rounded-monday-md text-semantic-success text-monday-sm" role="alert">
                 {successMessage}
               </div>
             )}
 
             {error && (
-              <div className="mb-linear-4 p-linear-4 bg-semantic-error/10 border border-semantic-error rounded-linear-md text-semantic-error text-linear-sm" role="alert">
+              <div className="mb-monday-4 p-monday-4 bg-semantic-error/10 border border-semantic-error rounded-monday-md text-semantic-error text-monday-sm" role="alert">
                 {error}
               </div>
             )}
 
             {loading ? (
-              <div className="p-linear-4 space-y-3" aria-busy="true">
+              <div className="p-monday-4 space-y-3" aria-busy="true">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex gap-4">
                     <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
@@ -195,7 +195,7 @@ export const UserManagementPage: React.FC = () => {
         </div>
       ) : (
         <Card variant="default" className="max-w-3xl mx-auto">
-          <h2 className="text-linear-2xl font-semibold text-uipro-text font-uipro-heading mb-linear-6">
+          <h2 className="text-monday-2xl font-semibold text-uipro-text font-uipro-heading mb-monday-6">
             {viewMode === 'create' ? '创建新用户' : '编辑用户'}
           </h2>
           <UserForm

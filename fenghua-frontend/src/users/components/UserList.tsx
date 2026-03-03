@@ -68,13 +68,13 @@ export const UserList: React.FC<UserListProps> = ({
       render: (role) => {
         if (role) {
           return (
-            <span className={`inline-flex items-center px-linear-2 py-linear-1 rounded-linear-sm text-linear-sm font-medium ${getRoleBadgeColor(role as string)}`}>
+            <span className={`inline-flex items-center px-monday-2 py-monday-1 rounded-monday-sm text-monday-sm font-medium ${getRoleBadgeColor(role as string)}`}>
               {getRoleLabel(role as string)}
             </span>
           );
         }
         return (
-          <span className="inline-flex items-center px-linear-2 py-linear-1 rounded-linear-sm bg-uipro-secondary/15 text-uipro-secondary text-linear-sm font-medium">
+          <span className="inline-flex items-center px-monday-2 py-monday-1 rounded-monday-sm bg-uipro-secondary/15 text-uipro-secondary text-monday-sm font-medium">
             无角色
           </span>
         );
@@ -102,7 +102,7 @@ export const UserList: React.FC<UserListProps> = ({
       header: '操作',
       render: (_, user) => (
         <div 
-          className="flex gap-linear-2" 
+          className="flex gap-monday-2" 
           onClick={(e) => e.stopPropagation()}
           role="group"
           aria-label="用户操作按钮组"
@@ -133,7 +133,7 @@ export const UserList: React.FC<UserListProps> = ({
   return (
     <div className="w-full">
       {/* Page Title */}
-      <h2 className="text-linear-2xl font-bold text-uipro-text font-uipro-heading mb-linear-6 tracking-tight">用户列表</h2>
+      <h2 className="text-monday-2xl font-bold text-uipro-text font-uipro-heading mb-monday-6 tracking-tight">用户列表</h2>
 
       <div className="overflow-x-auto">
         <Table

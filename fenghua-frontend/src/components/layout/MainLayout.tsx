@@ -74,33 +74,38 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   const isActive = (path: string) => location.pathname === path;
 
-  /** 19.4 login-nav-layout：emoji → iconName，HomeModuleIcon 渲染 SVG */
-  const navigationItems = [
-    { path: '/', label: '首页', iconName: 'home' },
-    { path: '/dashboard', label: '业务仪表板', iconName: 'chartBar', directorOrAdminOnly: true },
-    { path: '/dashboard/product-association-analysis', label: '产品关联分析', iconName: 'link', directorOrAdminOnly: true },
-    { path: '/dashboard/customer-analysis', label: '客户分析', iconName: 'users', directorOrAdminOnly: true },
-    { path: '/dashboard/supplier-analysis', label: '供应商分析', iconName: 'buildingOffice', directorOrAdminOnly: true },
-    { path: '/dashboard/buyer-analysis', label: '采购商分析', iconName: 'shoppingCart', directorOrAdminOnly: true },
-    { path: '/dashboard/business-trend-analysis', label: '业务趋势分析', iconName: 'arrowTrendingUp', directorOrAdminOnly: true },
-    { path: '/users', label: '用户管理', iconName: 'users', adminOnly: true },
-    { path: '/products', label: '产品管理', iconName: 'cube', adminOnly: false },
-    { path: '/customers', label: '客户管理', iconName: 'briefcase', adminOnly: false },
-    { path: '/interactions', label: '互动管理', iconName: 'chat', adminOnly: false },
-    { path: '/settings', label: '系统', iconName: 'cog', adminOnly: true },
-  ];
-
-  const visibleNavItems = navigationItems.filter(
-    (item) => {
-      if (item.directorOrAdminOnly) {
-        return userIsAdmin || userIsDirector;
-      }
-      if (item.adminOnly) {
-        return userIsAdmin;
-      }
-      return true;
-    }
-  );
+  const navigationGroups = [
+    {
+      label: null,
+      items: [
+        { path: '/', label: '首页', iconName: 'home' },
+        { path: '/products', label: '产品管理', iconName: 'cube' },
+        { path: '/customers', label: '客户管理', iconName: 'briefcase' },
+        { path: '/interactions', label: '互动管理', iconName: 'chat' },
+      ],
+      visible: true,
+    },
+    {
+      label: '数据分析',
+      items: [
+        { path: '/dashboard', label: '业务仪表板', iconName: 'chartBar' },
+        { path: '/dashboard/product-association-analysis', label: '产品关联分析', iconName: 'link' },
+        { path: '/dashboard/customer-analysis', label: '客户分析', iconName: 'users' },
+        { path: '/dashboard/supplier-analysis', label: '供应商分析', iconName: 'buildingOffice' },
+        { path: '/dashboard/buyer-analysis', label: '采购商分析', iconName: 'shoppingCart' },
+        { path: '/dashboard/business-trend-analysis', label: '业务趋势分析', iconName: 'arrowTrendingUp' },
+      ],
+      visible: canAccessDashboard,
+    },
+    {
+      label: '系统管理',
+      items: [
+        { path: '/users', label: '用户管理', iconName: 'users' },
+        { path: '/settings', label: '系统', iconName: 'cog' },
+      ],
+      visible: userIsAdmin,
+    },
+  ].filter((group) => group.visible);
 
   // Get role label in Chinese
   const getRoleLabel = (role: string | null): string => {
@@ -131,12 +136,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <>
-      {/* 装饰性几何图形 */}
-      <div className="decorative-circle-1" />
-      <div className="decorative-circle-2" />
-      
-      <div className="flex flex-col min-h-screen relative z-10">
+    <div className="flex flex-col min-h-screen">
         {/* Main Content Area with Sidebar */}
         <div className="flex-1 flex min-h-0 px-monday-6 pb-monday-6 pt-monday-6">
         {/* Left Sidebar - Card Style - Full Height */}
@@ -155,26 +155,41 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               </Link>
             </div>
 
-            {/* Navigation Items - Better Spacing */}
-            <nav className="flex-1 flex items-start p-monday-3">
-              <ul className="w-full space-y-monday-2">
-                {visibleNavItems.map((item) => (
-                  <li key={item.path}>
-                    <Link
-                      to={item.path}
-                      className={`flex items-center ${
-                        sidebarCollapsed ? 'justify-center' : 'gap-monday-3'
-                      } p-monday-3 rounded-monday-md transition-colors duration-200 cursor-pointer ${
-                        isActive(item.path)
-                          ? 'bg-uipro-cta/10 text-uipro-cta'
-                          : 'text-gray-950 hover:bg-monday-bg hover:text-black'
-                      }`}
-                    >
-                      <HomeModuleIcon name={item.iconName} className="w-5 h-5 flex-shrink-0" />
-                      {!sidebarCollapsed && (
-                        <span className="text-monday-sm font-medium tracking-tight">{item.label}</span>
-                      )}
-                    </Link>
+            {/* Navigation Items - Grouped */}
+            <nav className="flex-1 flex items-start p-monday-3 overflow-y-auto">
+              <ul className="w-full">
+                {navigationGroups.map((group, groupIndex) => (
+                  <li key={groupIndex}>
+                    {group.label && (
+                      <div className={`${groupIndex > 0 ? 'mt-monday-2 pt-monday-2' : ''} border-t border-gray-100`}>
+                        {!sidebarCollapsed && (
+                          <p className="px-monday-3 pt-monday-2 pb-monday-1 text-monday-xs text-gray-400 font-medium tracking-wider uppercase">
+                            {group.label}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <ul className="space-y-monday-1 mt-monday-1">
+                      {group.items.map((item) => (
+                        <li key={item.path}>
+                          <Link
+                            to={item.path}
+                            className={`flex items-center ${
+                              sidebarCollapsed ? 'justify-center' : 'gap-monday-3'
+                            } p-monday-3 rounded-monday-md transition-colors duration-200 cursor-pointer ${
+                              isActive(item.path)
+                                ? 'bg-uipro-cta/10 text-uipro-cta'
+                                : 'text-gray-950 hover:bg-monday-bg hover:text-black'
+                            }`}
+                          >
+                            <HomeModuleIcon name={item.iconName} className="w-5 h-5 flex-shrink-0" />
+                            {!sidebarCollapsed && (
+                              <span className="text-monday-sm font-medium tracking-tight">{item.label}</span>
+                            )}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 ))}
               </ul>
@@ -277,7 +292,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         )}
         </div>
       </div>
-    </>
   );
 };
 
