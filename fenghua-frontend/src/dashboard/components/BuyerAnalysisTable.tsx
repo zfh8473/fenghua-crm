@@ -1,7 +1,7 @@
 /**
  * Buyer Analysis Table Component
- * 
- * Displays buyer analysis data in a table format
+ *
+ * Displays buyer follow-up status: name, last interaction date, days since last contact
  * All custom code is proprietary and not open source.
  */
 
@@ -15,51 +15,18 @@ interface BuyerAnalysisTableProps {
   loading?: boolean;
 }
 
-/**
- * Activity rating color mapping
- */
-const getActivityRatingColor = (rating: BuyerAnalysisItem['activityRating']): string => {
-  switch (rating) {
-    case 'HIGH':
-      return 'text-green-600 font-semibold';
-    case 'MEDIUM':
-      return 'text-blue-600 font-semibold';
-    case 'LOW':
-      return 'text-yellow-600 font-semibold';
-    default:
-      return 'text-monday-text';
-  }
+const getDaysSinceColor = (days: number): string => {
+  if (days <= 30) return 'text-green-600 font-medium';
+  if (days <= 60) return 'text-yellow-600 font-medium';
+  if (days <= 90) return 'text-orange-500 font-medium';
+  return 'text-red-600 font-semibold';
 };
 
-/**
- * Churn risk color mapping
- */
-const getChurnRiskColor = (risk: BuyerAnalysisItem['churnRisk']): string => {
-  switch (risk) {
-    case 'HIGH':
-      return 'text-red-600 font-semibold';
-    case 'MEDIUM':
-      return 'text-orange-600 font-semibold';
-    case 'LOW':
-      return 'text-yellow-600 font-semibold';
-    case 'NONE':
-      return 'text-green-600 font-semibold';
-    default:
-      return 'text-monday-text';
-  }
-};
-
-/**
- * Get value color based on order amount (high value buyers)
- */
-const getValueColor = (amount: number): string => {
-  // High value: > 10000, Medium: 1000-10000, Low: < 1000
-  if (amount > 10000) {
-    return 'text-green-600 font-semibold';
-  } else if (amount > 1000) {
-    return 'text-blue-600';
-  }
-  return 'text-monday-text';
+const getDaysSinceLabel = (days: number): string => {
+  if (days <= 30) return '近期';
+  if (days <= 60) return '偏久';
+  if (days <= 90) return '较长';
+  return '需跟进';
 };
 
 export const BuyerAnalysisTable: React.FC<BuyerAnalysisTableProps> = ({
@@ -73,7 +40,7 @@ export const BuyerAnalysisTable: React.FC<BuyerAnalysisTableProps> = ({
   };
 
   const handleBuyerNameClick = (row: BuyerAnalysisItem, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click event
+    e.stopPropagation();
     navigate(`/customers?customerId=${row.buyerId}`);
   };
 
@@ -92,83 +59,26 @@ export const BuyerAnalysisTable: React.FC<BuyerAnalysisTableProps> = ({
       ),
     },
     {
-      key: 'orderCount',
-      header: '订单量',
-      sortable: true,
-      render: (value) => value.toLocaleString(),
-    },
-    {
-      key: 'orderAmount',
-      header: '订单金额',
-      sortable: true,
-      render: (value) => (
-        <span className={getValueColor(value)}>
-          ¥{value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
-      ),
-    },
-    {
-      key: 'orderFrequency',
-      header: '订单频率',
-      sortable: true,
-      render: (value) => `${value.toFixed(4)} 单/天`,
-    },
-    {
       key: 'lastInteractionDate',
       header: '最后互动日期',
       sortable: true,
-      render: (value) => {
-        const date = new Date(value);
-        return date.toLocaleDateString('zh-CN');
-      },
+      render: (value) => new Date(value).toLocaleDateString('zh-CN'),
     },
     {
       key: 'daysSinceLastInteraction',
-      header: '距离最后互动天数',
+      header: '距离最后互动',
       sortable: true,
-      render: (value) => `${value} 天`,
-    },
-    {
-      key: 'activityLevel',
-      header: '活跃度',
-      sortable: true,
-      render: (value, row) => (
-        <div className="flex items-center gap-2">
-          <span>{value.toFixed(2)}%</span>
-          <span className={getActivityRatingColor(row.activityRating)}>
-            ({row.activityRating === 'HIGH' ? '高' : row.activityRating === 'MEDIUM' ? '中' : '低'})
-          </span>
-        </div>
+      render: (value) => (
+        <span className={getDaysSinceColor(value)}>
+          {value} 天&nbsp;
+          <span className="text-monday-xs">({getDaysSinceLabel(value)})</span>
+        </span>
       ),
-    },
-    {
-      key: 'churnRisk',
-      header: '流失风险',
-      sortable: true,
-      render: (value) => {
-        const riskLabels = {
-          HIGH: '高风险',
-          MEDIUM: '中风险',
-          LOW: '低风险',
-          NONE: '无风险',
-        };
-        return (
-          <span className={getChurnRiskColor(value as BuyerAnalysisItem['churnRisk'])}>
-            {riskLabels[value as keyof typeof riskLabels] || value}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'lifetimeValue',
-      header: '生命周期价值',
-      sortable: true,
-      render: (value) => `¥${value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     },
   ];
 
   if (loading) {
-    const colCount = 9;
+    const colCount = 3;
     return (
       <div className="w-full rounded-monday-lg overflow-hidden bg-monday-surface border border-gray-200">
         <div className="overflow-x-auto">
@@ -215,9 +125,8 @@ export const BuyerAnalysisTable: React.FC<BuyerAnalysisTableProps> = ({
         rowKey={(row) => row.buyerId}
         striped
         className="w-full"
-        aria-label="采购商分析表格"
+        aria-label="采购商联系跟进表格"
       />
     </div>
   );
 };
-
