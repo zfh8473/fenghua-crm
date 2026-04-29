@@ -17,7 +17,6 @@ import { ProductBusinessProcessPage } from './products/ProductBusinessProcessPag
 import { ProductIntegrityValidationPage } from './products/ProductIntegrityValidationPage'
 import { CustomerManagementPage } from './customers/CustomerManagementPage'
 import { CustomerProductInteractionHistoryPage } from './customers/CustomerProductInteractionHistoryPage'
-import { PersonManagementPage } from './people/PersonManagementPage'
 import { InteractionsPage } from './interactions/pages/InteractionsPage'
 import { InteractionCreatePage } from './interactions/pages/InteractionCreatePage'
 import { InteractionEditPage } from './interactions/pages/InteractionEditPage'
@@ -69,7 +68,6 @@ function HomePage() {
       category: '核心功能',
       modules: [
         { path: '/customers', label: '客户管理', iconName: 'briefcase' },
-        { path: '/people', label: '联系人管理', iconName: 'user' },
         { path: '/interactions', label: '互动记录', iconName: 'chat' },
         { path: '/products', label: '产品管理', iconName: 'cube' },
         { path: '/product-categories', label: '类别管理', iconName: 'tag' },
@@ -409,11 +407,7 @@ function App() {
       />
       <Route
         path="/people"
-        element={
-          <ProtectedRoute>
-            <PersonManagementPage />
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/customers" replace />}
       />
       <Route
         path="/interactions"
