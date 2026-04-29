@@ -27,6 +27,7 @@ import { SecurityModule } from './security/security.module';
 import { GdprModule } from './gdpr/gdpr.module';
 import { DataRetentionModule } from './data-retention/data-retention.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
+import { TasksModule } from './tasks/tasks.module';
 // Note: ProductCustomerAssociationManagementModule is now deprecated
 // ProductCustomerAssociationManagementController is in ProductsModule
 // CustomerProductAssociationManagementController is in CompaniesModule
@@ -65,6 +66,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
     GdprModule, // For GDPR data export requests
     DataRetentionModule, // For data retention policy and automatic cleanup
     ApiKeysModule, // For external automation tool API keys (n8n, etc.)
+    TasksModule, // Personal task management with due dates
     // Note: ProductCustomerAssociationManagementModule is deprecated, controllers are in ProductsModule and CompaniesModule
   ],
 })

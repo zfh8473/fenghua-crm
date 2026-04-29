@@ -86,13 +86,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       visible: true,
     },
     {
+      label: '工作面板',
+      items: [
+        { path: '/workspace/follow-up', label: '客户跟进', iconName: 'users' },
+        { path: '/workspace/tasks', label: '待办事项', iconName: 'clipboard' },
+      ],
+      visible: true,
+    },
+    {
       label: '数据分析',
       items: [
         { path: '/dashboard', label: '业务仪表板', iconName: 'chartBar' },
         { path: '/dashboard/product-association-analysis', label: '产品关联分析', iconName: 'link' },
         { path: '/dashboard/customer-analysis', label: '客户分析', iconName: 'users' },
         { path: '/dashboard/supplier-analysis', label: '供应商分析', iconName: 'buildingOffice' },
-        { path: '/dashboard/buyer-analysis', label: '采购商分析', iconName: 'shoppingCart' },
         { path: '/dashboard/business-trend-analysis', label: '业务趋势分析', iconName: 'arrowTrendingUp' },
       ],
       visible: canAccessDashboard,

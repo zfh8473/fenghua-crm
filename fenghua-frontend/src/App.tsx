@@ -31,8 +31,9 @@ import { DashboardPage } from './dashboard/pages/DashboardPage'
 import { ProductAssociationAnalysisPage } from './dashboard/pages/ProductAssociationAnalysisPage'
 import { CustomerAnalysisPage } from './dashboard/pages/CustomerAnalysisPage'
 import { SupplierAnalysisPage } from './dashboard/pages/SupplierAnalysisPage'
-import { BuyerAnalysisPage } from './dashboard/pages/BuyerAnalysisPage'
 import { BusinessTrendAnalysisPage } from './dashboard/pages/BusinessTrendAnalysisPage'
+import { CustomerFollowUpPage } from './workspace/CustomerFollowUpPage'
+import { TasksPage } from './workspace/tasks/TasksPage'
 import { TestTailwind } from './components/TestTailwind'
 import { Card } from './components/ui'
 import { HomeModuleIcon } from './components/icons/HomeModuleIcons'
@@ -64,6 +65,14 @@ function HomePage() {
   }
 
   const moduleGroups = [
+    {
+      category: '工作面板',
+      modules: [
+        { path: '/workspace/follow-up', label: '客户跟进', iconName: 'users' },
+        { path: '/workspace/tasks', label: '待办事项', iconName: 'clipboard' },
+      ],
+      adminOnly: false,
+    },
     {
       category: '核心功能',
       modules: [
@@ -237,14 +246,7 @@ function App() {
           </ProtectedRoute>
         }
       />
-            <Route
-              path="/dashboard/buyer-analysis"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'DIRECTOR']}>
-                  <BuyerAnalysisPage />
-                </ProtectedRoute>
-              }
-            />
+      <Route path="/dashboard/buyer-analysis" element={<Navigate to="/workspace/follow-up" replace />} />
             <Route
               path="/dashboard/business-trend-analysis"
               element={
@@ -446,6 +448,22 @@ function App() {
         element={
           <ProtectedRoute>
             <TestTailwind />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workspace/follow-up"
+        element={
+          <ProtectedRoute>
+            <CustomerFollowUpPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workspace/tasks"
+        element={
+          <ProtectedRoute>
+            <TasksPage />
           </ProtectedRoute>
         }
       />
