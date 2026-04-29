@@ -15,26 +15,6 @@ interface ProductAssociationTableProps {
   loading?: boolean;
 }
 
-/**
- * Conversion rate thresholds for color coding
- */
-const CONVERSION_RATE_THRESHOLDS = {
-  HIGH: 20,
-  LOW: 5,
-} as const;
-
-/**
- * Get conversion rate color based on value
- */
-const getConversionRateColor = (rate: number): string => {
-  if (rate >= CONVERSION_RATE_THRESHOLDS.HIGH) {
-    return 'text-green-600 font-semibold'; // High conversion rate
-  } else if (rate < CONVERSION_RATE_THRESHOLDS.LOW) {
-    return 'text-red-600 font-semibold'; // Low conversion rate
-  }
-  return 'text-monday-text'; // Normal
-};
-
 export const ProductAssociationTable: React.FC<ProductAssociationTableProps> = ({
   data,
   loading = false,
@@ -99,20 +79,10 @@ export const ProductAssociationTable: React.FC<ProductAssociationTableProps> = (
       sortable: true,
       render: (value) => value.toLocaleString(),
     },
-    {
-      key: 'conversionRate',
-      header: '转化率',
-      sortable: true,
-      render: (value) => (
-        <span className={getConversionRateColor(value)}>
-          {value.toFixed(2)}%
-        </span>
-      ),
-    },
   ];
 
   if (loading) {
-    const colCount = 8;
+    const colCount = 7;
     return (
       <div className="w-full rounded-monday-lg overflow-hidden bg-monday-surface border border-gray-200">
         <div className="overflow-x-auto">

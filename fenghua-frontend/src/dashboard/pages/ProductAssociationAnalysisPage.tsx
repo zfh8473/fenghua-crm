@@ -15,12 +15,10 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import {
   getProductAssociationAnalysis,
-  getConversionRateTrend,
   getProductCategories,
   ProductAssociationAnalysisQuery,
 } from '../services/product-association-analysis.service';
 import { ProductAssociationTable } from '../components/ProductAssociationTable';
-import { ConversionRateTrendChart } from '../components/ConversionRateTrendChart';
 import { AnalysisExportDialog } from '../components/AnalysisExportDialog';
 
 /**
@@ -96,29 +94,6 @@ export const ProductAssociationAnalysisPage: React.FC = () => {
     enabled: !!token && hasAccess,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (React Query 5.x)
-  });
-
-  // Fetch conversion rate trend
-  const {
-    data: trendData,
-    isLoading: isLoadingTrend,
-    error: trendError,
-  } = useQuery({
-    queryKey: ['conversion-rate-trend', selectedCategory, filters.startDate, filters.endDate],
-    queryFn: () => {
-      if (!token) {
-        throw new Error('未登录，请先登录');
-      }
-      return getConversionRateTrend(
-        token,
-        selectedCategory || undefined,
-        filters.startDate,
-        filters.endDate,
-      );
-    },
-    enabled: !!token && hasAccess,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const handleFilterChange = (key: keyof ProductAssociationAnalysisQuery, value: any) => {
@@ -258,19 +233,6 @@ export const ProductAssociationAnalysisPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Conversion Rate Trend Chart */}
-        <Card variant="default" className="p-monday-6">
-          <h2 className="text-monday-lg font-semibold text-monday-text mb-monday-4">
-            订单转化率趋势
-          </h2>
-          <div id="conversion-rate-chart">
-            <ConversionRateTrendChart
-              data={trendData?.trends || []}
-              loading={isLoadingTrend}
-            />
-          </div>
-        </Card>
-
         {/* Product Association Table */}
         <Card variant="default" className="p-monday-6">
           <div className="flex items-center justify-between mb-monday-4">
@@ -333,7 +295,7 @@ export const ProductAssociationAnalysisPage: React.FC = () => {
             startDate: filters.startDate,
             endDate: filters.endDate,
           }}
-          chartElementIds={['conversion-rate-chart']}
+          chartElementIds={[]}
           isOpen={isExportDialogOpen}
           onClose={() => setIsExportDialogOpen(false)}
           token={token}
