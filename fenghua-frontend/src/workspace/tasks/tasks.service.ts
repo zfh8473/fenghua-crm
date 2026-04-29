@@ -1,7 +1,3 @@
-const API = () =>
-  (import.meta.env?.VITE_API_BASE_URL as string) ||
-  (import.meta.env?.VITE_BACKEND_URL as string) ||
-  '/api';
 
 export type TaskPriority = 'HIGH' | 'MEDIUM' | 'LOW';
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
@@ -35,7 +31,11 @@ export interface UpdateTaskDto {
 }
 
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API()}${path}`, {
+  const apiBaseUrl =
+    (import.meta.env?.VITE_API_BASE_URL as string) ||
+    (import.meta.env?.VITE_BACKEND_URL as string) ||
+    '/api';
+  const res = await fetch(`${apiBaseUrl}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
