@@ -287,7 +287,7 @@ export const CustomerFollowUpPage: React.FC = () => {
 
               {items.map((item) => {
                 const cfg = STATUS_CONFIG[item.followUpStatus];
-                const isEditing = editingId === item.id;
+                const isEditing = editingId === item.customerId;
 
                 return (
                   <div
