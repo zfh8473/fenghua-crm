@@ -86,6 +86,9 @@ export class HealthService implements OnModuleDestroy {
       this.redisClient = redis.createClient({
         url: redisUrl,
       });
+      this.redisClient.on('error', (error) => {
+        this.logger.warn('Redis client error', error.message);
+      });
       // Connect immediately to reuse connection for health checks
       this.redisClient.connect().catch((error) => {
         this.logger.warn('Redis connection will be established on first health check', error);

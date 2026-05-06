@@ -286,14 +286,17 @@ export class AuditService implements OnModuleDestroy {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     `;
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const toUuid = (val: string | undefined) => (val && uuidRegex.test(val) ? val : null);
+
     await this.pgPool.query(query, [
       auditLog.action,
       auditLog.entityType,
       auditLog.entityId,
       auditLog.oldValue ? JSON.stringify(auditLog.oldValue) : null,
       auditLog.newValue ? JSON.stringify(auditLog.newValue) : null,
-      auditLog.userId,
-      auditLog.operatorId,
+      toUuid(auditLog.userId),
+      toUuid(auditLog.operatorId),
       auditLog.timestamp,
       auditLog.reason || null,
       auditLog.metadata ? JSON.stringify(auditLog.metadata) : null,
