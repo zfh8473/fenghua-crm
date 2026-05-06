@@ -30,17 +30,6 @@ const PencilIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
   </svg>
 );
 
-const CheckIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const XIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
 
 // ── Status config ──────────────────────────────────────────────────────────────
 
@@ -328,7 +317,7 @@ export const CustomerFollowUpPage: React.FC = () => {
                 return (
                   <div
                     key={item.customerId}
-                    className={`border-b border-gray-100 last:border-b-0 ${cfg.rowCls} transition-colors duration-150 group`}
+                    className={`border-b border-gray-100 last:border-b-0 ${cfg.rowCls} transition-colors duration-150`}
                   >
                     {isEditing ? (
                       <div className="px-monday-5 py-monday-4 bg-uipro-cta/[0.04] border-l-[3px] border-l-uipro-cta">
@@ -423,12 +412,13 @@ export const CustomerFollowUpPage: React.FC = () => {
 
                         {/* Edit action (manager only) */}
                         {manager && (
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setEditingId(item.customerId)}
-                            className="inline-flex items-center gap-1 px-monday-2 py-monday-1 rounded-monday-md text-monday-xs text-monday-text-secondary hover:text-monday-text hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-uipro-cta"
                           >
-                            <PencilIcon />配置
-                          </button>
+                            配置
+                          </Button>
                         )}
                       </div>
                     )}
