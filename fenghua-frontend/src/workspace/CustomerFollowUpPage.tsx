@@ -60,8 +60,6 @@ const STATUS_CONFIG: Record<FollowUpStatus, { label: string; badgeCls: string; b
   },
 };
 
-const SELECT_CLS = 'rounded-monday-md border border-gray-300 px-monday-3 py-monday-1 text-monday-sm bg-white focus:outline-none focus:ring-2 focus:ring-uipro-cta cursor-pointer';
-
 const MANAGER_ROLES = ['ADMIN', 'DIRECTOR'];
 const isManagerRole = (role?: string | null) => !!role && MANAGER_ROLES.includes(role.toUpperCase());
 
@@ -302,12 +300,12 @@ export const CustomerFollowUpPage: React.FC = () => {
           ) : (
             <div className="rounded-monday-lg border border-gray-200 overflow-hidden">
               {/* Table header */}
-              <div className="bg-monday-bg border-b border-gray-200 grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-monday-4 px-monday-4 py-monday-3">
+              <div className={`bg-monday-bg border-b border-gray-200 grid ${manager ? 'grid-cols-[2fr_1fr_1fr_1fr_auto]' : 'grid-cols-[2fr_1fr_1fr_auto]'} gap-monday-4 px-monday-4 py-monday-3`}>
                 <span className="text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">客户名称</span>
                 {manager && <span className="text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">负责人</span>}
                 <span className="text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">上次联系</span>
                 <span className="text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">跟进状态</span>
-                {manager && <span className="text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">操作</span>}
+                <span className="text-monday-xs font-semibold text-monday-text-secondary uppercase tracking-wider">操作</span>
               </div>
 
               {items.map((item) => {
@@ -345,7 +343,7 @@ export const CustomerFollowUpPage: React.FC = () => {
                         />
                       </div>
                     ) : (
-                      <div className={`grid px-monday-4 py-monday-3 hover:bg-monday-bg/50 ${manager ? 'grid-cols-[2fr_1fr_1fr_1fr_auto]' : 'grid-cols-[2fr_1fr_1fr]'} gap-monday-4 items-center`}>
+                      <div className={`grid px-monday-4 py-monday-3 hover:bg-monday-bg/50 ${manager ? 'grid-cols-[2fr_1fr_1fr_1fr_auto]' : 'grid-cols-[2fr_1fr_1fr_auto]'} gap-monday-4 items-center`}>
                         {/* Customer name */}
                         <div
                           className="flex items-center gap-monday-2 cursor-pointer"
@@ -410,16 +408,27 @@ export const CustomerFollowUpPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Edit action (manager only) */}
-                        {manager && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingId(item.customerId)}
-                          >
-                            配置
-                          </Button>
-                        )}
+                        {/* Actions */}
+                        <div className="flex items-center gap-monday-2">
+                          {(item.followUpStatus === 'overdue' || item.followUpStatus === 'soon') && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => navigate(`/interactions/create?customerId=${item.customerId}`)}
+                            >
+                              记录互动
+                            </Button>
+                          )}
+                          {manager && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingId(item.customerId)}
+                            >
+                              配置
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
