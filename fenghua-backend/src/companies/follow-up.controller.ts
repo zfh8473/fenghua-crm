@@ -9,9 +9,8 @@ import {
   Req,
   ParseUUIDPipe,
   ForbiddenException,
-  IsOptional,
 } from '@nestjs/common';
-import { IsInt, IsUUID, ValidateIf } from 'class-validator';
+import { IsInt, IsUUID, IsOptional, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
