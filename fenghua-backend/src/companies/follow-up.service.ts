@@ -78,6 +78,7 @@ export class FollowUpService implements OnModuleInit {
     userId: string,
     userRoles: string[],
     ownerFilter?: string,
+    customerType?: string,
   ): Promise<FollowUpItem[]> {
     if (!this.pgPool) throw new BadRequestException('数据库连接未初始化');
 
@@ -95,7 +96,6 @@ export class FollowUpService implements OnModuleInit {
     } else {
       params.push(userId);
       conditions.push(`c.owner_id = $${params.length}`);
-      // Specialists are restricted by customer type
       const isFrontend = userRoles.includes('FRONTEND_SPECIALIST');
       const isBackend = userRoles.includes('BACKEND_SPECIALIST');
       if (isFrontend) {
@@ -103,6 +103,11 @@ export class FollowUpService implements OnModuleInit {
       } else if (isBackend) {
         conditions.push(`c.customer_type = 'SUPPLIER'`);
       }
+    }
+
+    if (customerType && ['BUYER', 'SUPPLIER'].includes(customerType)) {
+      params.push(customerType);
+      conditions.push(`c.customer_type = $${params.length}`);
     }
 
     const whereClause = conditions.join(' AND ');

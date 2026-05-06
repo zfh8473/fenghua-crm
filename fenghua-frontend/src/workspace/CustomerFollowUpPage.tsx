@@ -146,7 +146,8 @@ export const CustomerFollowUpPage: React.FC = () => {
   const manager = isManagerRole(user?.role);
   const selfId = user?.id || '';
 
-  const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [ownerFilter, setOwnerFilter] = useState<string>('self');
+  const [typeFilter, setTypeFilter] = useState<string>('BUYER');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const { data: assignees = [] } = useQuery({
@@ -155,11 +156,14 @@ export const CustomerFollowUpPage: React.FC = () => {
     enabled: !!token && manager,
   });
 
-  const effectiveFilter = !manager ? undefined : ownerFilter === 'all' ? undefined : ownerFilter;
+  const effectiveOwner = manager
+    ? ownerFilter === 'all' ? undefined : ownerFilter === 'self' ? selfId : ownerFilter
+    : undefined;
+  const effectiveType = typeFilter === 'all' ? undefined : typeFilter;
 
   const { data: items = [], isLoading, error } = useQuery({
-    queryKey: ['follow-up', effectiveFilter ?? 'all'],
-    queryFn: () => followUpService.getList(token!, effectiveFilter),
+    queryKey: ['follow-up', effectiveOwner ?? 'all', effectiveType ?? 'all'],
+    queryFn: () => followUpService.getList(token!, effectiveOwner, effectiveType),
     enabled: !!token,
     staleTime: 2 * 60 * 1000,
   });
@@ -178,13 +182,16 @@ export const CustomerFollowUpPage: React.FC = () => {
   const overdueCount = items.filter((i) => i.followUpStatus === 'overdue').length;
   const soonCount = items.filter((i) => i.followUpStatus === 'soon').length;
 
+  const typeLabel = typeFilter === 'BUYER' ? '采购商' : typeFilter === 'SUPPLIER' ? '供应商' : '全部';
   const pageTitle = !manager
-    ? '我的跟进客户'
+    ? `我的跟进客户（${typeLabel}）`
     : ownerFilter === 'all'
-    ? '全部客户跟进'
+    ? `全部客户跟进（${typeLabel}）`
+    : ownerFilter === 'self'
+    ? `我的客户（${typeLabel}）`
     : ownerFilter === 'unassigned'
-    ? '未分配客户'
-    : `${assignees.find((a) => a.id === ownerFilter)?.displayName ?? ''} 的客户`;
+    ? `未分配客户（${typeLabel}）`
+    : `${assignees.find((a) => a.id === ownerFilter)?.displayName ?? ''} 的客户（${typeLabel}）`;
 
   return (
     <MainLayout title="客户跟进">
@@ -213,12 +220,39 @@ export const CustomerFollowUpPage: React.FC = () => {
           </div>
         )}
 
-        {/* Manager: owner filter bar */}
-        {manager && (
-          <Card variant="default" className="px-monday-6 py-monday-3">
-            <div className="flex items-center gap-monday-3 flex-wrap">
+        {/* Filter bars */}
+        <Card variant="default" className="px-monday-6 py-monday-3 space-y-monday-3">
+          {/* Customer type filter — always visible */}
+          <div className="flex items-center gap-monday-3 flex-wrap">
+            <span className="text-monday-sm font-medium text-monday-text-secondary">类型：</span>
+            {([
+              { key: 'BUYER', label: '采购商' },
+              { key: 'SUPPLIER', label: '供应商' },
+              { key: 'all', label: '全部' },
+            ] as const).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => { setTypeFilter(key); setEditingId(null); }}
+                className={`px-monday-3 py-monday-1 rounded-full text-monday-sm font-medium transition-colors duration-150 cursor-pointer ${
+                  typeFilter === key
+                    ? 'bg-uipro-cta text-white'
+                    : 'bg-gray-100 text-monday-text-secondary hover:bg-gray-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Manager: owner filter */}
+          {manager && (
+            <div className="flex items-center gap-monday-3 flex-wrap border-t border-gray-100 pt-monday-3">
               <span className="text-monday-sm font-medium text-monday-text-secondary">查看：</span>
-              {(['all', 'unassigned'] as const).map((key) => (
+              {([
+                { key: 'self', label: '我的客户' },
+                { key: 'all', label: '全部客户' },
+                { key: 'unassigned', label: '未分配' },
+              ] as const).map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => { setOwnerFilter(key); setEditingId(null); }}
@@ -228,10 +262,10 @@ export const CustomerFollowUpPage: React.FC = () => {
                       : 'bg-gray-100 text-monday-text-secondary hover:bg-gray-200'
                   }`}
                 >
-                  {key === 'all' ? '全部客户' : '未分配'}
+                  {label}
                 </button>
               ))}
-              {assignees.map((a) => (
+              {assignees.filter((a) => a.id !== selfId).map((a) => (
                 <button
                   key={a.id}
                   onClick={() => { setOwnerFilter(a.id); setEditingId(null); }}
@@ -242,12 +276,12 @@ export const CustomerFollowUpPage: React.FC = () => {
                   }`}
                 >
                   <UserIcon className="w-3 h-3" />
-                  {a.displayName}{a.id === selfId ? '（我）' : ''}
+                  {a.displayName}
                 </button>
               ))}
             </div>
-          </Card>
-        )}
+          )}
+        </Card>
 
         {/* Main table */}
         <Card variant="default" className="p-monday-6">

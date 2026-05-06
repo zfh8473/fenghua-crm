@@ -50,11 +50,13 @@ export class FollowUpController {
   getFollowUpList(
     @Req() req: AuthReq,
     @Query('owner') ownerFilter?: string,
+    @Query('type') customerType?: string,
   ) {
     return this.followUpService.getFollowUpList(
       req.user!.id,
       req.user?.roles || [],
       ownerFilter,
+      customerType,
     );
   }
 

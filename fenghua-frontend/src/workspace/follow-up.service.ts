@@ -42,8 +42,11 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
 }
 
 export const followUpService = {
-  getList: (token: string, ownerFilter?: string) => {
-    const qs = ownerFilter ? `?owner=${ownerFilter}` : '';
+  getList: (token: string, ownerFilter?: string, customerType?: string) => {
+    const params = new URLSearchParams();
+    if (ownerFilter) params.set('owner', ownerFilter);
+    if (customerType) params.set('type', customerType);
+    const qs = params.toString() ? `?${params.toString()}` : '';
     return request<FollowUpItem[]>(`/workspace/follow-up${qs}`, token);
   },
 
