@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString, IsUUID } from 'class-validator';
 import { TaskPriority, TaskStatus } from './create-task.dto';
 
 export class UpdateTaskDto {
@@ -21,4 +21,8 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string; // YYYY-MM-DD, pass null to clear
+
+  @IsOptional()
+  @IsUUID()
+  assigneeId?: string;
 }

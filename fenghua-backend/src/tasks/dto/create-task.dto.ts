@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString, IsUUID } from 'class-validator';
 
 export enum TaskPriority {
   HIGH = 'HIGH',
@@ -31,4 +31,8 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string; // YYYY-MM-DD
+
+  @IsOptional()
+  @IsUUID()
+  assigneeId?: string;
 }

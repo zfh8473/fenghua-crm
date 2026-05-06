@@ -10,8 +10,16 @@ export interface Task {
   status: TaskStatus;
   dueDate: string | null; // YYYY-MM-DD
   createdBy: string;
+  assigneeId: string;
+  assigneeName: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TeamMember {
+  id: string;
+  displayName: string;
+  email: string;
 }
 
 export interface CreateTaskDto {
@@ -20,6 +28,7 @@ export interface CreateTaskDto {
   priority?: TaskPriority;
   status?: TaskStatus;
   dueDate?: string;
+  assigneeId?: string;
 }
 
 export interface UpdateTaskDto {
@@ -28,6 +37,7 @@ export interface UpdateTaskDto {
   priority?: TaskPriority;
   status?: TaskStatus;
   dueDate?: string | null;
+  assigneeId?: string;
 }
 
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
@@ -52,8 +62,10 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
 }
 
 export const tasksService = {
-  getAll: (token: string) =>
-    request<Task[]>('/tasks', token),
+  getAll: (token: string, assigneeId?: string) => {
+    const qs = assigneeId ? `?assignee_id=${assigneeId}` : '';
+    return request<Task[]>(`/tasks${qs}`, token);
+  },
 
   create: (token: string, dto: CreateTaskDto) =>
     request<Task>('/tasks', token, {
@@ -69,4 +81,7 @@ export const tasksService = {
 
   remove: (token: string, id: string) =>
     request<void>(`/tasks/${id}`, token, { method: 'DELETE' }),
+
+  getTeamMembers: (token: string) =>
+    request<TeamMember[]>('/tasks/team-members', token),
 };
