@@ -118,7 +118,7 @@ export class FollowUpService implements OnModuleInit {
          MAX(pci.interaction_date) AS last_interaction_date,
          CASE
            WHEN MAX(pci.interaction_date) IS NULL THEN NULL
-           ELSE GREATEST(0, EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(pci.interaction_date)::date)) / 86400)
+           ELSE GREATEST(0, CURRENT_DATE - MAX(pci.interaction_date)::date)
          END AS days_since_last_interaction
        FROM companies c
        LEFT JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
@@ -129,11 +129,11 @@ export class FollowUpService implements OnModuleInit {
        ORDER BY
          CASE
            WHEN MAX(pci.interaction_date) IS NULL THEN 2
-           WHEN (c.follow_up_interval_days - GREATEST(0, EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(pci.interaction_date)::date)) / 86400)) < 0 THEN 0
-           WHEN (c.follow_up_interval_days - GREATEST(0, EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(pci.interaction_date)::date)) / 86400)) <= 7 THEN 1
+           WHEN (c.follow_up_interval_days - GREATEST(0, CURRENT_DATE - MAX(pci.interaction_date)::date)) < 0 THEN 0
+           WHEN (c.follow_up_interval_days - GREATEST(0, CURRENT_DATE - MAX(pci.interaction_date)::date)) <= 7 THEN 1
            ELSE 3
          END ASC,
-         (c.follow_up_interval_days - GREATEST(0, EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(pci.interaction_date)::date)) / 86400)) ASC NULLS LAST,
+         (c.follow_up_interval_days - GREATEST(0, CURRENT_DATE - MAX(pci.interaction_date)::date)) ASC NULLS LAST,
          c.name ASC`,
       params,
     );
