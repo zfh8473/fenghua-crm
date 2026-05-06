@@ -37,6 +37,7 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || `请求失败 (${res.status})`);
   }
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
