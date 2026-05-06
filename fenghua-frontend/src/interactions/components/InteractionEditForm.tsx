@@ -53,6 +53,7 @@ const STATUS_OPTIONS_FRONTEND = [
   { value: InteractionStatus.IN_PROGRESS, label: '进行中' },
   { value: InteractionStatus.COMPLETED, label: '已完成' },
   { value: InteractionStatus.CANCELLED, label: '已取消' },
+  { value: InteractionStatus.NEEDS_FOLLOW_UP, label: '待跟进' },
 ];
 
 const STATUS_OPTIONS_BACKEND = [
