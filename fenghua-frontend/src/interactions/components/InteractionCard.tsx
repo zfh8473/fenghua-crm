@@ -135,13 +135,16 @@ export const InteractionCard: React.FC<InteractionCardProps> = ({
                   },
                 },
               })}
-              className="inline-flex items-center gap-1 px-monday-3 py-monday-1 rounded-monday-md text-monday-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors duration-150 cursor-pointer"
-              title="基于此互动创建跟进待办"
+              className="p-monday-2 text-[#0369A1] bg-[#0369A1]/10 hover:bg-[#0369A1]/20 hover:text-[#025a8a] border border-[#0369A1]/30 hover:border-[#0369A1]/50 rounded-monday-md transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+              aria-label="创建待办"
+              title="创建跟进待办"
             >
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                <rect x="9" y="3" width="6" height="4" rx="1" />
+                <line x1="9" y1="12" x2="15" y2="12" />
+                <line x1="9" y1="16" x2="13" y2="16" />
               </svg>
-              创建待办
             </button>
           )}
           <ActionButtons
