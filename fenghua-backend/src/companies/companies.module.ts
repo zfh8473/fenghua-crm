@@ -13,10 +13,12 @@ import { CustomerProductAssociationController } from './customer-product-associa
 import { CustomerProductInteractionHistoryController } from './customer-product-interaction-history.controller';
 import { CustomerTimelineController } from './customer-timeline.controller';
 import { CustomerProductAssociationManagementController } from './customer-product-association-management.controller';
+import { FollowUpController } from './follow-up.controller';
 import { CompaniesService } from './companies.service';
 import { CustomerProductAssociationService } from './customer-product-association.service';
 import { CustomerProductInteractionHistoryService } from './customer-product-interaction-history.service';
 import { CustomerTimelineService } from './customer-timeline.service';
+import { FollowUpService } from './follow-up.service';
 import { AuthModule } from '../auth/auth.module';
 import { PermissionModule } from '../permission/permission.module';
 import { AuditModule } from '../audit/audit.module';
@@ -40,18 +42,21 @@ import { forwardRef } from '@nestjs/common';
     CustomerProductAssociationController, // Handles /customers/:id/products routes
     CustomerProductInteractionHistoryController, // Handles /customers/:customerId/interactions routes
     CustomerTimelineController, // Handles /customers/:customerId/timeline routes
+    FollowUpController, // Handles /workspace/follow-up routes
   ],
   providers: [
     CompaniesService,
     CustomerProductAssociationService,
     CustomerProductInteractionHistoryService,
     CustomerTimelineService,
+    FollowUpService,
   ],
   exports: [
     CompaniesService,
     CustomerProductAssociationService,
     CustomerProductInteractionHistoryService,
     CustomerTimelineService,
+    FollowUpService,
   ],
 })
 export class CompaniesModule {}
