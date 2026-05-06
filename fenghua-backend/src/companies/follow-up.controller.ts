@@ -9,6 +9,8 @@ import {
   Req,
   ParseUUIDPipe,
   ForbiddenException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { IsInt, IsUUID, IsOptional, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -57,6 +59,7 @@ export class FollowUpController {
   }
 
   @Patch(':customerId/config')
+  @HttpCode(HttpStatus.NO_CONTENT)
   assignConfig(
     @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() dto: AssignConfigDto,
