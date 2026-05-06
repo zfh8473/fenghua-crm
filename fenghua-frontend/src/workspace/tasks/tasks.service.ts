@@ -12,6 +12,7 @@ export interface Task {
   createdBy: string;
   assigneeId: string;
   assigneeName: string | null;
+  interactionId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +30,7 @@ export interface CreateTaskDto {
   status?: TaskStatus;
   dueDate?: string;
   assigneeId?: string;
+  interactionId?: string;
 }
 
 export interface UpdateTaskDto {

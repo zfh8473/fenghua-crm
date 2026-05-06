@@ -22,6 +22,7 @@ export interface Task {
   createdBy: string;
   assigneeId: string;
   assigneeName: string | null;
+  interactionId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,6 +81,9 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
       await this.pgPool.query(`
         UPDATE tasks SET assignee_id = created_by WHERE assignee_id IS NULL AND deleted_at IS NULL
       `);
+      await this.pgPool.query(`
+        ALTER TABLE tasks ADD COLUMN IF NOT EXISTS interaction_id UUID REFERENCES product_customer_interactions(id)
+      `);
       this.logger.log('tasks table ready');
     } catch (error) {
       this.logger.error('Failed to initialize tasks table', error);
@@ -110,7 +114,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
     const result = await this.pgPool.query(
       `SELECT t.id, t.title, t.description, t.priority, t.status,
               TO_CHAR(t.due_date, 'YYYY-MM-DD') AS due_date,
-              t.created_by, t.assignee_id,
+              t.created_by, t.assignee_id, t.interaction_id,
               NULLIF(TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')), '') AS assignee_name,
               t.created_at, t.updated_at
        FROM tasks t
@@ -138,7 +142,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
     const result = await this.pgPool.query(
       `SELECT t.id, t.title, t.description, t.priority, t.status,
               TO_CHAR(t.due_date, 'YYYY-MM-DD') AS due_date,
-              t.created_by, t.assignee_id,
+              t.created_by, t.assignee_id, t.interaction_id,
               NULLIF(TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')), '') AS assignee_name,
               t.created_at, t.updated_at
        FROM tasks t
@@ -162,8 +166,8 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
     const assigneeId = isManager(userRoles) && dto.assigneeId ? dto.assigneeId : userId;
 
     const result = await this.pgPool.query(
-      `INSERT INTO tasks (title, description, priority, status, due_date, assignee_id, created_by, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+      `INSERT INTO tasks (title, description, priority, status, due_date, assignee_id, interaction_id, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
        RETURNING id`,
       [
         dto.title.trim(),
@@ -172,6 +176,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
         dto.status || TaskStatus.PENDING,
         dto.dueDate || null,
         assigneeId,
+        dto.interactionId || null,
         userId,
       ],
     );
@@ -248,6 +253,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
       createdBy: row.created_by,
       assigneeId: row.assignee_id,
       assigneeName: row.assignee_name || null,
+      interactionId: row.interaction_id || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };

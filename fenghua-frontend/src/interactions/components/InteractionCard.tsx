@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { Interaction } from '../services/interactions.service';
+import { useNavigate } from 'react-router-dom';
+import { Interaction, InteractionStatus } from '../services/interactions.service';
 import { Card } from '../../components/ui/Card';
 import { TypeBadge } from './InteractionCard/TypeBadge';
 import { StatusBadge } from './InteractionCard/StatusBadge';
@@ -42,12 +43,13 @@ const buildingIcon = (
   </svg>
 );
 
-export const InteractionCard: React.FC<InteractionCardProps> = ({ 
-  interaction, 
+export const InteractionCard: React.FC<InteractionCardProps> = ({
+  interaction,
   onInteractionClick,
   className = '',
   users = []
 }) => {
+  const navigate = useNavigate();
   // Find creator from users list passed from parent (performance optimization)
   const creator = users.find((u) => u.id === interaction.createdBy);
 
@@ -122,10 +124,31 @@ export const InteractionCard: React.FC<InteractionCardProps> = ({
           creatorName={creator ? `${creator.firstName || ''} ${creator.lastName || ''}`.trim() || creator.email : undefined}
           creator={creator}
         />
-        <ActionButtons
-          interactionId={interaction.id}
-          onView={handleCardClick}
-        />
+        <div className="flex items-center gap-monday-2" onClick={(e) => e.stopPropagation()}>
+          {interaction.status === InteractionStatus.NEEDS_FOLLOW_UP && (
+            <button
+              onClick={() => navigate('/workspace/tasks', {
+                state: {
+                  createFrom: {
+                    interactionId: interaction.id,
+                    title: `跟进：${interaction.customerName}`,
+                  },
+                },
+              })}
+              className="inline-flex items-center gap-1 px-monday-3 py-monday-1 rounded-monday-md text-monday-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors duration-150 cursor-pointer"
+              title="基于此互动创建跟进待办"
+            >
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              创建待办
+            </button>
+          )}
+          <ActionButtons
+            interactionId={interaction.id}
+            onView={handleCardClick}
+          />
+        </div>
       </div>
     </Card>
   );

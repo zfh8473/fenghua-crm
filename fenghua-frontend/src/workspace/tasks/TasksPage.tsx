@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { MainLayout } from '../../components/layout/MainLayout';
 import { Card } from '../../components/ui/Card';
@@ -53,6 +54,13 @@ const UserIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
     <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const LinkIcon = ({ className = 'w-3 h-3' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
   </svg>
 );
 
@@ -126,10 +134,11 @@ interface CreateFormProps {
   isManager: boolean;
   members: TeamMember[];
   selfId: string;
+  initialValues?: { title?: string; interactionId?: string };
 }
 
-const CreateForm: React.FC<CreateFormProps> = ({ onSave, onCancel, saving, isManager, members, selfId }) => {
-  const [title, setTitle] = useState('');
+const CreateForm: React.FC<CreateFormProps> = ({ onSave, onCancel, saving, isManager, members, selfId, initialValues }) => {
+  const [title, setTitle] = useState(initialValues?.title || '');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
   const [dueDate, setDueDate] = useState('');
@@ -144,11 +153,18 @@ const CreateForm: React.FC<CreateFormProps> = ({ onSave, onCancel, saving, isMan
       priority,
       dueDate: dueDate || undefined,
       assigneeId: isManager ? assigneeId : undefined,
+      interactionId: initialValues?.interactionId,
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-monday-3 p-monday-4 bg-monday-bg/60 rounded-monday-lg border border-gray-200 shadow-sm">
+      {initialValues?.interactionId && (
+        <div className="flex items-center gap-monday-2 text-monday-xs text-uipro-cta bg-uipro-cta/5 border border-uipro-cta/20 rounded-monday-md px-monday-3 py-monday-2">
+          <LinkIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>此任务将关联到对应的互动记录</span>
+        </div>
+      )}
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -367,6 +383,16 @@ const TaskRow: React.FC<TaskRowProps> = ({
             截止 {new Date(task.dueDate + 'T00:00:00').toLocaleDateString('zh-CN')}
           </p>
         )}
+        {task.interactionId && (
+          <Link
+            to={`/interactions/${task.interactionId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-monday-xs text-uipro-cta hover:underline mt-monday-1"
+          >
+            <LinkIcon />
+            查看关联互动记录
+          </Link>
+        )}
       </div>
 
       {/* Actions */}
@@ -396,11 +422,14 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
 export const TasksPage: React.FC = () => {
   const { token, user } = useAuth();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const manager = isManagerRole(user?.role);
   const selfId = user?.id || '';
 
-  const [showCreate, setShowCreate] = useState(false);
+  const createFrom = (location.state as { createFrom?: { interactionId: string; title: string } } | null)?.createFrom;
+
+  const [showCreate, setShowCreate] = useState(!!createFrom);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
@@ -578,6 +607,7 @@ export const TasksPage: React.FC = () => {
                 isManager={manager}
                 members={members}
                 selfId={selfId}
+                initialValues={createFrom}
               />
             </div>
           )}
