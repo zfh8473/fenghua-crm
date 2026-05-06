@@ -76,7 +76,9 @@ const SELECT_CLS = 'rounded-monday-md border border-gray-300 px-monday-3 py-mond
 const MANAGER_ROLES = ['ADMIN', 'DIRECTOR'];
 const isManagerRole = (role?: string | null) => !!role && MANAGER_ROLES.includes(role.toUpperCase());
 
-// ── Inline config row ──────────────────────────────────────────────────────���───
+// ── Inline config row ─────────────────────────────────────────────────────────
+
+const SELECT_EDIT_CLS = 'rounded-monday-md border border-gray-300 px-monday-3 py-1.5 text-monday-sm bg-white focus:outline-none focus:ring-2 focus:ring-uipro-cta cursor-pointer min-w-[140px]';
 
 interface ConfigRowProps {
   item: FollowUpItem;
@@ -92,11 +94,11 @@ const ConfigRow: React.FC<ConfigRowProps> = ({ item, assignees, onSave, onCancel
   const [intervalDays, setIntervalDays] = useState<number>(item.followUpIntervalDays);
 
   return (
-    <div className="flex items-center gap-monday-3 flex-wrap">
-      <div className="flex flex-col gap-monday-1">
-        <label className="text-monday-xs text-monday-text-secondary">负责人</label>
-        <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className={SELECT_CLS}>
-          <option value="">未分配</option>
+    <div className="flex items-end gap-monday-4 flex-wrap">
+      <div className="flex flex-col gap-1">
+        <label className="text-[11px] font-semibold text-uipro-cta uppercase tracking-wide">负责人</label>
+        <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className={SELECT_EDIT_CLS}>
+          <option value="">— 未分配 —</option>
           {assignees.map((a) => (
             <option key={a.id} value={a.id}>
               {a.displayName}{a.id === selfId ? '（我）' : ''}
@@ -104,32 +106,32 @@ const ConfigRow: React.FC<ConfigRowProps> = ({ item, assignees, onSave, onCancel
           ))}
         </select>
       </div>
-      <div className="flex flex-col gap-monday-1">
-        <label className="text-monday-xs text-monday-text-secondary">跟进周期</label>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[11px] font-semibold text-uipro-cta uppercase tracking-wide">跟进周期</label>
         <select
           value={intervalDays}
           onChange={(e) => setIntervalDays(Number(e.target.value))}
-          className={SELECT_CLS}
+          className={SELECT_EDIT_CLS}
         >
           {FOLLOW_UP_INTERVALS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
       </div>
-      <div className="flex items-end gap-monday-1 pb-0.5">
-        <button
-          onClick={() => onSave(ownerId || null, intervalDays)}
+
+      <div className="flex items-center gap-monday-2 pb-px">
+        <Button
+          variant="primary"
+          size="sm"
           disabled={saving}
-          className="inline-flex items-center gap-1 px-monday-2 py-monday-1 rounded-monday-md text-monday-xs text-green-700 hover:bg-green-50 transition-colors cursor-pointer"
+          onClick={() => onSave(ownerId || null, intervalDays)}
         >
-          <CheckIcon />{saving ? '保存中…' : '保存'}
-        </button>
-        <button
-          onClick={onCancel}
-          className="inline-flex items-center gap-1 px-monday-2 py-monday-1 rounded-monday-md text-monday-xs text-monday-text-secondary hover:bg-gray-100 transition-colors cursor-pointer"
-        >
-          <XIcon />取消
-        </button>
+          {saving ? '保存中…' : '保存'}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onCancel}>
+          取消
+        </Button>
       </div>
     </div>
   );
@@ -295,9 +297,10 @@ export const CustomerFollowUpPage: React.FC = () => {
                     className={`border-b border-gray-100 last:border-b-0 ${cfg.rowCls} transition-colors duration-150 group`}
                   >
                     {isEditing ? (
-                      <div className="px-monday-4 py-monday-3 bg-monday-bg/40">
-                        <div className="flex items-center gap-monday-3 mb-monday-3">
-                          <span className="font-medium text-monday-text">{item.customerName}</span>
+                      <div className="px-monday-5 py-monday-4 bg-uipro-cta/[0.04] border-l-[3px] border-l-uipro-cta">
+                        <div className="flex items-center gap-monday-2 mb-monday-4">
+                          <PencilIcon className="w-3.5 h-3.5 text-uipro-cta flex-shrink-0" />
+                          <span className="text-monday-sm font-semibold text-monday-text">{item.customerName}</span>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-monday-xs font-medium ${
                             item.customerType === 'BUYER'
                               ? 'bg-uipro-cta/10 text-uipro-cta ring-1 ring-uipro-cta/20'
@@ -305,6 +308,7 @@ export const CustomerFollowUpPage: React.FC = () => {
                           }`}>
                             {item.customerType === 'BUYER' ? '采购商' : '供应商'}
                           </span>
+                          <span className="text-monday-xs text-monday-text-secondary ml-1">编辑跟进配置</span>
                         </div>
                         <ConfigRow
                           item={item}
