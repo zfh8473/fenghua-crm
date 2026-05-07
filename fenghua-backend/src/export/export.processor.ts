@@ -24,7 +24,7 @@ import { AuthService } from '../auth/auth.service';
 import { AuditService } from '../audit/audit.service';
 import { ExportRecord, AnyExportRecord } from './types/export-record.types';
 
-@Processor('export-queue')
+@Processor('export-queue', { stalledInterval: 300_000 })
 @Injectable()
 export class ExportProcessor extends WorkerHost implements OnModuleDestroy {
   private readonly logger = new Logger(ExportProcessor.name);
@@ -518,4 +518,3 @@ export class ExportProcessor extends WorkerHost implements OnModuleDestroy {
     }
   }
 }
-
