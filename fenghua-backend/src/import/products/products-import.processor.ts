@@ -38,7 +38,7 @@ export interface ImportJobResult {
   }>;
 }
 
-@Processor('product-import-queue')
+@Processor('product-import-queue', { stalledInterval: 300_000 })
 @Injectable()
 export class ProductsImportProcessor extends WorkerHost implements OnModuleDestroy {
   private readonly logger = new Logger(ProductsImportProcessor.name);
@@ -631,4 +631,3 @@ export class ProductsImportProcessor extends WorkerHost implements OnModuleDestr
     }
   }
 }
-
