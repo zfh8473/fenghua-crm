@@ -37,7 +37,7 @@ export interface ImportJobResult {
   }>;
 }
 
-@Processor('customer-import-queue')
+@Processor('customer-import-queue', { stalledInterval: 300_000 })
 @Injectable()
 export class CustomersImportProcessor extends WorkerHost {
   private readonly logger = new Logger(CustomersImportProcessor.name);
@@ -437,4 +437,3 @@ export class CustomersImportProcessor extends WorkerHost {
     }
   }
 }
-
